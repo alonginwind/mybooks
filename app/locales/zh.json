@@ -238,7 +238,7 @@
         "emailLabel": "Email*",
         "kindleSenderNote": "* 请先将本站邮箱加入到Kindle发件人中:",
         "convertToAudio": "有声书转换",
-        "convertToAudioNote": "转换为有声书需要花费一段时间，请耐心等待。如果无法访问外网音频服务，可以在系统设置中设置为委托书栈处理。",
+        "convertToAudioNote": "转换为有声书需要花费一段时间，请耐心等待。如果无法访问外网音频服务，可以在系统设置中书栈服务中设置代理服务器地址。",
         "downloadBook": "下载书籍",
         "noDownloadableFiles": "本书暂无可供下载的文件格式",
         "push": "推送",

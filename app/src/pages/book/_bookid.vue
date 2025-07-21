@@ -1,20 +1,40 @@
 <template>
     <v-row align="start">
         <v-col cols="12">
-            <v-dialog v-model="dialog_epub2audio" persistent width="300">
+            <v-dialog v-model="dialog_epub2audio" persistent width="380">
                 <v-card>
                     <v-card-title class="">{{ $t('book.convertToAudio') }}</v-card-title>
                     <v-card-text>
                         <p>{{ $t('book.convertToAudioNote') }}</p>
-                        <v-combobox
-                            :items="voice_names"
+                        <v-select
+                            :items="voice_options"
                             outlined
                             dense
                             v-model="voice_name"
-                            label="Voices"
-                            auto-select-first
+                            label="选择声音"
+                            item-text="display_name"
+                            item-value="voice_name"
                             required
-                        ></v-combobox>
+                        >
+                            <template v-slot:selection="{ item }">
+                                {{ item.display_name }}
+                            </template>
+                            <template v-slot:item="{ item }">
+                                <v-list-item-content>
+                                    <v-list-item-title>{{ item.display_name }}</v-list-item-title>
+                                </v-list-item-content>
+                                <v-list-item-action>
+                                    <v-btn
+                                        icon
+                                        small
+                                        @click.stop="playVoiceSample(item)"
+                                        :loading="playing_sample === item.voice_name"
+                                    >
+                                        <v-icon>play_arrow</v-icon>
+                                    </v-btn>
+                                </v-list-item-action>
+                            </template>
+                        </v-select>
                     </v-card-text>
                     <v-card-actions>
                         <v-btn color="" text @click="dialog_epub2audio = false">{{ $t('common.cancel') }}</v-btn>
@@ -386,6 +406,59 @@ export default {
         refer_books_loading: false,
         refer_books_setting_btn_loading:false,
         refer_books: [],
+        voice_name: "zh-CN-XiaoxiaoNeural", // 默认选择小晓
+        playing_sample: null,
+        currentAudio: null,
+        voice_options: [
+            {
+                voice_name: "zh-CN-liaoning-XiaobeiNeural",
+                display_name: "女声 | 晓北（辽宁）",
+                gender: "female",
+                sample_file: "female/xiaobei.mp3"
+            },
+            {
+                voice_name: "zh-CN-XiaoxiaoNeural",
+                display_name: "女声 | 晓晓",
+                gender: "female",
+                sample_file: "female/xiaoxiao.mp3"
+            },
+            {
+                voice_name: "zh-CN-XiaoyiNeural",
+                display_name: "女声 | 晓伊",
+                gender: "female",
+                sample_file: "female/xiaoyi.mp3"
+            },
+            {
+                voice_name: "zh-HK-HiuGaaiNeural",
+                display_name: "女声 | 晓佳（香港）",
+                gender: "female",
+                sample_file: "female/hiugaai.mp3"
+            },
+            {
+                voice_name: "zh-CN-YunjianNeural",
+                display_name: "男声 | 云健",
+                gender: "male",
+                sample_file: "male/yunjian.mp3"
+            },
+            {
+                voice_name: "zh-CN-YunxiNeural",
+                display_name: "男声 | 云希",
+                gender: "male",
+                sample_file: "male/yunxi.mp3"
+            },
+            {
+                voice_name: "zh-CN-YunyangNeural",
+                display_name: "男声 | 云扬",
+                gender: "male",
+                sample_file: "male/yunyang.mp3"
+            },
+            {
+                voice_name: "zh-HK-WanLungNeural",
+                display_name: "男声 | 云龙（香港）",
+                gender: "male",
+                sample_file: "male/wanlung.mp3"
+            }
+        ],
         email_rules: function (email) {
             var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
             return (email !== this.kindle_sender && re.test(email)) || "Invalid email format";
@@ -412,6 +485,10 @@ export default {
     },
     beforeRouteUpdate(to, from, next) {
         this.init(to, next);
+    },
+    beforeDestroy() {
+        // 清理音频资源
+        this.stopCurrentAudio();
     },
     methods: {
         init(route, next) {
@@ -542,6 +619,47 @@ export default {
                     this.$alert("error", rsp.msg);
                 }
             });
+        },
+        playVoiceSample(voice_option) {
+            if (this.playing_sample === voice_option.voice_name) {
+                // 如果正在播放相同的样本，则停止播放
+                this.stopCurrentAudio();
+                return;
+            }
+
+            // 停止当前播放的音频
+            this.stopCurrentAudio();
+
+            // 设置正在播放状态
+            this.playing_sample = voice_option.voice_name;
+
+            // 创建音频对象并播放
+            const audioUrl = `/static/epub_to_audio/samples/chinese/${voice_option.sample_file}`;
+            this.currentAudio = new Audio(audioUrl);
+
+            this.currentAudio.addEventListener('ended', () => {
+                this.playing_sample = null;
+                this.currentAudio = null;
+            });
+
+            this.currentAudio.addEventListener('error', () => {
+                this.playing_sample = null;
+                this.currentAudio = null;
+                this.$alert("error", "音频文件加载失败");
+            });
+
+            this.currentAudio.play().catch(() => {
+                this.playing_sample = null;
+                this.currentAudio = null;
+                this.$alert("error", "音频播放失败");
+            });
+        },
+        stopCurrentAudio() {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
+            this.playing_sample = null;
         },
         check_proxy_address(address) {
             // address should be valid ip(v4/v6) address or host uri, the port is optional. Ex: <ip>:<port>, <host>:<port>, <ip>, <host>
