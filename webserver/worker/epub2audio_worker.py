@@ -17,18 +17,31 @@ from typing import Optional, Tuple, Dict, Any
 python3 main.py --tts edge --language zh-CN --worker_count 2 --voice_name zh-CN-YunyangNeural --no_prompt /home/horky/workspace/epub_to_audio/test.epub /home/horky/workspace/epub_to_audio/
 """
 
+def remove_null_values(obj):
+    if isinstance(obj, dict):
+        return {k: remove_null_values(v) for k, v in obj.items() if v is not None}
+    elif isinstance(obj, list):
+        return [remove_null_values(item) for item in obj if item is not None]
+    else:
+        return obj
+
+def json_dumps_clean(obj, **kwargs):
+    cleaned_obj = remove_null_values(obj)
+    return json.dumps(cleaned_obj, **kwargs)
+
 class EpubToAudioWorker:
     """
     Specialized worker for epub_to_audio conversion with progress tracking
     """
+    STATUS_PROCESSING = "processing"
+    STATUS_CONVERTED = "converted"
+    STATUS_RUNNING = "running"
+    STATUS_COMPLETED = "completed"
+    STATUS_FAILED = "failed"
 
     def __init__(self, main_py_path: str = None, timeout: Optional[float] = None):
         """
         Initialize the EpubToAudioWorker
-
-        Args:
-            main_py_path: Path to epub_to_audio/main.py
-            timeout: Maximum time to wait for conversion (in seconds)
         """
         self.main_py_path = main_py_path or "epub_to_audio/main.py"
         self.timeout = timeout
@@ -51,14 +64,10 @@ class EpubToAudioWorker:
     def _parse_bookbarn_log(self, line: str):
         """
         Parse BOOKBARN log messages and update progress
-
-        Args:
-            line: Log line from stdout
         """
         if "[BOOKBARN]" not in line:
             return
 
-        # Extract the BOOKBARN message
         match = re.search(r'\[BOOKBARN\](.+)', line)
         if not match:
             return
@@ -81,93 +90,81 @@ class EpubToAudioWorker:
                 self.progress_data["current_chapter"] = {"idx": idx, "title": title}
                 self.progress_data["chapters"][idx] = {
                     "title": title,
-                    "status": "processing",
+                    "status": self.STATUS_PROCESSING,
                     "error": None
                 }
                 self.progress_data["processed_chapters"] = len([
                     ch for ch in self.progress_data["chapters"].values()
-                    if ch["status"] in ["processing", "converted", "failed"]
+                    if ch["status"] in [self.STATUS_PROCESSING, self.STATUS_CONVERTED, self.STATUS_FAILED]
                 ])
 
         elif message.startswith("Converted:"):
-            # Successfully converted chapter
             match = re.search(r'Converted:(\d+),(.+)', message)
             if match:
                 idx = int(match.group(1))
                 title = match.group(2)
                 if idx in self.progress_data["chapters"]:
-                    self.progress_data["chapters"][idx]["status"] = "converted"
+                    self.progress_data["chapters"][idx]["status"] = self.STATUS_CONVERTED
                 else:
                     self.progress_data["chapters"][idx] = {
                         "title": title,
-                        "status": "converted",
+                        "status": self.STATUS_CONVERTED,
                         "error": None
                     }
                 self.progress_data["converted_chapters"] = len([
                     ch for ch in self.progress_data["chapters"].values()
-                    if ch["status"] == "converted"
+                    if ch["status"] == self.STATUS_CONVERTED
                 ])
 
         elif message.startswith("Error:"):
-            # Failed chapter
             match = re.search(r'Error:(\d+),(.+)', message)
             if match:
                 idx = int(match.group(1))
                 error = match.group(2)
                 if idx in self.progress_data["chapters"]:
-                    self.progress_data["chapters"][idx]["status"] = "failed"
+                    self.progress_data["chapters"][idx]["status"] = self.STATUS_FAILED
                     self.progress_data["chapters"][idx]["error"] = error
                 else:
                     self.progress_data["chapters"][idx] = {
                         "title": f"Chapter {idx}",
-                        "status": "failed",
+                        "status": self.STATUS_FAILED,
                         "error": error
                     }
                 self.progress_data["failed_chapters"] = len([
                     ch for ch in self.progress_data["chapters"].values()
-                    if ch["status"] == "failed"
+                    if ch["status"] == self.STATUS_FAILED
                 ])
 
         elif message.startswith("ConversionFailed:"):
-            # Overall conversion failed
             match = re.search(r'ConversionFailed:(\d+)', message)
             if match:
                 failed_count = int(match.group(1))
-                self.progress_data["status"] = "failed"
+                self.progress_data["status"] = self.STATUS_FAILED
                 self.progress_data["failed_chapters"] = failed_count
-                self.progress_data["end_time"] = time.time()
+                self.progress_data["end_time"] = int(time.time())
 
         elif message.startswith("ConversionSuccess:"):
-            # Overall conversion succeeded
             match = re.search(r'ConversionSuccess:(.+)', message)
             if match:
                 output_folder = match.group(1)
-                self.progress_data["status"] = "completed"
+                self.progress_data["status"] = self.STATUS_COMPLETED
                 self.progress_data["output_folder"] = output_folder
-                self.progress_data["end_time"] = time.time()
+                self.progress_data["end_time"] = int(time.time())
 
     def _read_stream_with_progress(self, stream, data_list, show_output=True):
         """
         Read from stream and parse progress information
-
-        Args:
-            stream: The stream to read from
-            data_list: List to store the output lines
-            show_output: Whether to print output lines
         """
         try:
             for line in iter(stream.readline, b''):
                 if line:
                     decoded_line = line.decode('utf-8', errors='replace').rstrip()
                     data_list.append(decoded_line)
-                    # Parse BOOKBARN logs for progress
                     self._parse_bookbarn_log(decoded_line)
 
-                    # Show output based on mode
                     if show_output:
                         print(f"[OUTPUT] {decoded_line}")
                     elif "[BOOKBARN]" in decoded_line:
-                        # In progress mode, only show BOOKBARN logs
                         print(f"[BOOKBARN_LOG] {decoded_line}")
         except Exception as e:
             print(f"[ERROR] Error reading stream: {e}")
@@ -197,7 +194,7 @@ class EpubToAudioWorker:
         """
         # Reset progress data
         self.progress_data = {
-            "status": "running",
+            "status": self.STATUS_RUNNING,
             "total_chapters": 0,
             "processed_chapters": 0,
             "converted_chapters": 0,
@@ -206,7 +203,7 @@ class EpubToAudioWorker:
             "chapters": {},
             "output_folder": None,
             "error_message": None,
-            "start_time": time.time(),
+            "start_time": int(time.time()),
             "end_time": None,
             "execution_time": 0
         }
@@ -239,7 +236,6 @@ class EpubToAudioWorker:
         try:
             print(f"[INFO] Starting EPUB to Audio conversion: {' '.join(cmd)}")
 
-            # Start the process
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -247,7 +243,6 @@ class EpubToAudioWorker:
                 preexec_fn=os.setsid if os.name != 'nt' else None
             )
 
-            # Start threads to read stdout and stderr with progress parsing
             stdout_thread = threading.Thread(
                 target=self._read_stream_with_progress,
                 args=(self.process.stdout, stdout_data, show_output)
@@ -269,28 +264,25 @@ class EpubToAudioWorker:
                 print(f"[WARNING] Conversion timed out after {self.timeout} seconds")
                 self._kill_process()
                 return_code = -9  # SIGKILL
-                self.progress_data["status"] = "failed"
+                self.progress_data["status"] = self.STATUS_FAILED
                 self.progress_data["error_message"] = f"Conversion timed out after {self.timeout} seconds"
 
-            # Wait for threads to complete
             stdout_thread.join(timeout=1)
             stderr_thread.join(timeout=1)
 
-            # Update final progress data
             if self.progress_data["end_time"] is None:
-                self.progress_data["end_time"] = time.time()
+                self.progress_data["end_time"] = int(time.time())
 
             self.progress_data["execution_time"] = self.progress_data["end_time"] - self.progress_data["start_time"]
 
-            # Set final status if not already set
-            if self.progress_data["status"] == "running":
+            if self.progress_data["status"] == self.STATUS_RUNNING:
                 if return_code == 0:
-                    self.progress_data["status"] = "completed"
+                    self.progress_data["status"] = self.STATUS_COMPLETED
                 else:
-                    self.progress_data["status"] = "failed"
+                    self.progress_data["status"] = self.STATUS_FAILED
                     self.progress_data["error_message"] = f"Process exited with code {return_code}"
 
-            success = return_code == 0 and self.progress_data["status"] == "completed"
+            success = return_code == 0 and self.progress_data["status"] == self.STATUS_COMPLETED
 
             return {
                 'success': success,
@@ -303,9 +295,9 @@ class EpubToAudioWorker:
 
         except Exception as e:
             if self.progress_data["end_time"] is None:
-                self.progress_data["end_time"] = time.time()
+                self.progress_data["end_time"] = int(time.time())
             self.progress_data["execution_time"] = self.progress_data["end_time"] - self.progress_data["start_time"]
-            self.progress_data["status"] = "failed"
+            self.progress_data["status"] = self.STATUS_FAILED
             self.progress_data["error_message"] = str(e)
 
             error_msg = f"Failed to execute conversion: {str(e)}"
@@ -327,9 +319,8 @@ class EpubToAudioWorker:
         Returns:
             Progress data dictionary
         """
-        # Update execution time if still running
-        if self.progress_data["status"] == "running" and self.progress_data["start_time"]:
-            self.progress_data["execution_time"] = time.time() - self.progress_data["start_time"]
+        if self.progress_data["status"] == self.STATUS_RUNNING and self.progress_data["start_time"]:
+            self.progress_data["execution_time"] = int(time.time()) - self.progress_data["start_time"]
 
         return self.progress_data.copy()
 
@@ -340,7 +331,7 @@ class EpubToAudioWorker:
         Returns:
             JSON string representation of progress
         """
-        return json.dumps(self.get_progress(), indent=2, ensure_ascii=False)
+        return json_dumps_clean(self.get_progress(), indent=2, ensure_ascii=False)
 
     def _kill_process(self):
         """
@@ -378,10 +369,10 @@ class EpubToAudioWorker:
         if self.is_running():
             print("[INFO] Stopping conversion process...")
             self._kill_process()
-            self.progress_data["status"] = "failed"
+            self.progress_data["status"] = self.STATUS_FAILED
             self.progress_data["error_message"] = "Process stopped by user"
             if self.progress_data["end_time"] is None:
-                self.progress_data["end_time"] = time.time()
+                self.progress_data["end_time"] = int(time.time())
                 self.progress_data["execution_time"] = self.progress_data["end_time"] - self.progress_data["start_time"]
 
 
@@ -425,7 +416,6 @@ def main():
         elif arg.startswith("--") and i + 1 < len(sys.argv):
             key = arg[2:]  # Remove --
             value = sys.argv[i + 1]
-            # Convert numeric values
             if key in ["worker_count", "timeout"]:
                 try:
                     value = int(value) if key == "worker_count" else float(value)
@@ -450,6 +440,15 @@ def main():
     if options:
         print(f"[INFO] Options: {options}")
 
+    if not os.path.exists(epub_path):
+        print(f"[ERROR] EPUB file does not exist: {epub_path}")
+        print("Please modify the script to use a valid epub_path")
+        return
+
+    if not os.path.exists(output_dir):
+        print(f"[INFO] Creating output directory: {output_dir}")
+        os.makedirs(output_dir, exist_ok=True)
+
     # Start conversion in a separate thread if progress_only is enabled
     if progress_only:
         print("[INFO] Running in progress monitoring mode...")
@@ -467,12 +466,12 @@ def main():
         try:
             while thread.is_alive() or worker.is_running():
                 progress = worker.get_progress()
-                print(f"\n[PROGRESS] {json.dumps(progress, indent=2, ensure_ascii=False)}")
+                print(f"\n[PROGRESS] {json_dumps_clean(progress, indent=2, ensure_ascii=False)}")
                 time.sleep(15)  # Update every 2 seconds
 
             # Get final progress
             final_progress = worker.get_progress()
-            print(f"\n[FINAL] {json.dumps(final_progress, indent=2, ensure_ascii=False)}")
+            print(f"\n[FINAL] {json_dumps_clean(final_progress, indent=2, ensure_ascii=False)}")
 
         except KeyboardInterrupt:
             print("\n[INFO] Stopping conversion...")
@@ -495,7 +494,7 @@ def main():
 
         # Print progress information as JSON
         print("\nPROGRESS DATA:")
-        print(json.dumps(result['progress'], indent=2, ensure_ascii=False))
+        print(json_dumps_clean(result['progress'], indent=2, ensure_ascii=False))
 
         if result['stderr']:
             print("\nSTDERR:")
