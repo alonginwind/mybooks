@@ -49,6 +49,7 @@ class EpubToAudioWorker:
         self.progress_data = {
             "status": "idle",  # idle, running, completed, failed
             "total_chapters": 0,
+            "total_characters": 0,
             "processed_chapters": 0,
             "converted_chapters": 0,
             "failed_chapters": 0,
@@ -80,7 +81,10 @@ class EpubToAudioWorker:
             match = re.search(r'Chapters:(\d+)', message)
             if match:
                 self.progress_data["total_chapters"] = int(match.group(1))
-
+        elif message.startswith("Total characters:"):
+            match = re.search(r'Total characters:(\d+)', message)
+            if match:
+                self.progress_data["total_characters"] = int(match.group(1))
         elif message.startswith("Processing:"):
             # Currently processing chapter
             match = re.search(r'Processing:(\d+),(.+)', message)
@@ -266,6 +270,14 @@ class EpubToAudioWorker:
                 return_code = -9  # SIGKILL
                 self.progress_data["status"] = self.STATUS_FAILED
                 self.progress_data["error_message"] = f"Conversion timed out after {self.timeout} seconds"
+            except KeyboardInterrupt:
+                print(f"\n[INFO] Conversion interrupted by user (Ctrl+C)")
+                self._kill_process()
+                return_code = -2  # Interrupted
+                self.progress_data["status"] = self.STATUS_FAILED
+                self.progress_data["error_message"] = "Conversion interrupted by user"
+                # Re-raise the exception to be handled by outer try-catch
+                raise
 
             stdout_thread.join(timeout=1)
             stderr_thread.join(timeout=1)
@@ -291,6 +303,27 @@ class EpubToAudioWorker:
                 'return_code': return_code,
                 'progress': self.progress_data,
                 'error': None if success else (self.progress_data["error_message"] or f"Process exited with code {return_code}")
+            }
+
+        except KeyboardInterrupt:
+            # Handle Ctrl+C interruption
+            print(f"\n[INFO] Conversion process interrupted by user")
+            if self.progress_data["end_time"] is None:
+                self.progress_data["end_time"] = int(time.time())
+            self.progress_data["execution_time"] = self.progress_data["end_time"] - self.progress_data["start_time"]
+            self.progress_data["status"] = self.STATUS_FAILED
+            self.progress_data["error_message"] = "Process interrupted by user"
+
+            # Ensure process is killed
+            self._kill_process()
+
+            return {
+                'success': False,
+                'error': 'Process interrupted by user',
+                'stdout': stdout_data,
+                'stderr': stderr_data,
+                'return_code': -2,
+                'progress': self.progress_data
             }
 
         except Exception as e:
@@ -479,27 +512,35 @@ def main():
 
     else:
         print("[INFO] Running in full output mode...")
-        # Execute conversion and show full results
-        result = worker.convert_epub_to_audio(epub_path, output_dir, **options)
+        try:
+            # Execute conversion and show full results
+            result = worker.convert_epub_to_audio(epub_path, output_dir, **options)
 
-        # Print results
-        print("\n" + "="*50)
-        print("CONVERSION RESULTS")
-        print("="*50)
-        print(f"Success: {result['success']}")
-        print(f"Return Code: {result['return_code']}")
+            # Print results
+            print("\n" + "="*50)
+            print("CONVERSION RESULTS")
+            print("="*50)
+            print(f"Success: {result['success']}")
+            print(f"Return Code: {result['return_code']}")
 
-        if result['error']:
-            print(f"Error: {result['error']}")
+            if result['error']:
+                print(f"Error: {result['error']}")
 
-        # Print progress information as JSON
-        print("\nPROGRESS DATA:")
-        print(json_dumps_clean(result['progress'], indent=2, ensure_ascii=False))
+            # Print progress information as JSON
+            print("\nPROGRESS DATA:")
+            print(json_dumps_clean(result['progress'], indent=2, ensure_ascii=False))
 
-        if result['stderr']:
-            print("\nSTDERR:")
-            for line in result['stderr']:
-                print(f"  {line}")
+            if result['stderr']:
+                print("\nSTDERR:")
+                for line in result['stderr']:
+                    print(f"  {line}")
+
+        except KeyboardInterrupt:
+            print("\n[INFO] Conversion interrupted by user")
+            if worker.is_running():
+                print("[INFO] Stopping conversion process...")
+                worker.stop()
+            print("[INFO] Conversion stopped")
 
 
 if __name__ == "__main__":
