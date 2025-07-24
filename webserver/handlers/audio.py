@@ -21,6 +21,47 @@ CONF = loader.get_settings()
 ConversionWorkerMap = {}
 AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
 
+
+class AudioUtils:
+    @staticmethod
+    def get_audios(book_id):
+        """Get audio files for a book."""
+        audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
+        if not os.path.exists(audio_dir):
+            return {"status": "unavailable", "msg": "No audio files found", "count": 0}
+
+        audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav'))]
+        if not audio_files:
+            return {"status": "unavailable", "msg": "No audio files found", "count": 0}
+
+        file_urls = []
+        for file in sorted(audio_files):
+            file_path = os.path.join(audio_dir, file)
+            file_urls.append({
+                "filename": file,
+                "url": f"/api/audio/{book_id}/download/{file}",
+                "size": os.path.getsize(file_path)
+            })
+
+        worker = ConversionWorkerMap.get(book_id)
+        if worker and not worker.is_completed():
+            # If conversion is in progress, return worker status
+            return {"status": worker.get_status(),
+                    "progress": worker.get_progress(),
+                    "audio_dir": audio_dir,
+                    "files": file_urls,
+                    "count": len(audio_files)
+                }
+
+        return {
+            "status": "available",
+            "msg": "ok",
+            "audio_dir": audio_dir,
+            "files": file_urls,
+            "count": len(audio_files)
+        }
+
+
 class AudioDetail(BaseHandler):
     @js
     def get(self, book_id):

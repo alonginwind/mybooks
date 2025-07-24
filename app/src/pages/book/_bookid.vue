@@ -395,6 +395,7 @@ export default {
         err: "",
         msg: "",
         book: {id: 0, title: "", files: [], tags: [], pubdate: ""},
+        audios: {count: 0, files: [], status: "ok"},
         debug: false,
         mail_to: "",
         kindle_sender: "",

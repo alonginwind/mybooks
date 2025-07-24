@@ -39,8 +39,6 @@ class EpubToAudioWorker:
     """
     STATUS_PROCESSING = "processing"
     STATUS_CONVERTED = "converted"
-    STATUS_RUNNING = "running"
-    STATUS_COMPLETED = "completed"
     STATUS_FAILED = "failed"
 
     def __init__(self, main_py_path: str = None, timeout: Optional[float] = None):
@@ -155,7 +153,7 @@ class EpubToAudioWorker:
             match = re.search(r'ConversionSuccess:(.+)', message)
             if match:
                 output_folder = match.group(1)
-                self.progress_data["status"] = self.STATUS_COMPLETED
+                self.progress_data["status"] = self.STATUS_CONVERTED
                 self.progress_data["output_folder"] = output_folder
                 self.progress_data["end_time"] = int(time.time())
 
@@ -202,7 +200,7 @@ class EpubToAudioWorker:
         """
         # Reset progress data
         self.progress_data = {
-            "status": self.STATUS_RUNNING,
+            "status": self.STATUS_PROCESSING,
             "total_chapters": 0,
             "processed_chapters": 0,
             "converted_chapters": 0,
@@ -291,14 +289,14 @@ class EpubToAudioWorker:
 
             self.progress_data["execution_time"] = self.progress_data["end_time"] - self.progress_data["start_time"]
 
-            if self.progress_data["status"] == self.STATUS_RUNNING:
+            if self.progress_data["status"] == self.STATUS_PROCESSING:
                 if return_code == 0:
-                    self.progress_data["status"] = self.STATUS_COMPLETED
+                    self.progress_data["status"] = self.STATUS_CONVERTED
                 else:
                     self.progress_data["status"] = self.STATUS_FAILED
                     self.progress_data["error_message"] = f"Process exited with code {return_code}"
 
-            success = return_code == 0 and self.progress_data["status"] == self.STATUS_COMPLETED
+            success = return_code == 0 and self.progress_data["status"] == self.STATUS_CONVERTED
 
             return {
                 'success': success,
@@ -356,7 +354,7 @@ class EpubToAudioWorker:
         Returns:
             Progress data dictionary
         """
-        if self.progress_data["status"] == self.STATUS_RUNNING and self.progress_data["start_time"]:
+        if self.progress_data["status"] == self.STATUS_PROCESSING and self.progress_data["start_time"]:
             self.progress_data["execution_time"] = int(time.time()) - self.progress_data["start_time"]
 
         return self.progress_data.copy()
@@ -398,6 +396,24 @@ class EpubToAudioWorker:
             True if process is running, False otherwise
         """
         return self.process is not None and self.process.poll() is None
+
+    def is_completed(self) -> bool:
+        """
+        Check if the conversion process has completed successfully.
+
+        Returns:
+            True if process is completed, False otherwise
+        """
+        return self.progress_data["status"] == self.STATUS_CONVERTED
+
+    def get_status(self) -> str:
+        """
+        Get the current status of the conversion process.
+
+        Returns:
+            Current status as a string
+        """
+        return self.progress_data["status"]
 
     def stop(self):
         """
