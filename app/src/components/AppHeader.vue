@@ -309,7 +309,7 @@ export default {
                 rsp.sys.footer = this.$t('appHeader.defaultFooter');
                 this.$store.commit("set_footer", rsp.sys.footer);
             }
-            if (rsp.sys.header !== '') {
+            if (rsp.sys.header === '') {
                 rsp.sys.header = this.$t('appHeader.defaultHeader');
                 this.$store.commit("set_header", rsp.sys.header);
             }
