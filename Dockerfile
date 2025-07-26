@@ -40,7 +40,7 @@ RUN if [ "x${BUILD_COUNTRY}" = "xCN" ]; then \
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     apt update -y && \
-    apt install -y gettext gosu procps vim nginx calibre calibre-bin supervisor fonts-lato && \
+    apt install -y gettext gosu procps vim nginx calibre calibre-bin supervisor fonts-lato ffmpeg && \
     apt clean && \
     apt install -y python3-pip && \
     pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \

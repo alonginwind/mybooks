@@ -30,12 +30,11 @@ class AudioUtils:
         audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
         if not os.path.exists(audio_dir):
             return {"status": "unavailable", "msg": _(u"没有发现音频文件目录"), "count": 0}
-        logging.info(f"worker map size: {len(ConversionWorkerMap)}, type of bid is {type(bid)}, type of book_id is {type(book_id)}")
+
         worker = ConversionWorkerMap.get(book_id)
         audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav'))]
         if not audio_files:
             if worker:
-                logging.info(f"No audio files found for book {book_id}, worker status: {worker.get_status()}")
                 return {"status": worker.get_status(),
                         "progress": worker.get_progress(),
                         "audio_dir": audio_dir,
@@ -43,7 +42,6 @@ class AudioUtils:
                         "count": 0
                     }
             else:
-                logging.info(f"No audio files found for book {book_id}, no worker running")
                 return {"status": "unavailable", "msg": _(u"没有发现音频文件"), "count": 0}
 
         file_urls = []
@@ -65,11 +63,10 @@ class AudioUtils:
                 }
         else:
             return {
-                    "status": "available",
+                    "status": EpubToAudioWorker.STATUS_CONVERTED,
                     "audio_dir": audio_dir,
                     "audios": file_urls,
-                    "status": file_urls.STATUS_COMPLETED,
-                    "total_files": len(file_urls)
+                    "count": len(file_urls)
                 }
 
 
@@ -184,11 +181,14 @@ class AudioConversion(BaseHandler):
             os.makedirs(output_dir, exist_ok=True)
 
             # Create new worker and start conversion
-            worker = EpubToAudioWorker()
+            epub_to_audio_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "epub_to_audio", "main.py")
+            worker = EpubToAudioWorker(main_py_path=epub_to_audio_path)
             ConversionWorkerMap[book_id] = worker
 
             # Start conversion in background thread
             def start_conversion():
+                logging.info(f"Starting conversion for book {book_id} in background thread")
+                logging.info(f"EPUB path: {epub_path}, Output dir: {output_dir}, Voice: {voice_name}, Language: {language}")
                 try:
                     result = worker.convert_epub_to_audio(
                         epub_path=epub_path,

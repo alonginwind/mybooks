@@ -3,6 +3,7 @@
 EPUB to Audio Worker - Convert EPUB books to audiobooks with progress tracking
 """
 
+import logging
 import subprocess
 import threading
 import time
@@ -45,7 +46,7 @@ class EpubToAudioWorker:
         """
         Initialize the EpubToAudioWorker
         """
-        self.main_py_path = main_py_path or "epub_to_audio/main.py"
+        self.main_py_path = main_py_path or "webserver/epub_to_audio/main.py"
         self.timeout = timeout
         self.process = None
         self.progress_data = {
@@ -69,6 +70,7 @@ class EpubToAudioWorker:
         Parse BOOKBARN log messages and update progress
         """
         if "[BOOKBARN]" not in line:
+            # logging.info(f"[LOG] {line}")
             return
 
         match = re.search(r'\[BOOKBARN\](.+)', line)
@@ -94,7 +96,7 @@ class EpubToAudioWorker:
                 idx = int(match.group(1))
                 title = match.group(2)
                 self.progress_data["current_chapter"] = {"idx": idx, "title": title}
-                self.progress_data["audios"][idx] = {
+                self.progress_data["chapters"][idx] = {
                     "title": title,
                     "status": self.STATUS_PROCESSING,
                     "error": None
@@ -156,6 +158,9 @@ class EpubToAudioWorker:
                 self.progress_data["status"] = self.STATUS_CONVERTED
                 self.progress_data["output_folder"] = output_folder
                 self.progress_data["end_time"] = int(time.time())
+
+        else:
+            logging.info(f"log message: {message}")
 
     def _read_stream_with_progress(self, stream, data_list, show_output=True):
         """
@@ -240,7 +245,7 @@ class EpubToAudioWorker:
         stderr_data = []
 
         try:
-            print(f"[INFO] Starting EPUB to Audio conversion: {' '.join(cmd)}")
+            logging.info(f"[INFO] Starting EPUB to Audio conversion: {' '.join(cmd)}")
 
             self.process = subprocess.Popen(
                 cmd,
@@ -264,16 +269,16 @@ class EpubToAudioWorker:
             # Wait for process completion or timeout
             try:
                 return_code = self.process.wait(timeout=self.timeout)
-                print(f"[INFO] Conversion completed with return code: {return_code}")
+                logging.info(f"[INFO] Conversion completed with return code: {return_code}")
 
             except subprocess.TimeoutExpired:
-                print(f"[WARNING] Conversion timed out after {self.timeout} seconds")
+                logging.warning(f"[WARNING] Conversion timed out after {self.timeout} seconds")
                 self._kill_process()
                 return_code = -9  # SIGKILL
                 self.progress_data["status"] = self.STATUS_FAILED
                 self.progress_data["error_message"] = f"Conversion timed out after {self.timeout} seconds"
             except KeyboardInterrupt:
-                print("\n[INFO] Conversion interrupted by user (Ctrl+C)")
+                logging.info("[INFO] Conversion interrupted by user (Ctrl+C)")
                 self._kill_process()
                 return_code = -2  # Interrupted
                 self.progress_data["status"] = self.STATUS_FAILED
@@ -309,7 +314,7 @@ class EpubToAudioWorker:
 
         except KeyboardInterrupt:
             # Handle Ctrl+C interruption
-            print("\n[INFO] Conversion process interrupted by user")
+            logging.info("[INFO] Conversion process interrupted by user")
             if self.progress_data["end_time"] is None:
                 self.progress_data["end_time"] = int(time.time())
             self.progress_data["execution_time"] = self.progress_data["end_time"] - self.progress_data["start_time"]
@@ -336,7 +341,7 @@ class EpubToAudioWorker:
             self.progress_data["error_message"] = str(e)
 
             error_msg = f"Failed to execute conversion: {str(e)}"
-            print(f"[ERROR] {error_msg}")
+            logging.error(f"[ERROR] {error_msg}")
 
             return {
                 'success': False,
@@ -420,7 +425,7 @@ class EpubToAudioWorker:
         Stop the currently running conversion process.
         """
         if self.is_running():
-            print("[INFO] Stopping conversion process...")
+            logging.info("[INFO] Stopping conversion process...")
             self._kill_process()
             self.progress_data["status"] = self.STATUS_FAILED
             self.progress_data["error_message"] = "Process stopped by user"
@@ -480,7 +485,7 @@ def main():
             i += 1
 
     # Extract special options
-    main_py_path = options.pop("main_py_path", "epub_to_audio/main.py")
+    main_py_path = options.pop("main_py_path", "webserver/epub_to_audio/main.py")
     timeout = options.pop("timeout", None)
 
     # Create EPUB to Audio worker
