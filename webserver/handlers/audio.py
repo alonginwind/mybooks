@@ -24,42 +24,53 @@ AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
 
 class AudioUtils:
     @staticmethod
-    def get_audios(book_id):
+    def get_audios(bid):
         """Get audio files for a book."""
+        book_id = int(bid)
         audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
         if not os.path.exists(audio_dir):
-            return {"status": "unavailable", "msg": "No audio files found", "count": 0}
-
+            return {"status": "unavailable", "msg": _(u"没有发现音频文件目录"), "count": 0}
+        logging.info(f"worker map size: {len(ConversionWorkerMap)}, type of bid is {type(bid)}, type of book_id is {type(book_id)}")
+        worker = ConversionWorkerMap.get(book_id)
         audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav'))]
         if not audio_files:
-            return {"status": "unavailable", "msg": "No audio files found", "count": 0}
+            if worker:
+                logging.info(f"No audio files found for book {book_id}, worker status: {worker.get_status()}")
+                return {"status": worker.get_status(),
+                        "progress": worker.get_progress(),
+                        "audio_dir": audio_dir,
+                        "audios": [],
+                        "count": 0
+                    }
+            else:
+                logging.info(f"No audio files found for book {book_id}, no worker running")
+                return {"status": "unavailable", "msg": _(u"没有发现音频文件"), "count": 0}
 
         file_urls = []
         for file in sorted(audio_files):
             file_path = os.path.join(audio_dir, file)
             file_urls.append({
-                "filename": file,
-                "url": f"/api/audio/{book_id}/download/{file}",
+                "filename": os.path.splitext(file)[0],
+                "url": f"/api/audio/{book_id}/{file}",
                 "size": os.path.getsize(file_path)
             })
 
-        worker = ConversionWorkerMap.get(book_id)
         if worker and not worker.is_completed():
             # If conversion is in progress, return worker status
             return {"status": worker.get_status(),
                     "progress": worker.get_progress(),
                     "audio_dir": audio_dir,
-                    "files": file_urls,
-                    "count": len(audio_files)
+                    "audios": file_urls,
+                    "count": len(file_urls)
                 }
-
-        return {
-            "status": "available",
-            "msg": "ok",
-            "audio_dir": audio_dir,
-            "files": file_urls,
-            "count": len(audio_files)
-        }
+        else:
+            return {
+                    "status": "available",
+                    "audio_dir": audio_dir,
+                    "audios": file_urls,
+                    "status": file_urls.STATUS_COMPLETED,
+                    "total_files": len(file_urls)
+                }
 
 
 class AudioDetail(BaseHandler):
@@ -71,7 +82,7 @@ class AudioDetail(BaseHandler):
             book_id = int(book_id)
             book = self.get_book(book_id)
             if not book:
-                return {"err": "params.book.invalid", "msg": "Book not found"}
+                return {"err": "params.book.invalid", "msg": _(u"书籍未找到")}
 
             # Check if audio file already exists
             audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
@@ -82,32 +93,28 @@ class AudioDetail(BaseHandler):
                     file_urls = []
                     for file in sorted(audio_files):
                         file_urls.append({
-                            "filename": file,
-                            "url": f"/api/audio/{book_id}/download/{file}",
+                            "filename": os.path.splitext(file)[0],
+                            "url": f"/api/audio/{book_id}/{file}",
                             "size": os.path.getsize(os.path.join(audio_dir, file))
                         })
-
                     return {
-                        "err": "ok",
-                        "msg": "Audio files found",
-                        "data": {
-                            "status": "available",
-                            "audio_dir": audio_dir,
-                            "files": file_urls,
-                            "total_files": len(audio_files)
-                        }
+                        "status": "available",
+                        "audio_dir": audio_dir,
+                        "audios": file_urls,
+                        "status": EpubToAudioWorker.STATUS_COMPLETED,
+                        "total_files": len(audio_files)
                     }
 
             # Check if conversion is in progress
             worker = ConversionWorkerMap.get(book_id)
             if worker:
                 progress = worker.get_progress()
-                return {"err": "ok", "msg": "Conversion in progress", "data": progress}
+                return {"err": "ok", "msg": _(u"已经在生成音频中"), "data": progress}
 
-            return {"err": "audio.not_found", "msg": "No audio files found"}
+            return {"err": "audio.not_found", "msg": _(u"没有发现音频文件")}
 
         except ValueError:
-            return {"err": "params.invalid", "msg": "Invalid book ID"}
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioDetail.get: {e}")
             return {"err": "server.error", "msg": str(e)}
@@ -126,15 +133,15 @@ class AudioConversion(BaseHandler):
                 if progress and progress["status"] in [EpubToAudioWorker.STATUS_CONVERTED, EpubToAudioWorker.STATUS_COMPLETED]:
                     # remove the book id from ConversionWorkerMap
                     ConversionWorkerMap.pop(book_id, None)
-                    return {"err": "ok", "msg":"Conversion completed", "data": progress}
+                    return {"err": "ok", "msg": _(u"转换完成"), "data": progress}
                 elif progress and progress["status"] == EpubToAudioWorker.STATUS_FAILED:
-                    return {"err": "audio.conversion_failed", "msg": "Conversion failed", "data": progress}
+                    return {"err": "audio.conversion_failed", "msg": _(u"转换失败"), "data": progress}
                 else:
-                    return {"err": "ok", "msg":"processing", "data": progress}
+                    return {"err": "ok", "msg": EpubToAudioWorker.STATUS_PROCESSING, "data": progress}
             else:
-                return {"err": "audio.no_conversion", "msg":"No conversion"}
+                return {"err": "audio.no_conversion", "msg": _(u"没有发现转换任务"), "data": None}
         except ValueError:
-            return {"err": "params.invalid", "msg": "Invalid book ID"}
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioConversion.get: {e}")
             return {"err": "server.error", "msg": str(e)}
@@ -152,13 +159,13 @@ class AudioConversion(BaseHandler):
             # Check if book exists
             book = self.get_book(book_id)
             if not book:
-                return {"err": "params.book.invalid", "msg": "Book not found"}
+                return {"err": "params.book.invalid", "msg": _(u"书籍未找到")}
 
             # Check if conversion is already running
             if book_id in ConversionWorkerMap:
                 worker = ConversionWorkerMap[book_id]
                 if worker.is_running():
-                    return {"err": "audio.already_converting", "msg": "Conversion already in progress"}
+                    return {"err": "audio.already_converting", "msg": _(u"转换已经在进行中")}
                 else:
                     # Remove stale worker
                     ConversionWorkerMap.pop(book_id, None)
@@ -166,11 +173,11 @@ class AudioConversion(BaseHandler):
             # Get EPUB file path
             epub_path = book.get("fmt_epub")
             if not epub_path:
-                return {"err": "params.book.no_epub", "msg": "Book does not have EPUB format"}
+                return {"err": "params.book.no_epub", "msg": _(u"书籍没有EPUB格式")}
 
             # Validate that the EPUB file actually exists
             if not os.path.exists(epub_path):
-                return {"err": "params.book.epub_missing", "msg": "EPUB file not found on disk"}
+                return {"err": "params.book.epub_missing", "msg": _(u"未找到EPUB文件")}
 
             # Create output directory
             output_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
@@ -195,7 +202,6 @@ class AudioConversion(BaseHandler):
                     )
                     if not result['success']:
                         logging.error(f"Conversion failed for book {book_id}: {result.get('error', 'Unknown error')}")
-                        # Mark worker as failed and clean up
                         worker.progress_data["status"] = EpubToAudioWorker.STATUS_FAILED
                         worker.progress_data["error_message"] = result.get('error', 'Unknown error')
                 except Exception as e:
@@ -218,18 +224,22 @@ class AudioConversion(BaseHandler):
             thread.daemon = True
             thread.start()
 
-            return {"err": "ok", "msg": "开始转换"}
+            logging.info(f"Conversion started for book {book_id} in background thread")
+            worker_checker = ConversionWorkerMap.get(book_id)
+            if worker_checker:
+                return {"err": "ok", "msg": _(u"开始转换"), "data": worker_checker.get_progress()}
+            else:
+                logging.error(f"Worker for book {book_id} not found after starting conversion")
+
+            return {"err": "ok", "msg": _(u"开始转换")}
 
         except ValueError:
-            return {"err": "params.invalid", "msg": "Invalid book ID"}
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioConversion.post: {e}")
             return {"err": "server.error", "msg": str(e)}
-
-            return {"err": "ok", "msg": "开始转换"}
-
         except ValueError:
-            return {"err": "params.invalid", "msg": "Invalid book ID"}
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioConversion.post: {e}")
             return {"err": "server.error", "msg": str(e)}
@@ -246,14 +256,15 @@ class AudioConversionCancel(BaseHandler):
             if worker:
                 worker.stop()
                 ConversionWorkerMap.pop(book_id, None)
-                return {"err": "ok", "msg": "Conversion cancelled"}
+                return {"err": "ok", "msg": _(u"转换已取消")}
             else:
-                return {"err": "audio.no_conversion", "msg": "No conversion to cancel"}
+                return {"err": "audio.no_conversion", "msg": _(u"没有发现转换任务"), "data": None}
         except ValueError:
-            return {"err": "params.invalid", "msg": "Invalid book ID"}
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioConversionCancel.post: {e}")
             return {"err": "server.error", "msg": str(e)}
+
 
 class AudioDelete(BaseHandler):
     @js
@@ -268,7 +279,7 @@ class AudioDelete(BaseHandler):
             worker = ConversionWorkerMap.get(book_id)
             if worker:
                 if worker.is_running():
-                    return {"err": "audio.conversion_running", "msg": "Cannot delete while conversion is running"}
+                    return {"err": "audio.conversion_running", "msg": _(u"无法在转换进行时删除")}
                 ConversionWorkerMap.pop(book_id, None)
 
             # Delete audio directory
@@ -276,15 +287,15 @@ class AudioDelete(BaseHandler):
             if os.path.exists(audio_dir):
                 try:
                     shutil.rmtree(audio_dir)
-                    return {"err": "ok", "msg": "Audio files deleted successfully"}
+                    return {"err": "ok", "msg": _(u"音频文件删除成功")}
                 except OSError as e:
                     logging.error(f"Error deleting audio directory {audio_dir}: {e}")
                     return {"err": "server.error", "msg": f"Failed to delete audio files: {e}"}
             else:
-                return {"err": "audio.not_found", "msg": "No audio files found to delete"}
+                return {"err": "audio.not_found", "msg": _(u"未找到要删除的音频文件")}
 
         except ValueError:
-            return {"err": "params.invalid", "msg": "Invalid book ID"}
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioDelete.post: {e}")
             return {"err": "server.error", "msg": str(e)}
@@ -298,17 +309,17 @@ class AudioDownload(BaseHandler):
             book_id = int(book_id)
             book = self.get_book(book_id)
             if not book:
-                raise tornado.web.HTTPError(404, "Book not found")
+                return {"err": "params.book.invalid", "msg": _(u"书籍未找到")}
 
             # Security check: ensure filename doesn't contain path traversal
             if ".." in filename or "/" in filename:
-                raise tornado.web.HTTPError(400, "Invalid filename")
+                return {"err": "params.invalid", "msg": _(u"无效的文件名")}
 
             audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
             file_path = os.path.join(audio_dir, filename)
 
             if not os.path.exists(file_path):
-                raise tornado.web.HTTPError(404, "Audio file not found")
+                return {"err": "audio.not_found", "msg": _(u"音频文件未找到")}
 
             # Set appropriate headers for audio file download
             self.set_header("Content-Type", "audio/mpeg")
@@ -322,10 +333,10 @@ class AudioDownload(BaseHandler):
                     self.write(chunk)
 
         except ValueError:
-            raise tornado.web.HTTPError(400, "Invalid book ID")
+            return {"err": "params.invalid", "msg": _(u"无效的书籍ID")}
         except Exception as e:
             logging.error(f"Error in AudioDownload.get: {e}")
-            raise tornado.web.HTTPError(500, "Server error")
+            return {"err": "server.error", "msg": str(e)}
 
 
 def routes():

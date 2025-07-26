@@ -4,6 +4,11 @@
             <v-dialog v-model="dialog_epub2audio" persistent width="380">
                 <v-card>
                     <v-card-title class="">{{ $t('book.convertToAudio') }}</v-card-title>
+                    <v-card-text v-if="audios.status === AUDIO_STATUS.FAILED">
+                        <p style="color: red; font-weight: bold;">{{ $t('book.conversionFailed') }} <br/>
+                            {{ audios.progress && audios.progress.error_message ? audios.progress.error_message : $t('book.defaultFailedReason') }}
+                        </p>
+                    </v-card-text>
                     <v-card-text>
                         <p>{{ $t('book.convertToAudioNote') }}</p>
                         <v-select
@@ -40,6 +45,25 @@
                         <v-btn color="" text @click="dialog_epub2audio = false">{{ $t('common.cancel') }}</v-btn>
                         <v-spacer></v-spacer>
                         <v-btn color="primary" text @click="generate_audio">{{ $t('common.start') }}</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="dialog_audiolist" persistent width="380">
+                <v-card>
+                    <v-card-title class="">{{ $t('book.audioList') }}</v-card-title>
+                    <v-card-text>
+                        <p>{{ $t('book.convertToAudioNote') }}</p>
+                        <v-row v-for="(audio_item, idx) in this.audioList"
+                               :key="'audio-' + idx"
+                               class="mb-2">
+                            <v-col class='py-0' cols=3>
+                                <v-text-field flat small v-model="audio_item.name" type="text"></v-text-field>
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-btn color="" text @click="dialog_epub2audio = false">{{ $t('common.close') }}</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
@@ -351,9 +375,9 @@
         <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
             <v-card outlined>
                 <v-list>
-                    <v-list-item @click="dialog_epub2audio = !dialog_epub2audio">
-                        <v-list-item-avatar large color="primary">
-                            <v-icon dark>audiotrack</v-icon>
+                    <v-list-item @click="switch_audio_dialog">
+                        <v-list-item-avatar large :color="audios.status === AUDIO_STATUS.FAILED ? 'red' : 'primary'">
+                            <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'error' : 'audiotrack' }}</v-icon>
                         </v-list-item-avatar>
                         <v-list-item-content>
                             <v-list-item-title>{{ $t('book.convertToAudio') }}</v-list-item-title>
@@ -396,17 +420,28 @@ export default {
         msg: "",
         book: {id: 0, title: "", files: [], tags: [], pubdate: ""},
         audios: {count: 0, files: [], status: "ok"},
+        // Audio status constants
+        AUDIO_STATUS: {
+            UNAVAILABLE: "unavailable",
+            AVAILABLE: "available",
+            PROCESSING: "processing",
+            CONVERTED: "converted",
+            FAILED: "failed",
+            OK: "ok"
+        },
         debug: false,
         mail_to: "",
         kindle_sender: "",
         txt_parse_inited: false,
         dialog_download: false,
         dialog_epub2audio: false,
+        dialog_audiolist: false,
         dialog_refer: false,
         dialog_msg: false,
         refer_books_loading: false,
         refer_books_setting_btn_loading:false,
         refer_books: [],
+        epub2audio_processing: false,
         voice_name: "zh-CN-XiaoxiaoNeural", // 默认选择小晓
         playing_sample: null,
         currentAudio: null,
@@ -500,6 +535,13 @@ export default {
             }
             if (next) next();
         },
+        switch_audio_dialog() {
+            if (this.audios.status === this.AUDIO_STATUS.UNAVAILABLE || this.audios.status === this.AUDIO_STATUS.FAILED) {
+                this.dialog_epub2audio = !this.dialog_epub2audio
+            } else {
+                this.dialog_audiolist = !this.dialog_audiolist
+            }
+        },
         sendto_kindle() {
             if (process.client) {
                 this.$cookies.set("last_mailto", this.mail_to);
@@ -525,6 +567,8 @@ export default {
                 body: JSON.stringify({voice: this.voice_name}),
             }).then((rsp) => {
                 if (rsp.err === "ok") {
+                    this.epub2audio_processing = true;
+                    this.dialog_epub2audio = false;
                     this.$alert("success", this.$t('book.audioGenerated'));
                 } else {
                     this.$alert("error", rsp.msg);

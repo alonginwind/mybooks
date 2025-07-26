@@ -94,7 +94,7 @@ class EpubToAudioWorker:
                 idx = int(match.group(1))
                 title = match.group(2)
                 self.progress_data["current_chapter"] = {"idx": idx, "title": title}
-                self.progress_data["chapters"][idx] = {
+                self.progress_data["audios"][idx] = {
                     "title": title,
                     "status": self.STATUS_PROCESSING,
                     "error": None
@@ -205,12 +205,12 @@ class EpubToAudioWorker:
             "processed_chapters": 0,
             "converted_chapters": 0,
             "failed_chapters": 0,
-            "current_chapter": None,
+            "current_chapter": -1,
             "chapters": {},
-            "output_folder": None,
-            "error_message": None,
+            "output_folder": '',
+            "error_message": '',
             "start_time": int(time.time()),
-            "end_time": None,
+            "end_time": 0,
             "execution_time": 0
         }
 
