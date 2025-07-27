@@ -495,6 +495,7 @@ export default {
             OK: "ok"
         },
         debug: false,
+        loaded: false,
         mail_to: "",
         kindle_sender: "",
         txt_parse_inited: false,
@@ -592,14 +593,27 @@ export default {
             // 从localStorage获取上次使用的语音名称
             const lastUsedVoice = localStorage.getItem("last_used_voice_name");
             this.voice_name = lastUsedVoice || "zh-CN-XiaoxiaoNeural"; // 如果没有保存的语音，使用默认的晓晓
-
-            // 检查音频转换状态，如果正在转换中则启动进度轮询
-            if (this.audios && this.audios.status === this.AUDIO_STATUS.PROCESSING) {
-                this.start_audio_progress_polling();
-            }
         } else {
             // 服务端渲染时使用默认语音
             this.voice_name = "zh-CN-XiaoxiaoNeural";
+        }
+    },
+    watch: {
+        // 监听audios数据变化，当数据加载完成后检查是否需要启动进度轮询
+        audios: {
+            handler(newValue, oldValue) {
+                if (!newValue || (oldValue && newValue && newValue.status === oldValue.status)) return;
+                if (!process.client) return;
+                if (this.loaded) return;
+                this.loaded = true;
+                if (newValue && newValue.status === this.AUDIO_STATUS.PROCESSING) {
+                    console.log("Audio processing started, starting progress polling...");
+                    // 如果音频状态是正在处理中，启动进度轮询
+                    this.start_audio_progress_polling();
+                }
+            },
+            immediate: true, // 立即执行一次，用于初始数据检查
+            deep: true // 深度监听对象变化
         }
     },
     beforeRouteUpdate(to, from, next) {
