@@ -50,7 +50,7 @@ class EpubToAudioWorker:
         self.timeout = timeout
         self.process = None
         self.progress_data = {
-            "status": "idle",  # idle, running, completed, failed
+            "status": self.STATUS_PROCESSING,
             "total_chapters": 0,
             "total_characters": 0,
             "processed_chapters": 0,

@@ -321,6 +321,7 @@
         "conversionFailed": "Conversion Failed:",
         "audioFilesDeleted": "Audio files deleted",
         "conversionCancelled": "Conversion cancelled",
+        "conversionInProgress": "Conversion in progress",
         "defaultFailedReason": "Internal error, please check the logs",
         "downloadBook": "Download Book",
         "noDownloadableFiles": "No downloadable file formats available for this book",

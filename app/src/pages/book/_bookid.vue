@@ -60,12 +60,12 @@
                     </v-card-title>
                     <v-card-text v-if="audios.status === AUDIO_STATUS.PROCESSING">
                         <p style="color: orange; font-weight: bold;">{{ $t('book.conversionInProgress') }}</p>
-                        <v-progress-circular
+                        <v-progress-linear
                             v-if="audios.progress && audios.progress.total_chapters > 0"
                             :value="(audios.progress.converted_chapters / audios.progress.total_chapters) * 100"
                             color="primary"
                             height="6"
-                        ></v-progress-circular>
+                        ></v-progress-linear>
                     </v-card-text>
                     <v-card-text v-if="audios.status === AUDIO_STATUS.FAILED">
                         <p style="color: red; font-weight: bold;">{{ $t('book.conversionFailed') }}</p>

@@ -19,11 +19,17 @@ CONF = loader.get_settings()
 
 # map of conversion workers, key is book id, value is instance of the worker
 ConversionWorkerMap = {}
+ALLOW_MAX_RUNNING_WORKERS = CONF.get("BOOK2AUDIO_MAX_WORKERS", 2)
 AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
 
 
 class AudioUtils:
     site_url = ""
+
+    @staticmethod
+    def get_running_worker_count():
+        """Get the count of currently running audio conversion workers."""
+        return sum(1 for worker in ConversionWorkerMap.values() if worker.is_running())
 
     @staticmethod
     def get_audios(bid):
@@ -154,6 +160,9 @@ class AudioConversion(BaseHandler):
     @js
     def post(self, bid):
         try:
+            if AudioUtils.get_running_worker_count() >= ALLOW_MAX_RUNNING_WORKERS:
+                return {"err": "audio.too_many_conversions", "msg": _(u"当前转换任务超过2项, 请稍后再试")}
+
             book_id = int(bid)
             req = tornado.escape.json_decode(self.request.body)
             voice_name = req.get("voice", "zh-CN-YunjianNeural")
@@ -208,7 +217,9 @@ class AudioConversion(BaseHandler):
                         no_prompt=True,
                         show_output=False
                     )
-                    if not result['success']:
+                    if result['success']:
+                        worker.progress_data["status"] = EpubToAudioWorker.STATUS_PROCESSING
+                    else:
                         logging.error(f"Conversion failed for book {book_id}: {result.get('error', 'Unknown error')}")
                         worker.progress_data["status"] = EpubToAudioWorker.STATUS_FAILED
                         worker.progress_data["error_message"] = result.get('error', 'Unknown error')
