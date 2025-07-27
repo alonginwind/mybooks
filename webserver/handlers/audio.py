@@ -206,6 +206,7 @@ class AudioConversion(BaseHandler):
             def start_conversion():
                 logging.info(f"Starting conversion for book {book_id} in background thread")
                 logging.info(f"EPUB path: {epub_path}, Output dir: {output_dir}, Voice: {voice_name}, Language: {language}")
+                proxy = CONF.get("BOOK2AUDIO_PROXY", None)
                 try:
                     result = worker.convert_epub_to_audio(
                         epub_path=epub_path,
@@ -215,7 +216,8 @@ class AudioConversion(BaseHandler):
                         tts="edge",
                         worker_count=2,
                         no_prompt=True,
-                        show_output=False
+                        show_output=False,
+                        proxy=proxy
                     )
                     if result['success']:
                         worker.progress_data["status"] = EpubToAudioWorker.STATUS_PROCESSING

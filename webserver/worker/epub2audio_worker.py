@@ -185,7 +185,7 @@ class EpubToAudioWorker:
     def convert_epub_to_audio(self, epub_path: str, output_dir: str,
                               tts: str = "edge", language: str = "zh-CN",
                               worker_count: int = 2, voice_name: str = "zh-CN-YunyangNeural",
-                              no_prompt: bool = True, show_output: bool = True, **kwargs) -> Dict[str, Any]:
+                              no_prompt: bool = True, show_output: bool = True, proxy: str = None, **kwargs) -> Dict[str, Any]:
         """
         Convert EPUB to audio using epub_to_audio
 
@@ -237,6 +237,9 @@ class EpubToAudioWorker:
                 cmd.extend([key, str(value)])
             elif not key.startswith("-"):
                 cmd.extend([f"--{key}", str(value)])
+
+        if proxy:
+            cmd.extend(["--proxy", proxy])
 
         # Add input and output paths
         cmd.extend([epub_path, output_dir])

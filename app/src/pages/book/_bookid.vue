@@ -232,6 +232,10 @@
                               class="ml-1">
                             ({{ audios.progress.converted_chapters }}/{{ audios.progress.total_chapters }})
                         </span>
+                        <span v-if="audios.status === AUDIO_STATUS.CONVERTED && audios.count > 0"
+                              class="ml-1">
+                            ({{ audios.count }})
+                        </span>
                     </v-btn
                     >
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" :href="'/read/' + book.id"
