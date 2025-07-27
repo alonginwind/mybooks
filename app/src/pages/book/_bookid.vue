@@ -224,9 +224,9 @@
 
                     <v-spacer></v-spacer>
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex"
-                           @click="dialog_epub2audio = !dialog_epub2audio"
+                           @click="switch_audio_dialog"
                     >
-                        <v-icon left v-if="!tiny">audio</v-icon>
+                        <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'error' : 'audiotrack' }}</v-icon>
                         {{ $t('book.convertToAudio') }}
                         <span v-if="audios.status === AUDIO_STATUS.PROCESSING && audios.progress && audios.progress.converted_chapters !== undefined"
                               class="ml-1">
@@ -441,6 +441,10 @@
                                       class="ml-1 text-caption">
                                     ({{ audios.progress.converted_chapters }}/{{ audios.progress.total_chapters }})
                                 </span>
+                                <span v-if="audios.status === AUDIO_STATUS.CONVERTED && audios.count > 0"
+                                    class="ml-1 text-caption">
+                                    ({{ audios.count }})
+                                </span>
                             </v-list-item-title>
                         </v-list-item-content>
                         <v-list-item-action>
@@ -503,7 +507,7 @@ export default {
         refer_books_setting_btn_loading:false,
         refer_books: [],
         epub2audio_processing: false,
-        voice_name: "zh-CN-XiaoxiaoNeural", // 默认选择小晓
+        voice_name: "", // 语音名称，将从localStorage加载
         playing_sample: null,
         currentAudio: null,
         // Audio file playback state
@@ -585,6 +589,12 @@ export default {
         this.get_txt_parse_status()
         if (process.client) {
             this.mail_to = this.$cookies.get("last_mailto");
+            // 从localStorage获取上次使用的语音名称
+            const lastUsedVoice = localStorage.getItem("last_used_voice_name");
+            this.voice_name = lastUsedVoice || "zh-CN-XiaoxiaoNeural"; // 如果没有保存的语音，使用默认的晓晓
+        } else {
+            // 服务端渲染时使用默认语音
+            this.voice_name = "zh-CN-XiaoxiaoNeural";
         }
     },
     beforeRouteUpdate(to, from, next) {
@@ -638,6 +648,11 @@ export default {
             });
         },
         generate_audio() {
+            // 保存选择的语音名称到localStorage
+            if (process.client) {
+                localStorage.setItem("last_used_voice_name", this.voice_name);
+            }
+
             this.$backend(`/audio/${this.book.id}/conversion`, {
                 method: "POST",
                 body: JSON.stringify({voice: this.voice_name}),
