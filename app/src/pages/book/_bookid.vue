@@ -65,7 +65,6 @@
                             :value="(audios.progress.converted_chapters / audios.progress.total_chapters) * 100"
                             color="primary"
                             height="6"
-                            rounded
                         ></v-progress-linear>
                     </v-card-text>
                     <v-card-text v-if="audios.status === AUDIO_STATUS.FAILED">
