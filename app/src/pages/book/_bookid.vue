@@ -592,6 +592,11 @@ export default {
             // 从localStorage获取上次使用的语音名称
             const lastUsedVoice = localStorage.getItem("last_used_voice_name");
             this.voice_name = lastUsedVoice || "zh-CN-XiaoxiaoNeural"; // 如果没有保存的语音，使用默认的晓晓
+
+            // 检查音频转换状态，如果正在转换中则启动进度轮询
+            if (this.audios && this.audios.status === this.AUDIO_STATUS.PROCESSING) {
+                this.start_audio_progress_polling();
+            }
         } else {
             // 服务端渲染时使用默认语音
             this.voice_name = "zh-CN-XiaoxiaoNeural";
