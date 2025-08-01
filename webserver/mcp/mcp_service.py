@@ -66,6 +66,64 @@ class MCPService:
             logging.error(traceback.format_exc())
             return [TextContent(type="text", text=_(u"搜索书籍时发生错误: %s") % str(e))]
 
+    async def update_book_info(self, arguments: dict[str, Any]) -> Sequence[TextContent]:
+        """更新书籍详细信息"""
+        try:
+            from webserver.plugins.meta import douban
+
+            book_id = arguments.get("book_id")
+            if not book_id:
+                return [TextContent(type="text", text="Missing required parameter: book_id")]
+
+            # 支持的字段
+            supported_keys = ["title", "authors", "isbn", "comments"]
+
+            # 获取书籍
+            try:
+                book = self.base_handler.get_book(book_id)
+                bid = book["id"]
+            except Exception as e:
+                return [TextContent(type="text", text=f"Book not found: {str(e)}")]
+
+            # 获取当前书籍元数据
+            mi = self.base_handler.db.get_metadata(bid, index_is_id=True)
+            if not mi:
+                return [TextContent(type="text", text="Failed to get book metadata")]
+
+            # 记录更新的字段
+            updated_fields = []
+
+            # 更新指定的字段
+            for key in supported_keys:
+                if key in arguments:
+                    val = arguments[key]
+                    if key == "authors" and isinstance(val, str):
+                        # 如果authors是字符串，转换为列表
+                        val = [val.strip()] if val.strip() else []
+                    elif key == "authors" and isinstance(val, list):
+                        # 确保authors列表中的每个元素都是字符串
+                        val = [str(author).strip() for author in val if str(author).strip()]
+
+                    mi.set(key, val)
+                    updated_fields.append(f"{key}: {val}")
+
+            if not updated_fields:
+                return [TextContent(type="text", text="No valid fields to update")]
+
+            # 保存元数据
+            self.base_handler.db.set_metadata(bid, mi)
+
+            result = f"Successfully updated book (ID: {bid}):\n" + "\n".join(updated_fields)
+            logging.info(f"Book {bid} updated via MCP: {updated_fields}")
+
+            return [TextContent(type="text", text=result)]
+
+        except Exception as e:
+            error_msg = f"Error updating book info: {str(e)}"
+            logging.error(error_msg)
+            logging.error(traceback.format_exc())
+            return [TextContent(type="text", text=error_msg)]
+
     async def get_books_count(self, arguments: dict[str, Any]) -> Sequence[TextContent]:
         """Get the current count of books in the collection."""
         from sqlalchemy import func
@@ -109,6 +167,39 @@ class MCPService:
                         }
                     },
                     "required": ["name"]
+                }
+            ),
+            Tool(
+                name="update_book_info",
+                description="Update book information including title, authors, ISBN, and comments",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "book_id": {
+                            "type": ["string", "integer"],
+                            "description": "ID of the book to update"
+                        },
+                        "title": {
+                            "type": "string",
+                            "description": "Book title"
+                        },
+                        "authors": {
+                            "type": ["string", "array"],
+                            "description": "Author name (string) or list of author names (array)",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "isbn": {
+                            "type": "string",
+                            "description": "ISBN number of the book"
+                        },
+                        "comments": {
+                            "type": "string",
+                            "description": "Book description or comments"
+                        }
+                    },
+                    "required": ["book_id"]
                 }
             )
         ]
@@ -177,6 +268,13 @@ class MCPService:
                     }
                 elif tool_name == "search_books":
                     result = await self.search_books(arguments)
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": request_id,
+                        "result": {"content": [{"type": "text", "text": result[0].text}]}
+                    }
+                elif tool_name == "update_book_info":
+                    result = await self.update_book_info(arguments)
                     return {
                         "jsonrpc": "2.0",
                         "id": request_id,
