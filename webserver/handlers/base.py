@@ -586,8 +586,8 @@ class ListHandler(BaseHandler):
             self.do_sort(items, "id", False)
         return None
 
-    @js
-    def render_book_list(self, all_books, ids=None, title=None, sort_by_id=False):
+    def get_book_list(self, all_books, ids=None, title=None, sort_by_id=False):
+        """Get a list of books."""
         start = self.get_argument_start()
         try:
             size = int(self.get_argument("size"))
@@ -611,6 +611,10 @@ class ListHandler(BaseHandler):
             "total": count,
             "books": [self.fmt(b) for b in books],
         }
+
+    @js
+    def render_book_list(self, all_books, ids=None, title=None, sort_by_id=False):
+        return self.get_book_list(all_books, ids, title, sort_by_id)
 
     def fmt(self, b):
         return utils.BookFormatter(self, b).format()

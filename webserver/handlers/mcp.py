@@ -15,7 +15,7 @@ import tornado.escape
 from tornado import web
 from webserver import loader
 from webserver.services.mail import MailService
-from webserver.handlers.base import BaseHandler, js
+from webserver.handlers.base import BaseHandler, ListHandler, js
 from webserver.models import Message, Reader
 from webserver.version import VERSION
 
@@ -33,7 +33,7 @@ def create_mcp_service(base_handler: BaseHandler = None):
     return mcp_service
 
 
-class MCPHandler(BaseHandler):
+class MCPHandler(ListHandler):
     @js
     def get(self):
         """Serve MCP client with the current version and settings."""

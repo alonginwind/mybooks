@@ -6,6 +6,8 @@ MCP Service Module
 """
 
 import logging
+import json
+import traceback
 import uuid
 from typing import Any, Sequence, Dict, Optional
 
@@ -16,6 +18,7 @@ from webserver.handlers.base import BaseHandler
 
 class MCPService:
     """MCP协议处理服务类"""
+    MAX_BOOKS_COUNT_IN_RESULT = 100  # 返回结果中最大书籍数量限制
 
     def __init__(self, base_handler: BaseHandler = None):
         """初始化MCP服务"""
@@ -25,28 +28,43 @@ class MCPService:
 
     def _setup_tools(self):
         """设置工具定义"""
-        @self.server.list_tools()
-        async def list_tools() -> list[Tool]:
-            """List available tools."""
-            return [
-                Tool(
-                    name="get_books_count",
-                    description="Get the current count of books in the collection",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {},
-                        "required": []
-                    }
-                )
-            ]
+        pass
 
-        @self.server.call_tool()
-        async def call_tool(name: str, arguments: dict[str, Any] | None = None) -> Sequence[TextContent]:
-            """Handle tool calls."""
-            if name == "get_books_count":
-                return await self.get_books_count(arguments or {})
-            else:
-                raise ValueError(f"Unknown tool: {name}")
+    async def search_books(self, arguments: dict[str, Any]) -> Sequence[TextContent]:
+        name = arguments.get("name", "")
+        if not name:
+            return [TextContent(type="text", text="Invalid parameter 'name'")]
+
+        title = _(u"搜索：%(name)s") % {"name": name}
+        try:
+            import opencc
+            ids = self.base_handler.cache.search(name)
+            for profile in {'s2t', "t2s"}:
+                if len(ids) >= self.MAX_BOOKS_COUNT_IN_RESULT:
+                    break
+                converted_name = opencc.OpenCC(profile).convert(name)
+                if converted_name == name:
+                    continue
+                ids2 = self.base_handler.cache.search(converted_name)
+                if len(ids2) > 0:
+                    ids = ids.union(ids, ids2)
+                    break
+
+            if not ids:
+                return [TextContent(type="text", text=_(u"没有找到相关书籍"))]
+
+            if len(ids) > self.MAX_BOOKS_COUNT_IN_RESULT:
+                ids = sorted(ids, key=lambda x: self.base_handler.cache.get_book(x).get("updated", 0), reverse=True)
+
+            book_list = self.base_handler.get_book_list([], ids=ids, title=title)
+
+            logging.info(f"Search books with name: {book_list}")
+            logging.info(book_list)
+            return [TextContent(type="text", text=json.dumps(book_list))]
+        except Exception as e:
+            logging.error(f"Error processing book: {e}")
+            logging.error(traceback.format_exc())
+            return [TextContent(type="text", text=_(u"搜索书籍时发生错误: %s") % str(e))]
 
     async def get_books_count(self, arguments: dict[str, Any]) -> Sequence[TextContent]:
         """Get the current count of books in the collection."""
@@ -77,6 +95,20 @@ class MCPService:
                     "type": "object",
                     "properties": {},
                     "required": []
+                }
+            ),
+            Tool(
+                name="search_books",
+                description="Search for books in the collection",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the book, author to search for"
+                        }
+                    },
+                    "required": ["name"]
                 }
             )
         ]
@@ -138,6 +170,13 @@ class MCPService:
 
                 if tool_name == "get_books_count":
                     result = await self.get_books_count(arguments)
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": request_id,
+                        "result": {"content": [{"type": "text", "text": result[0].text}]}
+                    }
+                elif tool_name == "search_books":
+                    result = await self.search_books(arguments)
                     return {
                         "jsonrpc": "2.0",
                         "id": request_id,
