@@ -462,7 +462,7 @@ class MCPService:
             ),
             Tool(
                 name="verify_token",
-                description="Verify if an authentication token is still valid",
+                description="Verify if an authentication token obtained from login is still valid",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -476,7 +476,7 @@ class MCPService:
             ),
             Tool(
                 name="logout",
-                description="Logout and invalidate the authentication token",
+                description="Logout and invalidate the authentication token obtained from login",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -490,7 +490,7 @@ class MCPService:
             ),
             Tool(
                 name="get_books_count",
-                description="Get the current count of books in the talebook collection (requires authentication)",
+                description="Get the current count of books in the talebook collection (requires the token obtained from the login tool)",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -504,7 +504,7 @@ class MCPService:
             ),
             Tool(
                 name="search_books",
-                description="Search for books in the collection (requires authentication)",
+                description="Search for books in the collection (requires the token obtained from the login tool)",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -522,7 +522,7 @@ class MCPService:
             ),
             Tool(
                 name="update_book_info",
-                description="Update book information including title, authors, ISBN, and comments (requires authentication and permissions)",
+                description="Update book information including title, authors, ISBN, and comments (requires the token obtained from the login tool)",
                 inputSchema={
                     "type": "object",
                     "properties": {
