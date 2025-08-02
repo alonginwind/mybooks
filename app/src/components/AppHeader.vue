@@ -252,6 +252,7 @@ export default {
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers },
                 { icon: "mdi-human-greeting", href: "/author", text: "appHeader.authors", count: this.sys.authors },
                 { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags },
+                { icon: "mdi-translate", href: "/language", text: "appHeader.languages", count: this.sys.languages },
                 {
                     target: "",
                     links: [

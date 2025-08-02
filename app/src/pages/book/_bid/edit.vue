@@ -59,7 +59,7 @@
                                     <v-text-field :label="$t('book.edit.fields.isbn')" v-model="book.isbn">{{ book.isbn }}</v-text-field>
                                 </v-col>
                                 <v-col class='py-0' cols=12 sm=6>
-                                    <v-text-field :label="$t('book.edit.fields.language')" v-model="book.language">{{ book.language }}</v-text-field>
+                                    <v-text-field :label="$t('book.edit.fields.languages')" v-model="book.languages">{{ book.languages }}</v-text-field>
                                 </v-col>
                                 <v-col class='py-0' cols=12>
                                     <!-- TAGS -->

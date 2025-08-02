@@ -466,7 +466,7 @@ class TestBook(TestWithUserLogin):
             "publisher": "上海译文出版社",
             "comments": "本书讲述了一个渔夫的故事。古巴老渔夫圣地亚哥在连续八十四天没捕到鱼的情况下。",
             "series": "x",
-            "language": None,
+            "languages": None,
             "isbn": "9787532723447",
             "is_public": True,
             "is_owner": True,

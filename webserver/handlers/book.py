@@ -383,7 +383,7 @@ class BookEdit(BaseHandler):
             "isbn",
             "series",
             "rating",
-            "language",
+            "languages",
         ]
         for key, val in data.items():
             if key in KEYS:

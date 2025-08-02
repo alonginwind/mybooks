@@ -4,6 +4,7 @@
 
 import datetime
 from gettext import gettext as _
+import logging
 
 
 class SimpleBookFormatter:
@@ -31,6 +32,7 @@ class SimpleBookFormatter:
 
     def format(self):
         b = self.book
+        logging.info(f"formatting book {b}")
         b["ts"] = b["timestamp"].strftime("%s")
         return {
             "id": b["id"],
@@ -46,7 +48,7 @@ class SimpleBookFormatter:
             "publisher": self.val("publisher"),
             "comments": self.val("comments", _(u"暂无简介")),
             "series": self.val("series", None),
-            "language": self.val("language", None),
+            "languages": self.val("languages", None),
             "isbn": self.val("isbn", None),
             "img": self.cdn_url + "/get/cover/%(id)s.jpg?t=%(ts)s" % b,
             "thumb": self.cdn_url + "/get/thumb_60x80/%(id)s.jpg?t=%(ts)s" % b,

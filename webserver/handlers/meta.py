@@ -46,6 +46,7 @@ class MetaList(ListHandler):
             "series": _(u"丛书列表"),
             "rating": _(u"全部评分"),
             "publisher": _(u"全部出版社"),
+            "language": _(u"全部语言"),
         }
         title = titles.get(meta, _(u"未知")) % vars()
         # category = meta if meta in ["series", "publisher"] else meta + "s"
@@ -69,9 +70,10 @@ class MetaBooks(ListHandler):
             "series": _('"%(name)s"丛书包含的书籍'),
             "rating": _("评分为%(name)s星的书籍"),
             "publisher": _(u'"%(name)s"出版的书籍'),
+            "language": _(u'"%(name)s"语言的书籍'),
         }
         title = titles.get(meta, _(u"未知")) % vars()  # noqa: F841
-        category = meta + "s" if meta in ["tag", "author"] else meta
+        category = meta + "s" if meta in ["tag", "author", "language"] else meta
         if meta in ["rating"]:
             name = int(name)
         books = self.get_item_books(category, name)
@@ -81,8 +83,8 @@ class MetaBooks(ListHandler):
 
 def routes():
     return [
-        (r"/api/(author|publisher|tag|rating|series)", MetaList),
-        (r"/api/(author|publisher|tag|rating|series)/(.*)", MetaBooks),
+        (r"/api/(author|publisher|tag|rating|series|language)", MetaList),
+        (r"/api/(author|publisher|tag|rating|series|language)/(.*)", MetaBooks),
         (r"/api/author/(.*)/update", AuthorBooksUpdate),
         (r"/api/publisher/(.*)/update", PubBooksUpdate),
     ]

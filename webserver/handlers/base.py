@@ -505,7 +505,13 @@ class BaseHandler(web.RequestHandler):
 
     def get_category_with_count(self, field):
         table = field if field in ["series"] else field + "s"
-        name_column = "A.rating as name" if field in ["rating"] else "A.name"
+        name_column = "A.name"
+        if field == "rating":
+            name_column = "A.rating as name"
+        elif field == "language":
+            name_column = "A.lang_code as name"
+            field = "lang_code"
+
         args = {"table": table, "field": field, "name_column": name_column}
         sql = (
             """SELECT A.id, %(name_column)s, count(distinct book) as count
