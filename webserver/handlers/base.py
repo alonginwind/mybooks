@@ -602,6 +602,9 @@ class ListHandler(BaseHandler):
             if sort_by_id:
                 # 归一化，按照id从大到小排列。
                 self.do_sort(books, "id", False)
+            else:
+                # 按照输入的ids顺序排序
+                books = sorted(books, key=lambda x: ids.index(x["id"]) if x["id"] in ids else -1)
         else:
             count = len(all_books)
             books = all_books[start : start + delta]
