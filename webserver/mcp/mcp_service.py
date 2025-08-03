@@ -240,12 +240,14 @@ class MCPService:
                 return [TextContent(type="text", text=json.dumps({"status": "success",
                                                                   "message": _(u"没有找到相关书籍"), "books": []}))]
 
+            total_books_count = len(ids)
             if len(ids) > self.MAX_BOOKS_COUNT_IN_RESULT:
-                ids = sorted(ids, key=lambda x: self.base_handler.cache.get_book(x).get("updated", 0), reverse=True)
-                # 这里只能取MAX_BOOKS_COUNT_IN_RESULT个结果
-                ids = ids[:self.MAX_BOOKS_COUNT_IN_RESULT]
+                # 将set转换为list，按值从大到小排序，再进行切片操作
+                ids_list = sorted(list(ids), reverse=True)
+                ids = ids_list[:self.MAX_BOOKS_COUNT_IN_RESULT]
 
             book_list = self.base_handler.get_book_list([], ids=ids, title=title)
+            book_list["total"] = total_books_count
             return [TextContent(type="text", text=json.dumps({"status": "success", "data": book_list}))]
         except Exception as e:
             logging.error(f"Error processing book: {e}")
