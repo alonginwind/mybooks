@@ -21,7 +21,7 @@ from webserver.handlers.base import BaseHandler
 
 class MCPService:
     """MCP协议处理服务类"""
-    MAX_BOOKS_COUNT_IN_RESULT = 100  # 返回结果中最大书籍数量限制
+    MAX_BOOKS_COUNT_IN_RESULT = 20  # 返回结果中最大书籍数量限制
     TOKEN_EXPIRE_HOURS = 24  # Token过期时间（小时）
 
     def __init__(self, base_handler: BaseHandler = None):
@@ -242,6 +242,8 @@ class MCPService:
 
             if len(ids) > self.MAX_BOOKS_COUNT_IN_RESULT:
                 ids = sorted(ids, key=lambda x: self.base_handler.cache.get_book(x).get("updated", 0), reverse=True)
+                # 这里只能取MAX_BOOKS_COUNT_IN_RESULT个结果
+                ids = ids[:self.MAX_BOOKS_COUNT_IN_RESULT]
 
             book_list = self.base_handler.get_book_list([], ids=ids, title=title)
             return [TextContent(type="text", text=json.dumps({"status": "success", "data": book_list}))]
