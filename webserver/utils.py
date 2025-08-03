@@ -4,7 +4,6 @@
 
 import datetime
 from gettext import gettext as _
-import logging
 
 
 class SimpleBookFormatter:
