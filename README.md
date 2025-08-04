@@ -110,7 +110,7 @@ docker-compose -f docker-compose.yml  up -d
   "mcpServers": {
     "talebook": {
       "type": "streamableHttp",
-      "url": "http://192.168.31.227:8082/api/mcp/stream",
+      "url": "http://<ip>:<port>/api/mcp/stream",
       "description": "Local ebooks management system"
     }
   }
