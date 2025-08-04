@@ -268,7 +268,7 @@ class MCPService:
                                                                   "message": "Missing required parameter: book_id"}))]
 
             # 支持的字段
-            supported_keys = ["title", "authors", "isbn", "comments"]
+            supported_keys = ["title", "authors", "isbn", "comments", "tags"]
 
             # 获取书籍
             try:
@@ -308,8 +308,8 @@ class MCPService:
                     if key == "authors" and isinstance(val, str):
                         # 如果authors是字符串，转换为列表
                         val = [val.strip()] if val.strip() else []
-                    elif key == "authors" and isinstance(val, list):
-                        # 确保authors列表中的每个元素都是字符串
+                    elif key in ("authors", "tags") and isinstance(val, list):
+                        # 确保authors&tags列表中的每个元素都是字符串
                         val = [str(author).strip() for author in val if str(author).strip()]
 
                     mi.set(key, val)
@@ -494,7 +494,14 @@ class MCPService:
                         "comments": {
                             "type": "string",
                             "description": "Book description or comments"
-                        }
+                        },
+                        "tags": {
+                            "type": ["string", "array"],
+                            "description": "Tag name (string) or list of tag names (array)",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
                     },
                     "required": ["token", "book_id"]
                 }
