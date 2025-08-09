@@ -595,12 +595,15 @@ class BookUpload(BaseHandler):
             mi.authors = [_(u"佚名")]
 
         logging.info("upload mi.title = " + repr(mi.title))
+        logging.info(f"upload mi.authors = {mi.authors}")
         books = self.db.books_with_same_title(mi)
         if books:
             book_id = None
             for b in self.db.get_data_as_dict(ids=books):
                 if book_id is None:
                     book_id = b.get("id")
+                if b.get("authors", "") != mi.authors:
+                    continue
                 if fmt.upper() in b.get("available_formats", ""):
                     return {
                         "err": "samebook",
