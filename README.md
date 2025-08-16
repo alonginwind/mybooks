@@ -18,7 +18,7 @@ A enhanced personal books management webserver built on Calibre + Vue, beautiful
     2. 增加文件的加密处理。可以帮助解决私有化部署场景下平台扫描导致的文件无法使用的问题。
     3. 带水印导出epub (待定)
     4. 增加统计信息显示
-* v3.15.0 (完成)
+* v3.15.* (完成)
     1. 提供MCP Server，可以集成到AI工具中使用
     2. 侧边栏增加图书语言分类，图书信息中支持修改语言类别
     3. 修复之前热度榜单无显示的问题
@@ -39,6 +39,9 @@ A enhanced personal books management webserver built on Calibre + Vue, beautiful
 * v3.9.0 (完成)
     1. 更新Calibre 7.6，系统使用Ubuntu 24.04
     2. 信息管理中增加信息重置，出现刮削错误时更新
+
+### Web API
+[Web API文档](document/WebAPI.md)
 
 ### 关注项目
 
