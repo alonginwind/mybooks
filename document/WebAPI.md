@@ -1,4 +1,4 @@
-# Talebook Python 后台 API 接口文档 (中文版)
+# PoxenStudio/Talebook Python 后台 API 接口文档 (中文版)
 
 本文档详细描述了 Talebook Python 后台 (`webserver`) 提供的 RESTful API 接口。这些接口被前端应用 (`app`) 调用以实现各种功能。
 
