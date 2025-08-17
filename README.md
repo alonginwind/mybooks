@@ -2,7 +2,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/poxenstudio/talebook.svg)](https://hub.docker.com/r/poxenstudio/talebook)
 
 
-# Tale Book: Personal Calibre WebServer
+# TaleBook: Personal Calibre WebServer
 A enhanced personal books management webserver built on Calibre + Vue, beautiful and easy-to-use. ([English](document/README.en.md))
 
 与阅读器不同，主要功能是对电子书的管理功能。阅读器可以灵活选择，移动端比较多，在PC端推荐Koodo Reader。
