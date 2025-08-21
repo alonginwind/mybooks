@@ -306,6 +306,7 @@ class BookRefer(BaseHandler):
     @js
     @auth
     def post(self, id):
+        from calibre.utils.date import now as nowf
         should_reset = self.get_argument("reset", "no")
         provider_key = self.get_argument("provider_key", "error")
         provider_value = self.get_argument("provider_value", "")
@@ -355,6 +356,7 @@ class BookRefer(BaseHandler):
                     self.db.set_tags(book_id, mi.tags)
             mi.smart_update(refer_mi, replace_metadata=True)
 
+        mi.timestamp = nowf()
         self.db.set_metadata(book_id, mi)
         return {"err": "ok"}
 
@@ -363,6 +365,7 @@ class BookCover(BaseHandler):
     @js
     @auth
     def post(self, id):
+        from calibre.utils.date import now as nowf
         book_id = int(id)
         mi = self.db.get_metadata(book_id, index_is_id=True)
         if not mi:
@@ -379,6 +382,7 @@ class BookCover(BaseHandler):
         if not ext and 'content_type' in fileinfo:
             ext = fileinfo['content_type'].split('/')[-1]
         mi.cover_data = (ext or None, img_data)
+        mi.timestamp = nowf()
         self.db.set_metadata(book_id, mi)
         return {"err": "ok"}
 
