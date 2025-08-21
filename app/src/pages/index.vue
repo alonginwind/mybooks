@@ -6,7 +6,7 @@
         </v-col>
         <v-col cols=6 xs=6 sm=4 md=2 lg=1 v-for="(book,idx) in get_random_books" :key="'rec'+idx+book.id" class="book-card">
             <v-card :to="book.href" class="ma-1">
-                <v-img :src="book.img" :aspect-ratio="11/15" > </v-img>
+                <v-img :src="book.img" :aspect-ratio="11/15" style="border-radius: 12px;" class="book-img-hover"> </v-img>
             </v-card>
         </v-col>
     </v-row>
@@ -101,4 +101,13 @@ export default {
     margin-top: 30px;
     margin-bottom: 20px;
 }
+.book-img-hover {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.book-img-hover:hover {
+    transform: scale(1.06);
+    z-index: 2;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
 </style>
+

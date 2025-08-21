@@ -4,7 +4,7 @@
             <v-card :to="book.href" >
                 <v-row>
                     <v-col cols=3 class='col-book-img'>
-                        <v-img :src="book.img" :aspect-ratio="11/15" ></v-img>
+                        <v-img :src="book.img" :aspect-ratio="11/15" style="border-radius: 12px;" class="book-img-hover"></v-img>
                     </v-col>
                     <v-col cols=9 class='col-book-info'>
                         <v-card-text class="pb-0" align-left>
@@ -90,5 +90,15 @@ export default {
     padding: 0;
     margin-left: -6px;
     margin-top: -6px;
+}
+.book-img-hover {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.book-img-hover:hover {
+    overflow-clip-margin: content-box;
+    overflow: clip;
+    transform: scale(1.06);
+    z-index: 2;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
 }
 </style>

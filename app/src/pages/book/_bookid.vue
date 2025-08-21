@@ -287,7 +287,7 @@
                 <v-row>
                     <v-col class="mx-auto" cols="8" sm="4">
                         <v-img class="book-img" :src="book.img" :aspect-ratio="11 / 15" max-height="500px"
-                               contain></v-img>
+                               contain style="border-radius: 14px;"></v-img>
                     </v-col>
                     <v-col cols="12" sm="8">
                         <v-card-text>
