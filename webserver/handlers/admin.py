@@ -23,6 +23,7 @@ from webserver.services.book_barn import BookBarnClient
 from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import Reader
 from webserver.utils import SimpleBookFormatter
+from webserver.version import VERSION
 
 CONF = loader.get_settings()
 
@@ -607,6 +608,31 @@ class AudioTestConnection(BaseHandler):
             return {"err": "error", "msg": _("EdgeTTS 连接测试失败: %s") % str(e)}
 
 
+class ReleaseNotes(BaseHandler):
+    @js
+    def get(self):
+        last_revsion = CONF.get("LAST_REVISION", "")
+        logging.error("Current version: %s, Last revision: %s", VERSION, last_revsion)
+        if True: # last_revsion == VERSION
+            args = loader.SettingsLoader()
+            args.clear()
+            args["LAST_REVISION"] = VERSION
+            logic = SettingsSaverLogic()
+            logic.save_extra_settings(args)
+            # Load the release notes from the public folder
+            release_note_path = CONF["static_path"] + "/static/release_notes.txt"
+            logging.error("Release note path: %s", release_note_path)
+            notes = ""
+            if os.path.exists(release_note_path):
+                with open(release_note_path, "r", encoding="utf-8") as f:
+                    notes = f.read()
+            else:
+                logging.error("Release note file not found")
+            return {"err": "ok", "msg": notes}
+        else:
+            return {"err": "ok", "msg": ""}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -619,4 +645,5 @@ def routes():
         (r"/api/admin/bookbarn/token/apply", AdminBookbarnTokenApply),
         (r"/api/admin/books/delete", AdminDeleteBooks),
         (r"/api/admin/audio/test", AudioTestConnection),
+        (r"/api/admin/release/notes", ReleaseNotes),
     ]

@@ -32,7 +32,8 @@
         "authorsCount": "Authors Count",
         "publishersCount": "Publishers Count",
         "tagsCount": "Tags Count",
-        "languages": "Languages"
+        "languages": "Languages",
+        "versionChanges": "Version Changes"
     },
     "listBook": {
         "title": "Book List",

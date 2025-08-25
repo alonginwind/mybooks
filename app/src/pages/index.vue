@@ -42,6 +42,26 @@
             </v-card>
         </v-col>
     </v-row>
+
+    <!-- Release Notes Dialog -->
+    <v-dialog v-model="releaseNotesDialog" max-width="480" persistent>
+        <v-card class="release-notes-card">
+            <v-card-title class="headline text-center">
+                {{ $t('index.versionChanges') }}
+                <v-spacer></v-spacer>
+                <span class="text-body-2 grey--text">{{ countdown }}s</span>
+            </v-card-title>
+            <v-card-text class="release-notes-card">
+                <!-- Render HTML content for release notes -->
+                <div v-html="releaseNotesContent" style="max-height: 440px; overflow-y: auto;"></div>
+            </v-card-text>
+            <v-card-actions class="justify-center">
+                <v-btn rounded large color="primary" dark elevation="2" @click="closeReleaseNotesDialog">
+                    {{ $t('common.close') }}
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
     </div>
 </template>
 
@@ -66,6 +86,44 @@ export default {
             });
         },
     },
+    methods: {
+        async checkReleaseNotes() {
+            try {
+                const rsp = await this.$backend('/admin/release/notes?rand='+Math.random());
+                if (rsp.err === 'ok' && rsp.msg) {
+                    this.releaseNotesContent = rsp.msg;
+                    this.releaseNotesDialog = true;
+                    this.startCountdown();
+                }
+            } catch (error) {
+                console.error('Failed to check release notes:', error);
+            }
+        },
+        startCountdown() {
+            this.countdown = 30;
+            this.countdownTimer = setInterval(() => {
+                this.countdown--;
+                if (this.countdown <= 0) {
+                    this.closeReleaseNotesDialog();
+                }
+            }, 1000);
+        },
+        closeReleaseNotesDialog() {
+            this.releaseNotesDialog = false;
+            if (this.countdownTimer) {
+                clearInterval(this.countdownTimer);
+                this.countdownTimer = null;
+            }
+        },
+    },
+    mounted() {
+        this.checkReleaseNotes();
+    },
+    beforeDestroy() {
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+        }
+    },
     created() {
         this.$store.commit('navbar', true);
         this.navs = [
@@ -88,6 +146,10 @@ export default {
         random_books: [],
         new_books: [],
         navs: [],
+        releaseNotesDialog: false,
+        releaseNotesContent: '',
+        countdown: 10,
+        countdownTimer: null,
     }),
     head: () => ({
         titleTemplate: "%s",
@@ -107,6 +169,14 @@ export default {
     transform: scale(1.06);
     z-index: 2;
     box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+/* Release Notes Dialog card font size */
+.release-notes-card {
+    font-size: 16px;
+}
+/* Ensure close button text is also 16px */
+.release-notes-card .v-btn {
+    font-size: 16px !important;
 }
 </style>
 
