@@ -18,6 +18,9 @@ A enhanced personal books management webserver built on Calibre + Vue, beautiful
     2. 增加文件的加密处理。可以帮助解决私有化部署场景下平台扫描导致的文件无法使用的问题。
     3. 带水印导出epub (待定)
     4. 增加统计信息显示
+* v3.16.* (完成)
+    1. 支持封面设置
+    2. 解决飞牛移动端无法登录的问题
 * v3.15.* (完成)
     1. 提供MCP Server，可以集成到AI工具中使用
     2. 侧边栏增加图书语言分类，图书信息中支持修改语言类别
