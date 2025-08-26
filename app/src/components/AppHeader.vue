@@ -240,7 +240,7 @@ export default {
                     expand: this.$route.path.indexOf("/admin/") == 0,
                     groups: [
                         { icon: "mdi-cog", href: "/admin/settings", text: "appHeader.systemSettings" },
-                        { icon: "account", href: "/admin/users", text: "appHeader.userManagement" },
+                        { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement" },
                         { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement" },
                         { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks" },
                     ],
@@ -250,7 +250,7 @@ export default {
                 { heading: "appHeader.categoryBrowse" },
                 { icon: "widgets", href: "/nav", text: "appHeader.categoryNavigation", count: this.sys.books },
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers },
-                { icon: "account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors },
+                { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors },
                 { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags },
                 {
                     target: "",
@@ -271,7 +271,7 @@ export default {
             var sys_links = [
                 { heading: "appHeader.system" },
                 { icon: "mdi-history", href: "", count: this.sys.version, text: this.$t('appHeader.systemVersion') },
-                { icon: "mdi-human", href: "", count: this.sys.users, text: this.$t('appHeader.userCount') },
+                { icon: "mdi-account", href: "", count: this.sys.users, text: this.$t('appHeader.userCount') },
                 { icon: "mdi-cellphone", href: "/opds-readme", count: "OPDS", target: "_blank", text: this.$t('appHeader.opdsIntroduction') },
             ];
 
