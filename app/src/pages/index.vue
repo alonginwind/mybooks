@@ -44,7 +44,7 @@
     </v-row>
 
     <!-- Release Notes Dialog -->
-    <v-dialog v-model="releaseNotesDialog" max-width="480" persistent>
+    <v-dialog v-model="releaseNotesDialog" max-width="480" persistent transition="dialog-bottom-transition">
         <v-card class="release-notes-card">
             <v-card-title class="headline text-center">
                 {{ $t('index.versionChanges') }}

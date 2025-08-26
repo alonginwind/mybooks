@@ -615,10 +615,10 @@ class ReleaseNotes(BaseHandler):
         logging.error("Current version: %s, Last revision: %s", VERSION, last_revsion)
         if last_revsion != VERSION:
             args = loader.SettingsLoader()
-            args.clear()
             args["LAST_REVISION"] = VERSION
             logic = SettingsSaverLogic()
             logic.save_extra_settings(args)
+
             # Load the release notes from the public folder
             release_note_path = CONF["static_path"] + "/static/release_notes.txt"
             logging.error("Release note path: %s", release_note_path)
