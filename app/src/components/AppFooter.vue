@@ -42,7 +42,7 @@ export default {
     left: 50%;
     transform: translate(-50%, -50%);
     font-family: 'Times New Roman', serif;
-    font-size: clamp(2rem, 5vw, 4rem);    /* 在 2rem–4rem 之间，按屏幕宽度自适应 */
+    font-size: clamp(2rem, 5vw, 3rem);    /* 在 2rem–3rem 之间，按屏幕宽度自适应 */
     font-weight: bold;
     color: rgba(200, 200, 200, 0.2); /* 浅灰色，半透明 */
     pointer-events: none;
