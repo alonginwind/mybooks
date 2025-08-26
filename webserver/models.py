@@ -251,6 +251,45 @@ class Message(Base, SQLAlchemyMixin):
         self.update_time = datetime.datetime.now()
         self.data = {"message": msg}
 
+    @classmethod
+    def cleanup_messages(cls, reader_id, msg_content, days=31):
+        """清理指定用户的匹配消息内容的消息"""
+        session = cls._session()
+        messages = session.query(cls).filter_by(reader_id=reader_id).all()
+
+        removed_count = 0
+        for message in messages:
+            if message.data.get("message") == msg_content:
+                session.delete(message)
+                removed_count += 1
+            elif message.update_time < datetime.datetime.now() - datetime.timedelta(days=days):
+                session.delete(message)
+                removed_count += 1
+
+        if removed_count > 0:
+            session.commit()
+            logging.info(f"Cleaned up {removed_count} messages for user {reader_id} with content: {msg_content}")
+
+        return removed_count
+
+    @classmethod
+    def cleanup_old_messages(cls, days=31):
+        """清理指定天数以前的消息"""
+        session = cls._session()
+        cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)
+
+        old_messages = session.query(cls).filter(cls.create_time < cutoff_date).all()
+        removed_count = len(old_messages)
+
+        for message in old_messages:
+            session.delete(message)
+
+        if removed_count > 0:
+            session.commit()
+            logging.info(f"Cleaned up {removed_count} messages older than {days} days")
+
+        return removed_count
+
 
 class Item(Base, SQLAlchemyMixin):
     # 图书信息

@@ -420,7 +420,6 @@ class BookBarnService(AsyncService):
         users = self.session.query(Reader).filter(Reader.admin).all()
         for user in users:
             admin_uids.append(user.id)
-            logging.info(f"[BARN]Admin user: {user.id} - {user.username}")
 
         self.admin_uids = admin_uids
         return admin_uids

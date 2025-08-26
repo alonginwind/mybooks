@@ -242,9 +242,12 @@ class UserMessages(BaseHandler):
             "messages": [],
         }
 
-        if user:
-            user.messages.sort(key=lambda x: x.create_time, reverse=True)
-            for msg in user.messages:
+        if user and user.messages is not None:
+            messages = user.messages
+            messages.sort(key=lambda x: x.create_time, reverse=True)
+            if messages is None:
+                return rsp
+            for msg in messages:
                 if not msg.unread:
                     continue
                 m = {

@@ -314,6 +314,7 @@ class BaseHandler(web.RequestHandler):
         user.save()
 
     def add_msg(self, status, msg):
+        Message.cleanup_messages(self.user_id(), msg)
         m = Message(self.user_id(), status, msg)
         if m.reader_id:
             m.save()

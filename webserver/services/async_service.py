@@ -89,9 +89,13 @@ class AsyncService(metaclass=SingletonType):
 
     # 一些常用的工具库
     def add_msg(self, user_id, status, msg):
+        Message.cleanup_messages(user_id, msg)
         m = Message(user_id, status, msg)
         if m.reader_id:
             m.save()
+
+    def remove_duplicated_messages(self, msg):
+        pass
 
     # 注册服务
     def async_mode(self):
