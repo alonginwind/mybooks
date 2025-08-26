@@ -72,7 +72,6 @@ class ScanService(AsyncService):
         rows = []
         inserted_hash = set()
         for fname, fpath, fmt in tasks:
-            logging.info("Scan: %s", fpath)
             samefiles = self.session.query(ScanFile).filter(ScanFile.path == fpath)
             if samefiles.count() > 0:
                 # 如果已经有相同的文件记录，则跳过
@@ -80,26 +79,28 @@ class ScanService(AsyncService):
                 for row in samefiles:
                     if row.status == ScanFile.NEW:
                         logging.warning("Got same file path: %s, id:%d, path:%s", fpath, row.id, row.path)
-                        found_book = False
+                        found_book = True
+                        row.status = ScanFile.NEW
+                        rows.append(row)
                         break
                     elif row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[row.book_id]):
-                        logging.warning("File already exists in Scan & Book DB: %s, status=%s", fpath, row.status)
+                        logging.warning("File already exists in Scan & library: %s, status=%s", fpath, row.status)
                         found_book = True
-                if not found_book:
-                    row.status = ScanFile.NEW
-                    rows.append(row)
-                else:
+                        break
+                    else:
+                        logging.warning("File already exists in Scan DB, but missed in library, try to import again")
+
+                if found_book:
                     logging.warning("File already exists in Scan & Book DB: %s, status=%s", fpath, row.status)
-                continue
+                    continue
 
             stat = os.stat(fpath)
             md5 = hashlib.md5(fname.encode("UTF-8")).hexdigest()
             hash = "fstat:%s/%s" % (stat.st_size, md5)
             if hash in inserted_hash:
                 row.status = ScanFile.DROP
-                logging.error("maybe have same book, skip: %s", fpath)
+                logging.error("Duplicated processing book, skip: %s", fpath)
                 continue
-
             if self.session.query(ScanFile).filter(ScanFile.hash == hash).count() > 0:
                 row.status = ScanFile.DROP
                 logging.error("maybe have same book, skip: %s, due to same hash", fpath)
@@ -137,7 +138,7 @@ class ScanService(AsyncService):
                         should_drop = True
                         break
                 if hash_rows.count() > 0 and not should_drop:
-                    # 删除旧数据
+                    # 需要继续处理时，删除ScanDB中旧数据
                     self.session.query(ScanFile).filter(ScanFile.hash == hash).delete()
             if should_drop:
                 # 如果已经有相同的哈希值，则删掉本任务
@@ -149,6 +150,7 @@ class ScanService(AsyncService):
 
             inserted_hash.add(hash)
             if not self.save_or_rollback(row):
+                logging.error("Failed to save row: %s", fpath)
                 continue
 
             if row.status == ScanFile.DROP:
@@ -176,10 +178,9 @@ class ScanService(AsyncService):
                         row.book_id = b['id']
                         row.status = ScanFile.EXIST
                         break
-            if row.status == ScanFile.EXIST:
-                continue
             if not self.save_or_rollback(row):
                 continue
+            pass
 
     @AsyncService.register_service
     def do_import(self, hashlist, user_id):

@@ -268,7 +268,6 @@ class Message(Base, SQLAlchemyMixin):
 
         if removed_count > 0:
             session.commit()
-            logging.info(f"Cleaned up {removed_count} messages for user {reader_id} with content: {msg_content}")
 
         return removed_count
 
