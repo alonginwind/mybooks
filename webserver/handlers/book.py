@@ -490,7 +490,7 @@ class BookDownload(BaseHandler, web.StaticFileHandler):
         logging.error("download %s bid=%s, fmt=%s" % (filename, bid, fmt))
         book = self.get_book(bid)
         book_id = book["id"]
-        self.user_history("download_history", book)
+        self.increase_history_count("download_history")
         self.count_increase(book_id, count_download=1)
         if "fmt_%s" % fmt not in book:
             raise web.HTTPError(404, reason=_(u"%s格式无法下载" % fmt))

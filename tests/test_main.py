@@ -305,7 +305,7 @@ class TestUser(TestWithUserLogin):
         self.assertEqual(d["err"], "ok")
         self.assertEqual(d["user"]["is_login"], True)
         self.assertEqual(d["sys"], {})
-        self.assertTrue(len(d["user"]["extra"]["download_history"]) >= 1)
+        self.assertTrue(d["user"]["extra"]["download_history_count"] >= 1)
 
     def add_user(self):
         self.mail.reset_mock()
