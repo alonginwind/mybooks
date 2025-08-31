@@ -6,6 +6,7 @@
             <v-btn :disabled="loading" outlined color="primary" @click="getDataFromApi"><v-icon>mdi-reload</v-icon>{{ $t('admin.books.refresh') }}</v-btn>
             <v-btn :disabled="loading" outlined color="info" @click="show_dialog_auto_file"><v-icon>mdi-info</v-icon>{{ $t('admin.books.autoUpdate') }}</v-btn>
             <v-btn :disabled="loading || books_selected.length === 0" outlined color="info" @click="deleteSelectedBooks"><v-icon>mdi-info</v-icon>{{ $t('admin.books.deleteSelected') }}</v-btn>
+            <v-btn :disabled="loading" outlined color="primary" @click="addByIsbn"><v-icon>mdi-plus</v-icon>{{ $t('admin.books.addByIsbn') }}</v-btn>
             <v-spacer></v-spacer>
             <v-text-field cols="2" dense @keyup.enter="getDataFromApi" v-model="search" append-icon="mdi-magnify" :label="$t('admin.books.search')" single-line hide-details></v-text-field>
         </v-card-actions>
@@ -37,10 +38,39 @@
             <template v-slot:item.id="{ item }">
                 <a target="_blank" :href="`/book/${item.id}`">{{ item.id }}</a>
             </template>
+            <template v-slot:item.book_type="{ item }">
+                <v-chip small :color="item.book_type === 1 ? 'success' : 'primary'">
+                    {{ item.book_type === 1 ? $t('admin.books.bookPhysical') : $t('admin.books.bookEBook') }}
+                </v-chip>
+            </template>
+            <template v-slot:item.book_count="{ item }">
+                <v-edit-dialog
+                    v-if="item.book_type === 1"
+                    large
+                    :return-value.sync="item.book_count"
+                    @save="save(item, 'book_count')"
+                    save-text="保存"
+                    cancel-text="取消"
+                >
+                    <span>{{ item.book_count || 0 }}</span>
+                    <template v-slot:input>
+                        <div class="mt-4 text-h6">修改数量</div>
+                        <v-text-field
+                            v-model.number="item.book_count"
+                            label="在库数量"
+                            type="number"
+                            min="0"
+                            max="100"
+                            :rules="[v => v >= 0 && v <= 100 || '数量必须在0-100之间']"
+                            counter
+                        ></v-text-field>
+                    </template>
+                </v-edit-dialog>
+                <span v-else>-</span>
+            </template>
             <template v-slot:item.title="{ item }">
                 <v-edit-dialog large :return-value.sync="item.title" @save="save(item, 'title')" save-text="保存" cancel-text="取消">
                     <span class="three-lines" style="max-width: 200px; min-width: 120px; ">{{ item.title }}</span>
-
                     <template v-slot:input>
                         <div class="mt-4 text-h6">修改字段</div>
                         <v-textarea v-model="item.title" label="书名" style="min-width: 400px" counter></v-textarea>
@@ -211,6 +241,50 @@
             </v-card>
         </v-dialog>
 
+        <!-- 添加实体书对话框 -->
+        <v-dialog v-model="isbn_dialog" persistent transition="dialog-bottom-transition" width="500">
+            <v-card>
+                <v-toolbar flat dense dark color="primary">
+                    <v-icon>mdi-book-plus</v-icon>
+                    <v-toolbar-title class="ml-2">添加实体书</v-toolbar-title>
+                </v-toolbar>
+                <v-card-text>
+                    <div class="mt-4">
+                        <p class="body-1">请输入要添加的图书ISBN号，系统将自动从豆瓣获取图书信息：</p>
+                        <v-text-field
+                            v-model="isbn"
+                            label="ISBN号"
+                            placeholder="请输入13位或10位ISBN号"
+                            outlined
+                            :rules="isbnRules"
+                            counter
+                            maxlength="17"
+                            hint="例如: 9787570220601 或 978-7-5702-2060-1"
+                            persistent-hint
+                            autofocus
+                            @keyup.enter="confirmAddBook"
+                        >
+                            <template v-slot:prepend-inner>
+                                <v-icon>mdi-barcode</v-icon>
+                            </template>
+                        </v-text-field>
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn @click="cancelAddBook" :disabled="adding_book">取消</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn
+                        color="primary"
+                        @click="confirmAddBook"
+                        :loading="adding_book"
+                        :disabled="!isValidIsbn"
+                    >
+                        确定添加
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
 </v-card>
 </template>
 
@@ -221,7 +295,9 @@ export default {
         snackColor: "",
         snackText: "",
         meta_dialog: false,
-
+        isbn_dialog: false,
+        adding_book: false,
+        isbn: "",
         books_selected: [],
         tag_input: null,
         search: "",
@@ -233,6 +309,8 @@ export default {
         headers: [
             { text: "封面", sortable: false, value: "img", width: "80px" },
             { text: "ID", sortable: true, value: "id", width: "80px" },
+            { text: "类型", sortable: false, value: "book_type", width: "80px" },
+            { text: "数量", sortable: true, value: "book_count", width: "70px" },
             { text: "书名", sortable: true, value: "title" },
             { text: "作者", sortable: true, value: "author", width: "100px" },
             { text: "评分", sortable: false, value: "rating", width: "60px" },
@@ -248,6 +326,11 @@ export default {
             total: 0,
             status: "finish",
         },
+        isbnRules: [
+            v => !!v || 'ISBN号不能为空',
+            v => (v && v.length >= 10) || 'ISBN号至少需要10位',
+            v => (v && /^[0-9\-X]+$/.test(v)) || 'ISBN号只能包含数字、连字符和X',
+        ],
     }),
     created() {},
     watch: {
@@ -261,6 +344,13 @@ export default {
     computed: {
         auto_fill_mins: function() {
             return Math.floor(this.total/60) + 1;
+        },
+        isValidIsbn: function() {
+            if (!this.isbn) return false;
+            // 移除连字符和空格
+            const cleanIsbn = this.isbn.replace(/[-\s]/g, '');
+            // 检查是否为10位或13位数字（可能包含X）
+            return /^[0-9]{9}[0-9X]$/.test(cleanIsbn) || /^[0-9]{13}$/.test(cleanIsbn);
         }
     },
     methods: {
@@ -326,6 +416,50 @@ export default {
                 .finally(() => {
                     this.loading = false;
                 });
+        },
+        addByIsbn() {
+            // 显示ISBN输入对话框
+            this.isbn = "";
+            this.isbn_dialog = true;
+        },
+        cancelAddBook() {
+            this.isbn_dialog = false;
+            this.isbn = "";
+        },
+        confirmAddBook() {
+            if (!this.isValidIsbn) {
+                this.$alert("error", "请输入有效的ISBN号");
+                return;
+            }
+
+            this.adding_book = true;
+            // 清理ISBN号（移除连字符和空格）
+            const cleanIsbn = this.isbn.replace(/[-\s]/g, '');
+
+            this.$backend("/book/add", {
+                method: "POST",
+                body: JSON.stringify({
+                    isbn: cleanIsbn,
+                }),
+            })
+            .then((rsp) => {
+                this.isbn_dialog = false;
+                if (rsp.err != "ok") {
+                    this.$alert("error", rsp.msg);
+                } else {
+                    this.snack = true;
+                    this.snackColor = "success";
+                    this.snackText = rsp.msg || "图书添加成功";
+                    this.getDataFromApi(); // 刷新列表
+                }
+            })
+            .catch((error) => {
+                this.$alert("error", "添加图书时发生错误: " + error.message);
+            })
+            .finally(() => {
+                this.adding_book = false;
+                this.isbn = "";
+            });
         },
         refresh_progress() {
             this.$backend("/admin/book/fill", {
@@ -402,6 +536,7 @@ export default {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     white-space: normal;
 }
 </style>

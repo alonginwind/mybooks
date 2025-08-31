@@ -15,6 +15,11 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.orm import relationship, declarative_base
 
 
+BOOK_TYPE_EBOOK = 0  # 电子书
+BOOK_TYPE_PHYSICAL = 1  # 实体书
+Base = declarative_base()
+
+
 def mksalt():
     import random
     import string
@@ -306,6 +311,8 @@ class Item(Base, SQLAlchemyMixin):
     collector_id = Column(Integer, ForeignKey("readers.id"))
     collector = relationship(Reader, backref="items")
     sole = Column(Boolean, default=False, nullable=False)
+    book_type = Column(Integer, default=0, nullable=False)
+    book_count = Column(Integer, default=1, nullable=False)
 
     def __init__(self):
         super(Item, self).__init__()
@@ -314,6 +321,8 @@ class Item(Base, SQLAlchemyMixin):
         self.count_download = 0
         self.collector_id = 1
         self.sole = False
+        self.book_type = BOOK_TYPE_EBOOK  # 0:电子书, 1:实体书
+        self.book_count = 1
 
 
 class ScanFile(Base, SQLAlchemyMixin):

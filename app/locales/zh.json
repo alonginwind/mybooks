@@ -132,6 +132,9 @@
             "autoUpdate": "自动更新图书信息...",
             "deleteSelected": "删除选中的图书",
             "noSelectedBook": "请先选择要删除的图书",
+            "addByIsbn": "添加实体书",
+            "bookEBook": "电子书",
+            "bookPhysical": "实体书",
             "search": "搜索",
             "status": {
                 "ready": "可导入",

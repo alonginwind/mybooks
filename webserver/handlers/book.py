@@ -19,7 +19,7 @@ from webserver.services.convert import ConvertService
 from webserver.services.extract import ExtractService
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, ListHandler, auth, js
-from webserver.models import Item
+from webserver.models import Item, BOOK_TYPE_PHYSICAL
 from webserver.plugins.meta import baike, douban, youshu
 from webserver.plugins.parser.txt import get_content_encoding
 from webserver.handlers.audio import AudioUtils
@@ -416,7 +416,7 @@ class BookEdit(BaseHandler):
             "isbn",
             "series",
             "rating",
-            "languages",
+            "languages"
         ]
         for key, val in data.items():
             if key in KEYS:
@@ -427,6 +427,15 @@ class BookEdit(BaseHandler):
             if content is None:
                 return {"err": "params.pudate.invalid", "msg": _(u"出版日期参数错误，格式应为 2019-05-10或2019-05或2019年或2019")}
             mi.set("pubdate", content)
+
+        if data.get("book_count", None):
+            book_cnt = data.get("book_count", 0)
+            mi.set("real_book_cnt", book_cnt)
+            # Need to update the item too
+            existing_item = self.sqlite_session.query(Item).filter(Item.book_id == bid).first()
+            if existing_item:
+                existing_item.book_count = book_cnt
+                existing_item.save()
 
         if "tags" in data and not data["tags"]:
             self.calibre_db.set_tags(bid, [])
@@ -572,6 +581,81 @@ class HotBook(ListHandler):
         items = db_items.limit(delta).offset(start).all()
         ids = [item.book_id for item in items]
         return self.render_book_list([], ids=ids, title=title, sort_by_id=False)
+
+
+# 通ISBN添加实体图书
+class BookAddByISBN(BaseHandler):
+    @js
+    @auth
+    def post(self):
+        if not self.current_user.can_upload():
+            return {"err": "permission", "msg": _(u"无权操作")}
+        data = tornado.escape.json_decode(self.request.body)
+        isbn = data.get("isbn", "").strip()
+        if not isbn:
+            return {"err": "params.invalid", "msg": _(u"请输入ISBN号")}
+
+        # 使用基类方法查找已存在的ISBN图书
+        existing_books = self.find_books_by_isbn(isbn)
+
+        # 如果已存在该ISBN的图书，更新相关计数
+        if existing_books:
+            book_id = list(existing_books)[0]  # 取第一个匹配的图书ID
+            # 检查当前用户是否已经有该图书的Item记录
+            existing_item = self.sqlite_session.query(Item).filter(
+                Item.book_id == book_id
+            ).first()
+
+            book_count = 1
+            if existing_item:
+                book_count = (existing_item.book_count or 0) + 1
+                existing_item.book_count = book_count
+                existing_item.save()
+            else:
+                item = Item()
+                item.book_id = book_id
+                item.collector_id = self.user_id()
+                item.book_type = BOOK_TYPE_PHYSICAL
+                item.book_count = book_count
+                item.save()
+
+            # 更新calibre custom data中的real_book_cnt
+            self.calibre_db.add_custom_book_data(book_id, "real_book_cnt", book_count)
+            return {"err": "ok", "msg": _(u"实体书数量已更新，当前数量：%d") % book_count}
+
+        logging.info("Adding new book by ISBN: %s" % isbn)
+        # 通过Douban API查询ISBN的图书信息
+        douban_api = douban.DoubanBookApi(
+            CONF["douban_apikey"],
+            CONF["douban_baseurl"],
+            copy_image=True,
+            maxCount=1
+        )
+        try:
+            md = douban.SimpleMetaData(isbn=isbn)
+            book_data = douban_api.get_book(md)
+            if not book_data:
+                return {"err": "book.notfound", "msg": _(u"未找到该ISBN号对应的图书")}
+
+            # 通过上面返回的book metadata, 添加图书到calibre中（不需要文件，仅metadata）
+            book_id = self.calibre_db.create_book_entry(book_data)
+            if book_id is None:
+                return {"err": "book.duplicate", "msg": _(u"该图书已存在或创建失败")}
+
+            # 添加自定义数据
+            self.calibre_db.add_custom_book_data(book_id, "real_book_cnt", 1)
+
+            # 创建Item记录
+            item = Item()
+            item.book_id = book_id
+            item.collector_id = self.user_id()
+            item.book_type = BOOK_TYPE_PHYSICAL
+            item.book_count = 1
+            item.save()
+            return {"err": "ok", "msg": _(u"图书添加成功")}
+        except Exception as e:
+            logging.error("Failed to add book by ISBN: %s", e)
+            return {"err": "internal", "msg": _(u"查询ISBN失败，请在系统设置中配置互联网信息源中插件地址。如http://douban-rs-api:80/。")}
 
 
 class BookUpload(BaseHandler):
@@ -827,6 +911,7 @@ def routes():
         (r"/api/recent", RecentBook),
         (r"/api/hot", HotBook),
         (r"/api/book/nav", BookNav),
+        (r"/api/book/add", BookAddByISBN),
         (r"/api/book/upload", BookUpload),
         (r"/api/book/([0-9]+)", BookDetail),
         (r"/api/book/([0-9]+)/delete", BookDelete),

@@ -132,6 +132,9 @@
             "autoUpdate": "Auto-update book information...",
             "deleteSelected": "Delete Selected Books",
             "noSelectedBook": "No books selected",
+            "addByIsbn": "Add Physical Book",
+            "bookEBook": "eBook",
+            "bookPhysical": "Book",
             "search": "Search",
             "status": {
                 "ready": "Ready to Import",

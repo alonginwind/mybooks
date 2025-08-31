@@ -39,6 +39,14 @@ def str2date(s):
     return None
 
 
+class SimpleMetaData:
+    def __init__(self, isbn=None, douban_id=None, title=None, author_sort=None):
+        self.isbn = isbn
+        self.douban_id = douban_id
+        self.title = title
+        self.author_sort = author_sort
+
+
 class DoubanBookApi(object):
     def __init__(self, apikey, baseUrl, copy_image=True, manual_select=False, maxCount=2):
         self.apikey = apikey
