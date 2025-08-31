@@ -17,7 +17,7 @@
                             outlined
                             dense
                             v-model="voice_name"
-                            label="选择声音"
+                            :label="$t('book.chooseVoice')"
                             item-text="display_name"
                             item-value="voice_name"
                             required
@@ -238,14 +238,12 @@
                               class="ml-1">
                             ({{ audios.count }})
                         </span>
-                    </v-btn
-                    >
+                    </v-btn>
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" :href="'/read/' + book.id"
                            target="_blank">
                         <v-icon left v-if="!tiny">import_contacts</v-icon>
                         {{ $t('book.read') }}
-                    </v-btn
-                    >
+                    </v-btn>
 
                     <template v-if="book.is_owner">
                         <v-menu offset-y>
@@ -253,8 +251,7 @@
                                 <v-btn v-on="on" dark color="primary" class="ml-2" :small="tiny"
                                 >{{ $t('book.manage') }}
                                     <v-icon small>more_vert</v-icon>
-                                </v-btn
-                                >
+                                </v-btn>
                             </template>
                             <v-list>
                                 <v-list-item :to="'/book/' + book.id + '/edit'">
@@ -305,6 +302,13 @@
                                     </v-icon>
                                     {{ book.author }}{{ $t('book.author') }}，{{ pub_year }}{{ $t('book.year') }}
                                 </span>
+                                <br />
+                                <span v-if="book.book_type==1">
+                                    <v-chip rounded small dark color="indigo">
+                                        <v-icon>mdi-bookshelf</v-icon>{{ $t('book.bookPhysical') }}
+                                    </v-chip>
+                                </span>
+                                <span v-if="book.book_type==1">{{ $t('book.bookCount')}}: {{book.book_count}}</span>
                                 <span
                                     v-if='book.files.length>0 && book.files[0].size >= 1048576'
                                     color="grey--text" style="font-weight: bold">&nbsp;&nbsp;&nbsp;[{{book.files[0].format}} - {{

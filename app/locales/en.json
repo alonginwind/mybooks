@@ -366,7 +366,10 @@
         "txtOnlineReading": "Txt online reading",
         "parsed":"Parsed",
         "notParsed":"Unparsed",
-        "download":"Download"
+        "download":"Download",
+        "bookPhysical":"Physical Book",
+        "bookCount":"Count",
+        "chooseVoice":"Choose voice"
     },
     "reader": {
         "tip": {
