@@ -310,7 +310,7 @@ export default {
             { text: "封面", sortable: false, value: "img", width: "80px" },
             { text: "ID", sortable: true, value: "id", width: "80px" },
             { text: "类型", sortable: false, value: "book_type", width: "80px" },
-            { text: "数量", sortable: true, value: "book_count", width: "70px" },
+            { text: "数量", sortable: false, value: "book_count", width: "70px" },
             { text: "书名", sortable: true, value: "title" },
             { text: "作者", sortable: true, value: "author", width: "100px" },
             { text: "评分", sortable: false, value: "rating", width: "60px" },
