@@ -9,7 +9,7 @@
                     <v-list-group v-else-if="item.groups" no-action :value="item.expand">
                         <template v-slot:activator>
                             <v-list-item-action class="mt-1 mb-1 mr-2" dense>
-                                <v-icon class="pa-0 ma-0">{{ item.icon }}</v-icon>
+                                <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
                             </v-list-item-action>
                             <v-list-item-content>
                                 <v-list-item-title v-text="$t(item.text)"></v-list-item-title>
@@ -19,7 +19,7 @@
                         <v-list-item v-for="link in item.groups" :key="link.href" :to="link.href">
                             <v-list-item-content>
                                 <v-list-item-title
-                                    ><v-icon>{{ link.icon }}</v-icon> {{ $t(link.text) }}</v-list-item-title
+                                    ><v-icon :color="link.color || ''">{{ link.icon }}</v-icon> {{ $t(link.text) }}</v-list-item-title
                                 >
                             </v-list-item-content>
                         </v-list-item>
@@ -31,10 +31,10 @@
                             <v-row>
                                 <v-col class="pa-0" cols="6" v-for="link in links" :key="link.href">
                                     <v-btn v-if="item.target != ''" text target="_blank" :href="link.href">
-                                        <v-icon v-if="link.icon" left>{{ link.icon }}</v-icon> {{ $t(link.text) }}
+                                        <v-icon v-if="link.icon" :color="link.color || ''" left>{{ link.icon }}</v-icon> {{ $t(link.text) }}
                                     </v-btn>
                                     <v-btn v-else text :to="link.href">
-                                        <v-icon v-if="link.icon" left>{{ link.icon }}</v-icon> {{ $t(link.text) }}
+                                        <v-icon v-if="link.icon" left :color="link.color || ''">{{ link.icon }}</v-icon> {{ $t(link.text) }}
                                     </v-btn>
                                 </v-col>
                             </v-row>
@@ -44,7 +44,7 @@
                     <!-- 导航菜单 -->
                     <v-list-item dense v-else :key="item.text" :to="item.href" :target="item.target">
                         <v-list-item-action class="mt-1 mb-1 mr-2" dense>
-                            <v-icon class="pa-0 ma-0">{{ item.icon }}</v-icon>
+                            <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
                         </v-list-item-action>
                         <v-list-item-content>
                             <v-list-item-title>
@@ -241,37 +241,45 @@ export default {
         items: function () {
             var home_links = [
                 // home
-                { icon: "home", href: "/", text: "appHeader.home" },
+                { icon: "home", href: "/", text: "appHeader.home", color:"primary" },
             ];
             var admin_links = [
                 {
                     icon: "mdi-cog",
                     text: "appHeader.admin",
                     expand: this.$route.path.indexOf("/admin/") == 0,
+                    color: "dark-grey",
                     groups: [
-                        { icon: "mdi-cog", href: "/admin/settings", text: "appHeader.systemSettings" },
-                        { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement" },
-                        { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement" },
-                        { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks" },
+                        { icon: "mdi-cog", href: "/admin/settings", text: "appHeader.systemSettings", color: "primary"},
+                        { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement", color: "primary"},
+                        { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement", color: "primary"},
+                        { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks", color: "primary"},
                     ],
                 },
             ];
             var nav_links = [
                 { heading: "appHeader.categoryBrowse" },
-                { icon: "widgets", href: "/nav", text: "appHeader.categoryNavigation", count: this.sys.books },
-                { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers },
-                { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors },
-                { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags },
                 {
                     target: "",
                     links: [
-                        { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series },
-                        { icon: "mdi-star-half", href: "/rating", text: "appHeader.rating" },
-                        { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking" },
-                        { icon: "mdi-translate", href: "/language", text: "appHeader.languages" },
+                        { icon: "mdi-heart", href: "/favorites", text: "appHeader.favorites", color: "red" },
+                        { icon: "mdi-bookmark-plus", href: "/wants", text: "appHeader.wants", color: "orange" }
                     ],
                 },
-                { icon: "mdi-history", href: "/recent", text: "appHeader.allBooks" },
+                { icon: "widgets", href: "/nav", text: "appHeader.categoryNavigation", count: this.sys.books, color: "primary" },
+                { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
+                { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors, color: "primary"},
+                { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags, color: "green"},
+                {
+                    target: "",
+                    links: [
+                        { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},
+                        { icon: "mdi-star-half", href: "/rating", text: "appHeader.rating", color: "primary"},
+                        { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},
+                        { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "black"},
+                    ],
+                },
+                { icon: "mdi-history", href: "/recent", text: "appHeader.allBooks", color: "primary"},
             ];
             var friend_links = [
                 // links
@@ -280,9 +288,9 @@ export default {
             ];
             var sys_links = [
                 { heading: "appHeader.system" },
-                { icon: "mdi-history", href: "", count: this.sys.version, text: this.$t('appHeader.systemVersion') },
-                { icon: "mdi-account", href: "", count: this.sys.users, text: this.$t('appHeader.userCount') },
-                { icon: "mdi-cellphone", href: "/opds-readme", count: "OPDS", target: "_blank", text: this.$t('appHeader.opdsIntroduction') },
+                { icon: "mdi-information-outline", href: "", count: this.sys.version, text: this.$t('appHeader.systemVersion'), color: "primary" },
+                { icon: "mdi-account", href: "", count: this.sys.users, text: this.$t('appHeader.userCount'), color: "primary"},
+                { icon: "mdi-cellphone", href: "/opds-readme", count: "OPDS", target: "_blank", text: this.$t('appHeader.opdsIntroduction'), color: "primary"},
             ];
 
             return home_links

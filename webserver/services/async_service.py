@@ -41,12 +41,30 @@ class AsyncService(metaclass=SingletonType):
                 """)).fetchall()
                 columns = [row[1] for row in result]
 
+                changed = False
                 # Check if the 'sole' column exists, and add it if it doesn't
                 if 'sole' not in columns:
                     self.session.execute(text("""
                         ALTER TABLE items ADD COLUMN sole BOOLEAN DEFAULT FALSE
                     """))
+                    changed = True
+
+                # Check if the 'book_type' and 'book_count' columns exists, and add it if it doesn't
+                if 'book_type' not in columns or 'book_count' not in columns:
+                    if 'book_type' not in columns:
+                        self.session.execute(text("""
+                            ALTER TABLE items ADD COLUMN book_type TEXT
+                        """))
+                        changed = True
+                    if 'book_count' not in columns:
+                        self.session.execute(text("""
+                            ALTER TABLE items ADD COLUMN book_count INTEGER DEFAULT 0
+                        """))
+                        changed = True
+
+                if changed:
                     self.session.commit()
+
             except Exception as err:
                 logging.warning("Failed to alter table 'items': %s", err)
                 self.session.rollback()

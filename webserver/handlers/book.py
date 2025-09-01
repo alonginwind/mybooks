@@ -467,25 +467,42 @@ class BookFavorite(BaseHandler):
 
     @js
     @auth
-    def get(self, id):
-        """获取当前用户对某本书的收藏状态"""
-        book_id = int(id)
+    def get(self):
+        """获取当前用户的收藏"""
         user_id = self.user_id()
+        logging.info("User %d is fetching favorite books." % user_id)
+        # 列出所有收藏书籍
+        reading_states = self.sqlite_session.query(ReadingState).filter(
+            ReadingState.reader_id == user_id,
+            ReadingState.favorite == 1
+        ).order_by(ReadingState.favorite_date.desc()).all()
+        favorite_books = []
+        for state in reading_states:
+            book = self.get_book(state.book_id)
+            book_data = utils.BookFormatter(self, book).format()
+            book_data["state"] = {
+                "favorite": state.favorite,
+                "favorite_date": state.favorite_date.isoformat() if state.favorite_date else None,
+                "wants": state.wants,
+                "wants_date": state.wants_date.isoformat() if state.wants_date else None,
+                "read_state": state.read_state,
+                "read_date": state.read_date.isoformat() if state.read_date else None,
+                "online_read": state.online_read or 0,
+                "download": state.download or 0
+            }
+            favorite_books.append(book_data)
 
-        reading_state = self.sqlite_session.query(ReadingState).filter(
-            ReadingState.book_id == book_id,
-            ReadingState.reader_id == user_id
-        ).first()
-
-        is_favorite = reading_state.is_favorite() if reading_state else False
-        return {"err": "ok", "favorite": is_favorite}
+        return {"err": "ok",
+                "title": _(u"我的收藏"),
+                "total": len(favorite_books),
+                "books": favorite_books}
 
 
 class BookWantToRead(BaseHandler):
     @js
     @auth
     def post(self, id):
-        """设置或取消想读某本书"""
+        """设置或取消待读某本书"""
         book_id = int(id)
         book = self.get_book(book_id)
         if not book:
@@ -505,27 +522,43 @@ class BookWantToRead(BaseHandler):
             reading_state = ReadingState(book_id, user_id)
             self.sqlite_session.add(reading_state)
 
-        # 设置想读状态
+        # 设置待读状态
         reading_state.set_wants(wants_status)
         reading_state.save()
 
-        action = "标记为想读" if wants_status else "取消想读"
+        action = "标记为待读" if wants_status else "取消待读"
         return {"err": "ok", "msg": _(u"%s成功") % action}
 
     @js
     @auth
-    def get(self, id):
-        """获取当前用户对某本书的想读状态"""
-        book_id = int(id)
+    def get(self):
+        """获取当前用户对某本书的待读状态"""
         user_id = self.user_id()
+        logging.info("User %d is fetching favorite books." % user_id)
+        reading_states = self.sqlite_session.query(ReadingState).filter(
+            ReadingState.reader_id == user_id,
+            ReadingState.wants == 1
+        ).order_by(ReadingState.wants_date.desc()).all()
+        favorite_books = []
+        for state in reading_states:
+            book = self.get_book(state.book_id)
+            book_data = utils.BookFormatter(self, book).format()
+            book_data["state"] = {
+                "favorite": state.favorite,
+                "favorite_date": state.favorite_date.isoformat() if state.favorite_date else None,
+                "wants": state.wants,
+                "wants_date": state.wants_date.isoformat() if state.wants_date else None,
+                "read_state": state.read_state,
+                "read_date": state.read_date.isoformat() if state.read_date else None,
+                "online_read": state.online_read or 0,
+                "download": state.download or 0
+            }
+            favorite_books.append(book_data)
 
-        reading_state = self.sqlite_session.query(ReadingState).filter(
-            ReadingState.book_id == book_id,
-            ReadingState.reader_id == user_id
-        ).first()
-
-        is_wants = reading_state.is_wants() if reading_state else False
-        return {"err": "ok", "wants": is_wants}
+        return {"err": "ok",
+                "title": _(u"待读清单"),
+                "total": len(favorite_books),
+                "books": favorite_books}
 
 
 class BookReadingState(BaseHandler):
@@ -1147,4 +1180,6 @@ def routes():
         (r"/api/book/([0-9]+)/favorite", BookFavorite),
         (r"/api/book/([0-9]+)/wants", BookWantToRead),
         (r"/api/book/([0-9]+)/readstate", BookReadingState),
+        (r"/api/favorites", BookFavorite),
+        (r"/api/wants", BookWantToRead),
     ]

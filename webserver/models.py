@@ -372,7 +372,7 @@ class ReadingState(Base, SQLAlchemyMixin):
     reader_id = Column(Integer, ForeignKey("readers.id"), primary_key=True)
     favorite = Column(Integer, default=0)  # 0:为未收藏,1:已收藏
     favorite_date = Column(DateTime)
-    wants = Column(Integer, default=0)  # 0:未标记为想读,1:标记为想读
+    wants = Column(Integer, default=0)  # 0:未标记为待读,1:标记为待读
     wants_date = Column(DateTime)
     read_state = Column(Integer, default=0, nullable=False)  # 0:None, 1:已申请, 2:在读, 3:已读完
     read_date = Column(DateTime)
@@ -400,12 +400,12 @@ class ReadingState(Base, SQLAlchemyMixin):
         return self.favorite == 1
 
     def set_wants(self, wants_status):
-        """设置想读状态"""
+        """设置待读状态"""
         self.wants = 1 if wants_status else 0
         self.wants_date = datetime.datetime.now()
 
     def is_wants(self):
-        """检查是否标记为想读"""
+        """检查是否标记为待读"""
         return self.wants == 1
 
     def set_read_state(self, read_state):

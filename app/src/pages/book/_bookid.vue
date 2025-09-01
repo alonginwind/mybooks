@@ -309,6 +309,18 @@
                                             {{ isFavorite ? 'mdi-heart' : 'mdi-heart-outline' }}
                                         </v-icon>
                                     </v-btn>
+                                    <v-btn
+                                        icon
+                                        small
+                                        class="ml-1"
+                                        @click="toggleWants"
+                                        :loading="wantsLoading"
+                                        :color="isWants ? 'orange' : 'grey'"
+                                    >
+                                        <v-icon>
+                                            {{ isWants ? 'mdi-bookmark-plus' : 'mdi-bookmark-plus-outline' }}
+                                        </v-icon>
+                                    </v-btn>
                                 </p>
                                 <span color="grey--text">
                                     <v-icon :color="book.sole ? 'red' : 'green'" class="mr-2">
@@ -537,12 +549,15 @@ export default {
         },
         isFavorite: function () {
             return this.book.state && this.book.state.favorite === 1;
+        },
+        isWants: function () {
+            return this.book.state && this.book.state.wants === 1;
         }
     },
     data: () => ({
         err: "",
         msg: "",
-        book: {id: 0, title: "", files: [], tags: [], pubdate: "", state: {favorite: 0}},
+        book: {id: 0, title: "", files: [], tags: [], pubdate: "", state: {favorite: 0, wants: 0}},
         audios: {count: 0, files: [], status: "ok"},
         // Audio status constants
         AUDIO_STATUS: {
@@ -559,6 +574,7 @@ export default {
         kindle_sender: "",
         txt_parse_inited: false,
         favoriteLoading: false,
+        wantsLoading: false,
         dialog_download: false,
         dialog_epub2audio: false,
         dialog_audiolist: false,
@@ -718,6 +734,38 @@ export default {
                 this.$alert('error', '网络错误，请稍后重试');
             } finally {
                 this.favoriteLoading = false;
+            }
+        },
+        async toggleWants() {
+            if (this.wantsLoading) return;
+
+            this.wantsLoading = true;
+            try {
+                const newWantsStatus = !this.isWants;
+                const response = await this.$backend(`/book/${this.book.id}/wants`, {
+                    method: 'POST',
+                    body: JSON.stringify({ wants: newWantsStatus }),
+                });
+
+                if (response.err === 'ok') {
+                    // 更新本地状态
+                    if (!this.book.state) {
+                        this.book.state = {};
+                    }
+                    this.book.state.wants = newWantsStatus ? 1 : 0;
+                    this.book.state.wants_date = newWantsStatus ? new Date().toISOString() : null;
+
+                    // 显示成功提示
+                    const message = newWantsStatus ? '已添加到待读清单' : '已从待读清单中移除';
+                    this.$alert('success', message);
+                } else {
+                    this.$alert('error', response.msg || '操作失败');
+                }
+            } catch (error) {
+                console.error('待读操作失败:', error);
+                this.$alert('error', '网络错误，请稍后重试');
+            } finally {
+                this.wantsLoading = false;
             }
         },
         init(route, next) {

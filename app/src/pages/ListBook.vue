@@ -56,6 +56,12 @@ export default {
       case "/recent":
         return {title: this.$t('listBook.recentUpdates')};
 
+      case "/favorites":
+        return {title: this.$t('listBook.favorites')};
+
+      case "/wants":
+        return {title: this.$t('listBook.wants')};
+
       default:
         break
     }
