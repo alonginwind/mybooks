@@ -499,8 +499,11 @@
         "done": "Read",
         "cancel": "Cancel Reading",
         "setReading": "Set as reading",
-        "setDone": "Set as read",
+        "setDone": "Mark as done",
         "favoriteHint": "Click to favorite/unfavorite",
-        "wantsHint": "Click to add to/remove from want-to-read list"
+        "wantsHint": "Click to add to/remove from want-to-read list",
+        "readingDays": "Reading for {days} days",
+        "readingWithinOneDay": "Within one day",
+        "completedReading": "This book was completed on {date}"
     }
 }

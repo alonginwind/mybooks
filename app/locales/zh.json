@@ -499,8 +499,11 @@
         "done": "已读",
         "cancel": "取消阅读",
         "setReading": "设为在读",
-        "setDone": "设为读完",
+        "setDone": "标记读完",
         "favoriteHint": "点击收藏/取消收藏",
-        "wantsHint": "点击添加到待读清单/从待读清单移除"
+        "wantsHint": "点击添加到待读清单/从待读清单移除",
+        "readingDays": "已阅读 {days} 天",
+        "readingWithinOneDay": "已阅读不足一天",
+        "completedReading": "本书已在 {date} 读完"
     }
 }

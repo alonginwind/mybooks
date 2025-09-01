@@ -230,11 +230,11 @@
                         dark
                         color="primary"
                         class="mx-2 d-flex d-sm-flex"
-                        @click="setReading"
+                        @click="handleReadingStateChange"
                         :loading="readingStateLoading"
                     >
                         <v-icon>mdi-book-open</v-icon>
-                        {{ $t('readingState.setReading') }}
+                        {{ readingStateButtonText }}
                     </v-btn>
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" @click="switch_audio_dialog">
                         <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'error' : 'audiotrack' }}</v-icon>
@@ -384,6 +384,27 @@
                             </div>
                             <v-rating v-model="book.rating" color="yellow accent-4" length="10" readonly dense
                                       small></v-rating>
+                            <!-- Reading state display -->
+                            <div v-if="book.state && book.state.read_state === 1" class="mt-2">
+                                <v-chip
+                                    small
+                                    color="green"
+                                    text-color="white"
+                                >
+                                    <v-icon small left>mdi-book-open</v-icon>
+                                    {{ readingDaysText }}
+                                </v-chip>
+                            </div>
+                            <div v-else-if="book.state && book.state.read_state === 2" class="mt-2">
+                                <v-chip
+                                    small
+                                    color="grey"
+                                    text-color="white"
+                                >
+                                    <v-icon small left>mdi-check</v-icon>
+                                    {{ completedReadingText }}
+                                </v-chip>
+                            </div>
                             <br/>
                             <div class="tag-chips">
                                     <template v-for="author in book.authors" :key="'author-' + author">
@@ -574,6 +595,36 @@ export default {
         },
         isWants: function () {
             return this.book.state && this.book.state.wants === 1;
+        },
+        readingStateButtonText: function () {
+            if (!this.book.state) return this.$t('readingState.setReading');
+            const readState = this.book.state.read_state;
+            if (readState === 1) {
+                return this.$t('readingState.setDone');
+            } else {
+                return this.$t('readingState.setReading');
+            }
+        },
+        readingDaysText: function () {
+            if (!this.book.state || !this.book.state.read_date) return '';
+
+            const readDate = new Date(this.book.state.read_date);
+            const today = new Date();
+            const diffTime = Math.abs(today - readDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 1) {
+                return this.$t('readingState.readingWithinOneDay');
+            } else {
+                return this.$t('readingState.readingDays', { days: diffDays });
+            }
+        },
+        completedReadingText: function () {
+            if (!this.book.state || !this.book.state.read_date) return '';
+
+            const readDate = new Date(this.book.state.read_date);
+            const dateStr = readDate.toLocaleDateString();
+            return this.$t('readingState.completedReading', { date: dateStr });
         }
     },
     data: () => ({
@@ -791,14 +842,28 @@ export default {
                 this.wantsLoading = false;
             }
         },
-        async setReading() {
+        async handleReadingStateChange() {
             if (this.readingStateLoading) return;
 
             this.readingStateLoading = true;
             try {
+                // 确定要设置的新状态
+                let newReadState;
+                let successMessage;
+
+                if (!this.book.state || this.book.state.read_state === 0 || this.book.state.read_state === 2) {
+                    // 未读或已读完 -> 设为在读
+                    newReadState = 1;
+                    successMessage = '已设置为在读状态';
+                } else if (this.book.state.read_state === 1) {
+                    // 在读 -> 设为读完
+                    newReadState = 2;
+                    successMessage = '已标记为读完';
+                }
+
                 const response = await this.$backend(`/book/${this.book.id}/readstate`, {
                     method: 'POST',
-                    body: JSON.stringify({ read_state: 1 }),
+                    body: JSON.stringify({ read_state: newReadState }),
                 });
 
                 if (response.err === 'ok') {
@@ -806,11 +871,11 @@ export default {
                     if (!this.book.state) {
                         this.book.state = {};
                     }
-                    this.book.state.read_state = 1;
+                    this.book.state.read_state = newReadState;
                     this.book.state.read_date = new Date().toISOString();
 
                     // 显示成功提示
-                    this.$alert('success', '已设置为在读状态');
+                    this.$alert('success', successMessage);
                 } else {
                     this.$alert('error', response.msg || '操作失败');
                 }
