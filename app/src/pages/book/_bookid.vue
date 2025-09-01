@@ -225,7 +225,14 @@
                     </v-btn>
 
                     <v-spacer></v-spacer>
-                    <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex">
+                    <v-btn
+                        :small="tiny"
+                        dark
+                        color="primary"
+                        class="mx-2 d-flex d-sm-flex"
+                        @click="setReading"
+                        :loading="readingStateLoading"
+                    >
                         <v-icon>mdi-book-open</v-icon>
                         {{ $t('readingState.setReading') }}
                     </v-btn>
@@ -298,30 +305,44 @@
                             <div>
                                 <p class='title mb-0'>
                                     {{ book.title }}
-                                    <v-btn
-                                        icon
-                                        small
-                                        class="ml-2"
-                                        @click="toggleFavorite"
-                                        :loading="favoriteLoading"
-                                        :color="isFavorite ? 'red' : 'grey'"
-                                    >
-                                        <v-icon>
-                                            {{ isFavorite ? 'mdi-heart' : 'mdi-heart-outline' }}
-                                        </v-icon>
-                                    </v-btn>
-                                    <v-btn
-                                        icon
-                                        small
-                                        class="ml-1"
-                                        @click="toggleWants"
-                                        :loading="wantsLoading"
-                                        :color="isWants ? 'orange' : 'grey'"
-                                    >
-                                        <v-icon>
-                                            {{ isWants ? 'mdi-bookmark-plus' : 'mdi-bookmark-plus-outline' }}
-                                        </v-icon>
-                                    </v-btn>
+                                    <v-tooltip bottom>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn
+                                                icon
+                                                small
+                                                class="ml-2"
+                                                @click="toggleFavorite"
+                                                :loading="favoriteLoading"
+                                                :color="isFavorite ? 'red' : 'grey'"
+                                                v-bind="attrs"
+                                                v-on="on"
+                                            >
+                                                <v-icon>
+                                                    {{ isFavorite ? 'mdi-heart' : 'mdi-heart-outline' }}
+                                                </v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>{{ $t('readingState.favoriteHint') }}</span>
+                                    </v-tooltip>
+                                    <v-tooltip bottom>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn
+                                                icon
+                                                small
+                                                class="ml-1"
+                                                @click="toggleWants"
+                                                :loading="wantsLoading"
+                                                :color="isWants ? 'orange' : 'grey'"
+                                                v-bind="attrs"
+                                                v-on="on"
+                                            >
+                                                <v-icon>
+                                                    {{ isWants ? 'mdi-bookmark-plus' : 'mdi-bookmark-plus-outline' }}
+                                                </v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>{{ $t('readingState.wantsHint') }}</span>
+                                    </v-tooltip>
                                 </p>
                                 <span color="grey--text">
                                     <v-icon :color="book.sole ? 'red' : 'green'" class="mr-2">
@@ -558,7 +579,7 @@ export default {
     data: () => ({
         err: "",
         msg: "",
-        book: {id: 0, title: "", files: [], tags: [], pubdate: "", state: {favorite: 0, wants: 0}},
+        book: {id: 0, title: "", files: [], tags: [], pubdate: "", state: {favorite: 0, wants: 0, read_state: 0}},
         audios: {count: 0, files: [], status: "ok"},
         // Audio status constants
         AUDIO_STATUS: {
@@ -576,6 +597,7 @@ export default {
         txt_parse_inited: false,
         favoriteLoading: false,
         wantsLoading: false,
+        readingStateLoading: false,
         dialog_download: false,
         dialog_epub2audio: false,
         dialog_audiolist: false,
@@ -767,6 +789,36 @@ export default {
                 this.$alert('error', '网络错误，请稍后重试');
             } finally {
                 this.wantsLoading = false;
+            }
+        },
+        async setReading() {
+            if (this.readingStateLoading) return;
+
+            this.readingStateLoading = true;
+            try {
+                const response = await this.$backend(`/book/${this.book.id}/readstate`, {
+                    method: 'POST',
+                    body: JSON.stringify({ read_state: 1 }),
+                });
+
+                if (response.err === 'ok') {
+                    // 更新本地状态
+                    if (!this.book.state) {
+                        this.book.state = {};
+                    }
+                    this.book.state.read_state = 1;
+                    this.book.state.read_date = new Date().toISOString();
+
+                    // 显示成功提示
+                    this.$alert('success', '已设置为在读状态');
+                } else {
+                    this.$alert('error', response.msg || '操作失败');
+                }
+            } catch (error) {
+                console.error('设置阅读状态失败:', error);
+                this.$alert('error', '网络错误，请稍后重试');
+            } finally {
+                this.readingStateLoading = false;
             }
         },
         init(route, next) {

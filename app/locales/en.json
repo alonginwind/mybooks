@@ -499,6 +499,8 @@
         "done": "Read",
         "cancel": "Cancel Reading",
         "setReading": "Set as reading",
-        "setDone": "Set as read"
+        "setDone": "Set as read",
+        "favoriteHint": "Click to favorite/unfavorite",
+        "wantsHint": "Click to add to/remove from want-to-read list"
     }
 }

@@ -499,6 +499,8 @@
         "done": "已读",
         "cancel": "取消阅读",
         "setReading": "设为在读",
-        "setDone": "设为读完"
+        "setDone": "设为读完",
+        "favoriteHint": "点击收藏/取消收藏",
+        "wantsHint": "点击添加到待读清单/从待读清单移除"
     }
 }
