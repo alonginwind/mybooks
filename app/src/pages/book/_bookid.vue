@@ -225,9 +225,11 @@
                     </v-btn>
 
                     <v-spacer></v-spacer>
-                    <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex"
-                           @click="switch_audio_dialog"
-                    >
+                    <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex">
+                        <v-icon>mdi-book-open</v-icon>
+                        {{ $t('readingState.setReading') }}
+                    </v-btn>
+                    <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" @click="switch_audio_dialog">
                         <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'error' : 'audiotrack' }}</v-icon>
                         {{ $t('book.convertToAudio') }}
                         <span v-if="audios.status === AUDIO_STATUS.PROCESSING && audios.progress && audios.progress.converted_chapters !== undefined"
@@ -244,7 +246,6 @@
                         <v-icon left v-if="!tiny">import_contacts</v-icon>
                         {{ $t('book.read') }}
                     </v-btn>
-
                     <template v-if="book.is_owner">
                         <v-menu offset-y>
                             <template v-slot:activator="{ on }">

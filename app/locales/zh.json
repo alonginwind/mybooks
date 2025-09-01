@@ -492,5 +492,13 @@
         "warning": "受限于服务器能力，请勿上传超过 {max_size} 文件书籍。",
         "selectFile": "请选择要上传的电子书",
         "upload": "上传"
+    },
+    "readingState": {
+        "reading": "在读",
+        "none": "未读",
+        "done": "已读",
+        "cancel": "取消阅读",
+        "setReading": "设为在读",
+        "setDone": "设为读完"
     }
 }

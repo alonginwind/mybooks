@@ -17,6 +17,12 @@ from sqlalchemy.orm import relationship, declarative_base
 
 BOOK_TYPE_EBOOK = 0  # 电子书
 BOOK_TYPE_PHYSICAL = 1  # 实体书
+
+# 阅读状态常量
+READ_STATE_UNREAD = 0      # 未读
+READ_STATE_READING = 1     # 在读
+READ_STATE_FINISHED = 2    # 已读完
+
 Base = declarative_base()
 
 
@@ -374,7 +380,7 @@ class ReadingState(Base, SQLAlchemyMixin):
     favorite_date = Column(DateTime)
     wants = Column(Integer, default=0)  # 0:未标记为待读,1:标记为待读
     wants_date = Column(DateTime)
-    read_state = Column(Integer, default=0, nullable=False)  # 0:None, 1:已申请, 2:在读, 3:已读完
+    read_state = Column(Integer, default=0, nullable=False)  # 0:未读, 1:在读, 2:已读完
     read_date = Column(DateTime)
     online_read = Column(Integer, default=0)  # 0:未在线阅读, 1:已在线阅读
     download = Column(Integer, default=0)  # 0:未下载,1:已下载
