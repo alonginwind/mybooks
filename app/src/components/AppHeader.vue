@@ -257,8 +257,8 @@ export default {
                     ],
                 },
             ];
-            var nav_links = [
-                { heading: "appHeader.categoryBrowse" },
+            var reading_links = [
+                { heading: "appHeader.readingInfo" },
                 {
                     target: "",
                     links: [
@@ -268,6 +268,9 @@ export default {
                         { icon: "mdi-check-circle", href: "/read-done", text: "appHeader.readDone", color: "green" }
                     ],
                 },
+            ];
+            var nav_links = [
+                { heading: "appHeader.categoryBrowse" },
                 { icon: "widgets", href: "/nav", text: "appHeader.categoryNavigation", count: this.sys.books, color: "primary" },
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
                 { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors, color: "primary"},
@@ -297,6 +300,7 @@ export default {
 
             return home_links
                 .concat(this.user.is_admin ? admin_links : [])
+                .concat(this.user.is_login ? reading_links : [])
                 .concat(nav_links)
                 .concat(this.sys.friends.length > 0 ? friend_links : [])
                 .concat(sys_links);
