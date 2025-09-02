@@ -2,7 +2,7 @@
   <div>
     <v-row>
       <v-col cols=12>
-        <h2>{{ $t('listBook.title') }}</h2>
+        <h2>{{ pageDisplayTitle }}</h2>
         <v-divider class="mt-3 mb-0"></v-divider>
       </v-col>
 
@@ -32,6 +32,7 @@ export default {
   computed: {},
   data: () => ({
     title: "",
+    pageDisplayTitle: "", // 用于页面显示的标题
     page: 1,
     books: [],
     total: 0,
@@ -46,51 +47,68 @@ export default {
     return app.$backend(route.fullPath);
   },
   head() {
+    let displayTitle = "";
+
     switch (this.$route.path) {
       case "/hot":
-        return {title: this.$t('listBook.hotBooks')};
+        displayTitle = this.$t('listBook.hotBooks');
+        break;
 
       case "/search":
-        return {title: this.$t('listBook.search')};
+        displayTitle = this.$t('listBook.search');
+        break;
 
       case "/recent":
-        return {title: this.$t('listBook.recentUpdates')};
+        displayTitle = this.$t('listBook.recentUpdates');
+        break;
 
       case "/favorites":
-        return {title: this.$t('listBook.favorites')};
+        displayTitle = this.$t('listBook.favoritesBooks');
+        break;
 
       case "/wants":
-        return {title: this.$t('listBook.wants')};
+        displayTitle = this.$t('listBook.wantsBooks');
+        break;
 
       case "/reading":
-        return {title: this.$t('listBook.reading')};
+        displayTitle = this.$t('listBook.readingBooks');
+        break;
 
       case "/read-done":
-        return {title: this.$t('listBook.readDone')};
+        displayTitle = this.$t('listBook.readDoneBooks');
+        break;
 
       default:
-        break
+        if (this.$route.params.meta !== undefined) {
+          var name = decodeURIComponent(this.$route.params.name);
+          var titles = {
+            tag: this.$t('listBook.tagBooks', { name }),
+            series: this.$t('listBook.seriesBooks', { name }),
+            rating: this.$t('listBook.ratingBooks', { name }),
+            author: this.$t('listBook.authorBooks', { name }),
+            publisher: this.$t('listBook.publisherBooks', { name }),
+            favorites: this.$t('listBook.favoritesBooks', { name }),
+            wants: this.$t('listBook.wantsBooks', { name }),
+            reading: this.$t('listBook.readingBooks', { name }),
+            readDone: this.$t('listBook.readDoneBooks', { name }),
+          }
+          var meta = this.$route.path.split("/")[1];
+          if (titles[meta] !== undefined) {
+            displayTitle = titles[meta];
+          }
+        }
+
+        if (!displayTitle) {
+          displayTitle = this.title;
+        }
+        break;
     }
 
-    if (this.$route.params.meta !== undefined) {
-      var name = decodeURIComponent(this.$route.params.name);
-      var titles = {
-        tag: this.$t('listBook.tagBooks', { name }),
-        series: this.$t('listBook.seriesBooks', { name }),
-        rating: this.$t('listBook.ratingBooks', { name }),
-        author: this.$t('listBook.authorBooks', { name }),
-        publisher: this.$t('listBook.publisherBooks', { name }),
-      }
-      var meta = this.$route.path.split("/")[1];
-      if (titles[meta] !== undefined) {
-        return {
-          title: titles[meta]
-        }
-      }
-    }
+    // 设置页面显示的标题
+    this.pageDisplayTitle = displayTitle;
 
     return {
-      title: this.title,
+      title: displayTitle,
     }
   },
   created() {
