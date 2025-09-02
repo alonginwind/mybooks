@@ -4,7 +4,13 @@
             <v-card :to="book.href" >
                 <v-row>
                     <v-col cols=3 class='col-book-img'>
-                        <v-img :src="book.img" :aspect-ratio="11/15" style="border-radius: 12px;" class="book-img-hover"></v-img>
+                        <div class="book-img-container">
+                            <v-img :src="book.img" :aspect-ratio="11/15" style="border-radius: 12px;" class="book-img-hover"></v-img>
+                            <!-- 实体书角标 -->
+                            <div v-if="book.book_type === 1" class="physical-book-badge">
+                                <v-icon small color="white">mdi-bookshelf</v-icon>
+                            </div>
+                        </div>
                     </v-col>
                     <v-col cols=9 class='col-book-info'>
                         <v-card-text class="pb-0" align-left>
@@ -54,6 +60,7 @@ export default {
     overflow-y: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     text-overflow: clip;
     text-align: left;
@@ -63,6 +70,7 @@ export default {
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     text-overflow: clip;
     margin-top: 6px;
@@ -85,6 +93,25 @@ export default {
 }
 .col-book-img {
     padding: 0 0 0 12px;
+}
+.book-img-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+.physical-book-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background-color: #2196F3;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+    z-index: 3;
 }
 .col-book-info {
     padding: 0;
