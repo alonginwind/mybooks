@@ -33,7 +33,14 @@
         "publishersCount": "出版社数量",
         "tagsCount": "标签数量",
         "languages": "语言",
-        "versionChanges": "版本变更"
+        "versionChanges": "版本变更",
+        "libraryStats": "书库统计",
+        "totalBooks": "在库数量",
+        "ebookCount": "电子书",
+        "physicalCount": "实体书",
+        "monthNewBooks": "本月新增",
+        "monthEbookCount": "本月新增电子书",
+        "monthPhysicalCount": "本月新增实体书"
     },
     "listBook": {
         "title": "书籍列表",

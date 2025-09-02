@@ -61,6 +61,11 @@ class AsyncService(metaclass=SingletonType):
                             ALTER TABLE items ADD COLUMN book_count INTEGER DEFAULT 0
                         """))
                         changed = True
+                    if 'create_time' not in columns:
+                        self.session.execute(text("""
+                            ALTER TABLE items ADD COLUMN create_time DATETIME
+                        """))
+                        changed = True
 
                 if changed:
                     self.session.commit()

@@ -33,7 +33,14 @@
         "publishersCount": "Publishers Count",
         "tagsCount": "Tags Count",
         "languages": "Languages",
-        "versionChanges": "Version Changes"
+        "versionChanges": "Version Changes",
+        "libraryStats": "Library Statistics",
+        "totalBooks": "Total Books",
+        "ebookCount": "E-books",
+        "physicalCount": "Physical Books",
+        "monthNewBooks": "This Month",
+        "monthEbookCount": "New E-books This Month",
+        "monthPhysicalCount": "New Physical Books This Month"
     },
     "listBook": {
         "title": "Book List",

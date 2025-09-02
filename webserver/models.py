@@ -319,6 +319,7 @@ class Item(Base, SQLAlchemyMixin):
     sole = Column(Boolean, default=False, nullable=False)
     book_type = Column(Integer, default=0, nullable=False)
     book_count = Column(Integer, default=1, nullable=False)
+    create_time = Column(DateTime)
 
     def __init__(self):
         super(Item, self).__init__()
@@ -329,6 +330,7 @@ class Item(Base, SQLAlchemyMixin):
         self.sole = False
         self.book_type = BOOK_TYPE_EBOOK  # 0:电子书, 1:实体书
         self.book_count = 1
+        self.create_time = datetime.datetime.now()
 
 
 class ScanFile(Base, SQLAlchemyMixin):

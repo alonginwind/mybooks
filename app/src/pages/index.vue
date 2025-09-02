@@ -1,5 +1,38 @@
 <template>
     <div>
+    <!-- 书库统计标题栏 -->
+    <v-row v-if="libraryStats" class="library-stats-bar">
+        <v-col cols=12>
+            <div class="stats-container">
+                <div class="stats-title">{{ $t('index.libraryStats') }}</div>
+                <div class="stats-content">
+                    <div class="stat-group">
+                        <span class="stat-label">{{ $t('index.totalBooks') }}:</span>
+                        <span class="stat-value">{{ libraryStats.total_books }}</span>
+                    </div>
+                    <div class="stat-separator">|</div>
+                    <div class="stat-group">
+                        <span class="stat-label">{{ $t('index.ebookCount') }}:</span>
+                        <span class="stat-value">{{ libraryStats.ebook_count }}</span>
+                    </div>
+                    <div class="stat-separator">|</div>
+                    <div class="stat-group">
+                        <span class="stat-label">{{ $t('index.physicalCount') }}:</span>
+                        <span class="stat-value">{{ libraryStats.physical_count }}</span>
+                    </div>
+                    <div class="stat-separator">|</div>
+                    <div class="stat-group">
+                        <span class="stat-label">{{ $t('index.monthNewBooks') }}:</span>
+                        <span class="stat-value month-new">
+                            {{ $t('index.ebookCount') }} {{ libraryStats.month_ebook_count }}
+                            + {{ $t('index.physicalCount') }} {{ libraryStats.month_physical_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </v-col>
+    </v-row>
+
     <v-row>
         <v-col cols=12>
             <p class="ma-0 title">{{ $t('index.randomRecommendation') }}</p>
@@ -87,6 +120,16 @@ export default {
         },
     },
     methods: {
+        async loadLibraryStats() {
+            try {
+                const rsp = await this.$backend('/library/stats');
+                if (rsp.err === 'ok') {
+                    this.libraryStats = rsp.stats;
+                }
+            } catch (error) {
+                console.warn('Failed to load library stats:', error);
+            }
+        },
         async checkReleaseNotes() {
             try {
                 const rsp = await this.$backend('/admin/release/notes?rand='+Math.random());
@@ -117,6 +160,7 @@ export default {
         },
     },
     mounted() {
+        this.loadLibraryStats();
         this.checkReleaseNotes();
     },
     beforeDestroy() {
@@ -146,6 +190,7 @@ export default {
         random_books: [],
         new_books: [],
         navs: [],
+        libraryStats: null,
         releaseNotesDialog: false,
         releaseNotesContent: '',
         countdown: 10,
@@ -158,6 +203,92 @@ export default {
 </script>
 
 <style>
+/* 书库统计标题栏样式 */
+.library-stats-bar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: -16px -16px 24px -16px;
+    padding: 16px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stats-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.stats-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    min-width: 120px;
+}
+
+.stats-content {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.stat-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #e3f2fd;
+    white-space: nowrap;
+}
+
+.stat-value {
+    background: rgba(0,0,0,0.3);
+    color: #ffffff;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 40px;
+    text-align: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.stat-value.month-new {
+    background: rgba(76, 175, 80, 0.3);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.stat-separator {
+    color: rgba(255,255,255,0.6);
+    font-size: 16px;
+    margin: 0 4px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .stats-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats-content {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .stat-separator {
+        display: none;
+    }
+}
+
 .new-legend {
     margin-top: 30px;
     margin-bottom: 20px;

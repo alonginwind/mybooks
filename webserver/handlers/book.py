@@ -669,6 +669,74 @@ class BookReadingStats(BaseHandler):
         }
 
 
+class LibraryStats(BaseHandler):
+    @js
+    def get(self):
+        """获取书库统计信息"""
+        import datetime
+        from sqlalchemy import func, extract
+        from ..models import Item
+
+        # 获取当前月份和年份
+        now = datetime.datetime.now()
+        current_year = now.year
+        current_month = now.month
+
+        # 查询所有书籍ID
+        all_book_ids = list(self.calibre_db_cache.search(""))
+        total_books = len(all_book_ids)
+
+        # 从items表统计书籍类型
+        ebook_count = 0
+        physical_count = 0
+        month_ebook_count = 0
+        month_physical_count = 0
+
+        if all_book_ids:
+            # 统计电子书数量 (book_type = 0)
+            ebook_count = self.sqlite_session.query(Item).filter(
+                Item.book_id.in_(all_book_ids),
+                Item.book_type == 0
+            ).count()
+
+            # 统计实体书数量 (book_type = 1, 需要加总book_count)
+            physical_books = self.sqlite_session.query(func.sum(Item.book_count)).filter(
+                Item.book_id.in_(all_book_ids),
+                Item.book_type == 1
+            ).scalar()
+            physical_count = physical_books if physical_books else 0
+
+            # 本月新增电子书数量
+            month_ebook_count = self.sqlite_session.query(Item).filter(
+                Item.book_id.in_(all_book_ids),
+                Item.book_type == 0,
+                extract('year', Item.create_time) == current_year,
+                extract('month', Item.create_time) == current_month
+            ).count()
+
+            # 本月新增实体书数量 (加总book_count)
+            month_physical_books = self.sqlite_session.query(func.sum(Item.book_count)).filter(
+                Item.book_id.in_(all_book_ids),
+                Item.book_type == 1,
+                extract('year', Item.create_time) == current_year,
+                extract('month', Item.create_time) == current_month
+            ).scalar()
+            month_physical_count = month_physical_books if month_physical_books else 0
+
+        return {
+            "err": "ok",
+            "stats": {
+                "total_books": total_books,
+                "ebook_count": ebook_count,
+                "physical_count": physical_count,
+                "month_ebook_count": month_ebook_count,
+                "month_physical_count": month_physical_count,
+                "current_year": current_year,
+                "current_month": current_month
+            }
+        }
+
+
 class BookReadingState(BaseHandler):
     @js
     @auth
@@ -1277,4 +1345,5 @@ def routes():
         (r"/api/reading", BookReading),
         (r"/api/read-done", BookReadDone),
         (r"/api/reading/stats", BookReadingStats),
+        (r"/api/library/stats", LibraryStats),
     ]
