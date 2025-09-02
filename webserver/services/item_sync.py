@@ -40,8 +40,7 @@ class ItemSyncService(AsyncService):
             for item in items_to_sync:
                 try:
                     # 通过book_id从calibre数据库获取书籍信息
-                    book_metadata = self.db.get_metadata(item.book_id)
-
+                    book_metadata = self.db.get_metadata(item.book_id, index_is_id=True)
                     if book_metadata and hasattr(book_metadata, 'timestamp'):
                         # 获取书籍的timestamp并转换为datetime
                         book_timestamp = book_metadata.timestamp
