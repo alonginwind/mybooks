@@ -233,7 +233,6 @@
                         @click="handleReadingStateChange"
                         :loading="readingStateLoading"
                     >
-                        <v-icon>mdi-book-open</v-icon>
                         {{ readingStateButtonText }}
                     </v-btn>
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" @click="switch_audio_dialog">
@@ -598,6 +597,58 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 添加实体书对话框 -->
+    <v-dialog v-model="isbn_dialog" persistent transition="dialog-bottom-transition" width="400">
+        <v-card>
+            <v-toolbar flat dense dark color="green">
+                <v-icon>mdi-book-plus</v-icon>
+                <v-toolbar-title class="ml-2">{{ $t('upload.addPhysicalBook') }}</v-toolbar-title>
+            </v-toolbar>
+            <v-card-text>
+                <div class="mt-4">
+                    <p class="body-1">{{ $t('upload.addPhysicalBookDesc') }}</p>
+                    <v-text-field
+                        v-model="isbn"
+                        :label="$t('upload.isbnLabel')"
+                        :placeholder="$t('upload.isbnPlaceholder')"
+                        outlined
+                        :rules="isbnRules"
+                        counter
+                        maxlength="17"
+                        :hint="$t('upload.isbnHint')"
+                        persistent-hint
+                        autofocus
+                        @keyup.enter="confirmAddBook"
+                    >
+                        <template v-slot:prepend-inner>
+                            <v-icon>mdi-barcode</v-icon>
+                        </template>
+                    </v-text-field>
+
+                    <!-- 继续添加checkbox -->
+                    <v-checkbox
+                        v-model="continueAdding"
+                        :label="$t('upload.continueAdding')"
+                        color="green"
+                        class="mt-4"
+                    ></v-checkbox>
+                </div>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn @click="cancelAddBook" :disabled="adding_book">{{ $t('common.cancel') }}</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn
+                    color="green"
+                    @click="confirmAddBook"
+                    :loading="adding_book"
+                    :disabled="!isValidIsbn"
+                >
+                    {{ $t('upload.confirmAdd') }}
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -658,6 +709,13 @@ export default {
             const readDate = new Date(this.book.state.read_date);
             const dateStr = readDate.toLocaleDateString();
             return this.$t('readingState.completedReading', { date: dateStr });
+        },
+        isValidIsbn: function() {
+            if (!this.isbn) return false;
+            // 移除连字符和空格
+            const cleanIsbn = this.isbn.replace(/[-\s]/g, '');
+            // 检查是否为10位或13位数字（可能包含X）
+            return /^[0-9]{9}[0-9X]$/.test(cleanIsbn) || /^[0-9]{13}$/.test(cleanIsbn);
         }
     },
     data: () => ({
@@ -688,6 +746,11 @@ export default {
         dialog_refer: false,
         dialog_msg: false,
         dialog_set_cover: false,
+        // 添加实体书对话框
+        isbn_dialog: false,
+        adding_book: false,
+        isbn: "",
+        continueAdding: false,
         cover_file: null,
         cover_error: '',
         refer_books_loading: false,
@@ -704,6 +767,12 @@ export default {
         currentAudioFile: null,
         // Progress polling timer
         progressTimer: null,
+        // 添加实体书相关数据
+        isbnRules: [
+            v => !!v || 'ISBN号不能为空',
+            v => (v && v.length >= 10) || 'ISBN号至少需要10位',
+            v => (v && /^[0-9\-X]+$/.test(v)) || 'ISBN号只能包含数字、连字符和X',
+        ],
         voice_options: [
             {
                 voice_name: "zh-CN-liaoning-XiaobeiNeural",
@@ -779,6 +848,14 @@ export default {
             // 从localStorage获取上次使用的语音名称
             const lastUsedVoice = localStorage.getItem("last_used_voice_name");
             this.voice_name = lastUsedVoice || "zh-CN-XiaoxiaoNeural"; // 如果没有保存的语音，使用默认的晓晓
+
+            // 检查URL参数，如果有continue_adding=true则自动弹出添加对话框
+            if (this.$route.query.continue_adding === 'true') {
+                this.$nextTick(() => {
+                    this.isbn_dialog = true;
+                    this.continueAdding = true;
+                });
+            }
         } else {
             // 服务端渲染时使用默认语音
             this.voice_name = "zh-CN-XiaoxiaoNeural";
@@ -1282,6 +1359,57 @@ export default {
               this.cover_error = resp.msg || this.$t('book.coverUploadFailed');
             }
           });
+        },
+
+        // 添加实体书相关方法
+        cancelAddBook() {
+            this.isbn_dialog = false;
+            this.isbn = "";
+            this.continueAdding = false; // 重置checkbox状态
+        },
+
+        confirmAddBook() {
+            if (!this.isValidIsbn) {
+                this.$alert("error", "请输入有效的ISBN号");
+                return;
+            }
+
+            this.adding_book = true;
+            // 清理ISBN号（移除连字符和空格）
+            const cleanIsbn = this.isbn.replace(/[-\s]/g, '');
+
+            this.$backend("/book/add", {
+                method: "POST",
+                body: JSON.stringify({
+                    isbn: cleanIsbn,
+                }),
+            })
+            .then((rsp) => {
+                this.isbn_dialog = false;
+                if (rsp.err != "ok") {
+                    this.$alert("error", rsp.msg);
+                } else {
+                    this.$alert("success", rsp.msg || "图书添加成功");
+
+                    // 如果勾选了继续添加，则跳转时携带参数，否则直接跳转
+                    if (this.continueAdding) {
+                        this.$router.push(`/book/${rsp.book_id}?continue_adding=true`);
+                    } else {
+                        this.$router.push(`/book/${rsp.book_id}`);
+                    }
+                }
+            })
+            .catch((error) => {
+                this.$alert("error", "添加图书时发生错误: " + error.message);
+            })
+            .finally(() => {
+                this.adding_book = false;
+                this.isbn = "";
+                // 只有在不继续添加的情况下才重置checkbox
+                if (!this.continueAdding) {
+                    this.continueAdding = false;
+                }
+            });
         },
     },
 };
