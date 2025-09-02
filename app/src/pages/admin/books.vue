@@ -2,13 +2,71 @@
     <v-card>
         <v-card-title> {{ $t('admin.books.title') }} <v-chip small class="primary">Beta</v-chip> </v-card-title>
         <v-card-text> {{ $t('admin.books.description') }} </v-card-text>
-        <v-card-actions>
-            <v-btn :disabled="loading" outlined color="primary" @click="getDataFromApi"><v-icon>mdi-reload</v-icon>{{ $t('admin.books.refresh') }}</v-btn>
-            <v-btn :disabled="loading" outlined color="info" @click="show_dialog_auto_file"><v-icon>mdi-info</v-icon>{{ $t('admin.books.autoUpdate') }}</v-btn>
-            <v-btn :disabled="loading || books_selected.length === 0" outlined color="info" @click="deleteSelectedBooks"><v-icon>mdi-info</v-icon>{{ $t('admin.books.deleteSelected') }}</v-btn>
-            <v-btn :disabled="loading" outlined color="primary" @click="addByIsbn"><v-icon>mdi-plus</v-icon>{{ $t('admin.books.addByIsbn') }}</v-btn>
-            <v-spacer></v-spacer>
-            <v-text-field cols="2" dense @keyup.enter="getDataFromApi" v-model="search" append-icon="mdi-magnify" :label="$t('admin.books.search')" single-line hide-details></v-text-field>
+        <v-card-actions class="pa-4">
+            <!-- 第一行：主要操作按钮 -->
+            <v-row no-gutters>
+                <v-col cols="12" class="d-flex flex-wrap ga-2 mb-2">
+                    <v-btn
+                        :disabled="loading"
+                        outlined
+                        color="primary"
+                        @click="getDataFromApi"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                        :small="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-reload</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.refresh') }}</span>
+                    </v-btn>
+                    <v-btn
+                        :disabled="loading"
+                        outlined
+                        color="info"
+                        @click="show_dialog_auto_file"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                        :small="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-book-refresh-outline</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.autoUpdate') }}</span>
+                    </v-btn>
+                    <v-btn
+                        :disabled="loading"
+                        outlined
+                        color="primary"
+                        @click="addByIsbn"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                        :small="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-plus</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.addByIsbn') }}</span>
+                    </v-btn>
+                    <!-- 删除选中按钮紧跟在主要按钮后面 -->
+                    <v-btn
+                        v-if="!loading && books_selected.length > 0"
+                        outlined
+                        color="error"
+                        @click="deleteSelectedBooks"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                        :small="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-delete</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.deleteSelected') }}</span>
+                    </v-btn>
+                    <v-text-field
+                        dense
+                        @keyup.enter="getDataFromApi"
+                        v-model="search"
+                        append-icon="mdi-magnify"
+                        :label="$t('admin.books.search')"
+                        single-line
+                        hide-details
+                        outlined
+                    ></v-text-field>
+                </v-col>
+            </v-row>
         </v-card-actions>
         <v-data-table
             dense
@@ -17,13 +75,14 @@
             v-model="books_selected"
             item-key="id"
             :search="search"
-            :headers="headers"
+            :headers="responsiveHeaders"
             :items="items"
             :options.sync="options"
             :server-items-length="total"
             :loading="loading"
             :items-per-page="100"
             :footer-props="{ 'items-per-page-options': [10, 50, 100] }"
+            :mobile-breakpoint="600"
         >
             <template v-slot:item.status="{ item }">
                 <v-chip small v-if="item.status == 'ready'" class="success">{{ $t('admin.books.status.ready') }}</v-chip>
@@ -192,7 +251,16 @@
             <template v-slot:item.actions="{ item }">
                 <v-menu offset-y right>
                     <template v-slot:activator="{ on }">
-                        <v-btn color="primary" small v-on="on">操作 <v-icon small>more_vert</v-icon></v-btn>
+                        <v-btn
+                            color="primary"
+                            :small="!$vuetify.breakpoint.xs"
+                            :x-small="$vuetify.breakpoint.xs"
+                            :icon="$vuetify.breakpoint.xs"
+                            v-on="on"
+                        >
+                            <v-icon :small="!$vuetify.breakpoint.xs" :x-small="$vuetify.breakpoint.xs">more_vert</v-icon>
+                            <span v-if="!$vuetify.breakpoint.xs">操作</span>
+                        </v-btn>
                     </template>
                     <v-list dense>
                         <v-list-item @click="delete_book(item)">
@@ -242,7 +310,7 @@
         </v-dialog>
 
         <!-- 添加实体书对话框 -->
-        <v-dialog v-model="isbn_dialog" persistent transition="dialog-bottom-transition" width="500">
+        <v-dialog v-model="isbn_dialog" persistent transition="dialog-bottom-transition" width="400">
             <v-card>
                 <v-toolbar flat dense dark color="primary">
                     <v-icon>mdi-book-plus</v-icon>
@@ -351,6 +419,30 @@ export default {
             const cleanIsbn = this.isbn.replace(/[-\s]/g, '');
             // 检查是否为10位或13位数字（可能包含X）
             return /^[0-9]{9}[0-9X]$/.test(cleanIsbn) || /^[0-9]{13}$/.test(cleanIsbn);
+        },
+        responsiveHeaders: function() {
+            // 根据屏幕宽度返回不同的headers配置
+            if (this.$vuetify.breakpoint.xs) {
+                // 超小屏幕（手机）：只显示最重要的列
+                return [
+                    { text: "封面", sortable: false, value: "img", width: "60px" },
+                    { text: "书名", sortable: true, value: "title" },
+                    { text: "操作", sortable: false, value: "actions", width: "80px" },
+                ];
+            } else if (this.$vuetify.breakpoint.sm) {
+                // 小屏幕（平板）：显示核心信息
+                return [
+                    { text: "封面", sortable: false, value: "img", width: "70px" },
+                    { text: "ID", sortable: true, value: "id", width: "60px" },
+                    { text: "类型", sortable: false, value: "book_type", width: "70px" },
+                    { text: "书名", sortable: true, value: "title" },
+                    { text: "作者", sortable: true, value: "author", width: "100px" },
+                    { text: "操作", sortable: false, value: "actions", width: "80px" },
+                ];
+            } else {
+                // 中等屏幕及以上：显示所有列
+                return this.headers;
+            }
         }
     },
     methods: {
@@ -538,5 +630,100 @@ export default {
     -webkit-line-clamp: 3;
     line-clamp: 3;
     white-space: normal;
+}
+
+/* 响应式优化 */
+@media (max-width: 960px) {
+    /* 在中等屏幕以下时，按钮文字可以更紧凑 */
+    .v-btn .v-icon {
+        margin-right: 4px !important;
+    }
+
+    /* 表格在中屏幕上的优化 */
+    .v-data-table th {
+        font-size: 12px !important;
+        padding: 0 8px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    /* 在小屏幕上优化按钮间距 */
+    .v-card-actions {
+        padding: 12px !important;
+    }
+
+    /* 按钮在小屏幕上使用更小的尺寸 */
+    .v-btn:not(.v-btn--icon) {
+        min-width: auto !important;
+        padding: 0 12px !important;
+    }
+
+    /* 搜索框在小屏幕上占满宽度 */
+    .v-text-field {
+        width: 100% !important;
+    }
+
+    /* 表格在小屏幕上的优化 */
+    .v-data-table {
+        font-size: 12px !important;
+    }
+
+    .v-data-table th,
+    .v-data-table td {
+        padding: 0 4px !important;
+        font-size: 11px !important;
+    }
+
+    /* 表格标题在小屏幕上隐藏或缩短 */
+    .v-data-table .text-start {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+    }
+
+    /* 图片在小屏幕上更小 */
+    .v-image {
+        max-width: 40px !important;
+        max-height: 60px !important;
+    }
+
+    /* Chip组件在小屏幕上更小 */
+    .v-chip {
+        font-size: 10px !important;
+        height: 20px !important;
+    }
+}
+
+/* 确保间距工具类正常工作 */
+.ga-2 > * {
+    margin: 4px !important;
+}
+.ga-2 > *:first-child {
+    margin-left: 0 !important;
+}
+.ga-2 > *:last-child {
+    margin-right: 0 !important;
+}
+
+/* 移动端按钮组优化 */
+@media (max-width: 599px) {
+    .flex-wrap .v-btn {
+        margin: 2px !important;
+        min-width: 36px !important;
+    }
+
+    /* 图标按钮在移动端的间距 */
+    .v-btn--icon {
+        width: 36px !important;
+        height: 36px !important;
+    }
+}
+
+/* 为超宽屏幕优化 */
+@media (min-width: 1920px) {
+    .v-data-table {
+        font-size: 14px !important;
+    }
 }
 </style>
