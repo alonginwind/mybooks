@@ -4,7 +4,7 @@
     <v-row v-if="libraryStats" class="library-stats-bar">
         <v-col cols=12>
             <div class="stats-container">
-                <div class="stats-title">{{ $t('index.libraryStats') }}</div>
+                <div class="stats-title"></div>
                 <div class="stats-content">
                     <div class="stat-group">
                         <span class="stat-label">{{ $t('index.totalBooks') }}:</span>
@@ -225,7 +225,7 @@ export default {
     font-size: 18px;
     font-weight: bold;
     color: #ffffff;
-    min-width: 120px;
+    min-width: 100px;
 }
 
 .stats-content {

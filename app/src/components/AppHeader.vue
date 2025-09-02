@@ -294,7 +294,6 @@ export default {
             var sys_links = [
                 { heading: "appHeader.system" },
                 { icon: "mdi-information-outline", href: "", count: this.sys.version, text: this.$t('appHeader.systemVersion'), color: "primary" },
-                { icon: "mdi-account", href: "", count: this.sys.users, text: this.$t('appHeader.userCount'), color: "primary"},
                 { icon: "mdi-cellphone", href: "/opds-readme", count: "OPDS", target: "_blank", text: this.$t('appHeader.opdsIntroduction'), color: "primary"},
             ];
 
