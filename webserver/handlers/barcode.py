@@ -4,7 +4,6 @@
 import os
 import tempfile
 import logging
-from tornado import web
 from pyzbar.pyzbar import decode
 from PIL import Image
 
