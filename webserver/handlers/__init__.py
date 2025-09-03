@@ -12,10 +12,12 @@ def routes():
     from . import scan
     from . import audio
     from . import mcp
+    from . import barcode
 
     routes = []
     routes += mcp.routes()
     routes += admin.routes()
+    routes += barcode.routes()
     routes += scan.routes()
     routes += opds.routes()
     routes += book.routes()

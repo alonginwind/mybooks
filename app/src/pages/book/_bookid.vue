@@ -611,6 +611,7 @@
             <v-card-text>
                 <p class="body-1">{{ $t('upload.addPhysicalBookDesc') }}</p>
                 <v-text-field
+                    ref="isbnField"
                     v-model="isbn"
                     :label="$t('upload.isbnLabel')"
                     :placeholder="$t('upload.isbnPlaceholder')"
@@ -627,7 +628,35 @@
                     <template v-slot:prepend-inner>
                         <v-icon>mdi-barcode</v-icon>
                     </template>
+                    <template v-slot:append>
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-btn
+                                    icon
+                                    small
+                                    @click="triggerImageUpload"
+                                    :loading="recognizing_barcode"
+                                    :disabled="recognizing_barcode"
+                                    color="primary"
+                                    v-bind="attrs"
+                                    v-on="on"
+                                >
+                                    <v-icon>mdi-camera</v-icon>
+                                </v-btn>
+                            </template>
+                            <span>{{ $t('upload.selectImageForBarcode') }}</span>
+                        </v-tooltip>
+                    </template>
                 </v-text-field>
+
+                <!-- 隐藏的文件输入框 -->
+                <input
+                    ref="barcodeImageInput"
+                    type="file"
+                    accept="image/*"
+                    style="display: none"
+                    @change="handleImageUpload"
+                />
 
                 <!-- 继续添加checkbox -->
                 <v-checkbox
@@ -780,6 +809,8 @@ export default {
         adding_book: false,
         isbn: "",
         continueAdding: false,
+        // 条形码识别相关
+        recognizing_barcode: false,
         // 控制是否显示验证错误（仅在点击添加按钮时显示）
         showValidationErrors: false,
         cover_file: null,
@@ -1456,6 +1487,66 @@ export default {
             if (this.isbn && this.showValidationErrors) {
                 this.showValidationErrors = false;
             }
+        },
+
+        // 触发图片上传
+        triggerImageUpload() {
+            this.$refs.barcodeImageInput.click();
+        },
+
+        // 处理图片上传和条形码识别
+        handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 检查文件类型
+            if (!file.type.startsWith('image/')) {
+                this.$alert("error", "请选择图片文件");
+                return;
+            }
+
+            // 检查文件大小（限制为10MB）
+            if (file.size > 10 * 1024 * 1024) {
+                this.$alert("error", "图片文件不能超过10MB");
+                return;
+            }
+
+            this.recognizing_barcode = true;
+
+            // 创建FormData对象
+            const formData = new FormData();
+            formData.append('barcode_image', file);
+
+            // 调用后端API识别条形码
+            this.$backend('/admin/barcode', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (response.err === 'ok') {
+                    // 识别成功，填充ISBN字段
+                    this.isbn = response.isbn;
+                    // 触发验证
+                    this.$nextTick(() => {
+                        this.$refs.isbnField && this.$refs.isbnField.validate();
+                    });
+                } else if (response.err === 'no_barcode') {
+                    this.$alert("error", "未在图片中识别到条形码，请确保图片清晰且包含条形码");
+                } else if (response.err === 'no_isbn') {
+                    this.$alert("warning", response.msg);
+                } else {
+                    this.$alert("error", response.msg || "条形码识别失败");
+                }
+            })
+            .catch(error => {
+                console.error('条形码识别错误:', error);
+                this.$alert("error", "条形码识别服务出错，请稍后重试");
+            })
+            .finally(() => {
+                this.recognizing_barcode = false;
+                // 清空文件输入框，允许重复选择同一文件
+                event.target.value = '';
+            });
         },
     },
 };

@@ -529,9 +529,11 @@
         "isbnHint": "Example: 9787570220601 or 978-7-5702-2060-1",
         "continueAdding": "Continue adding more physical books",
         "confirmAdd": "Confirm Add",
-        "isbnMinLength": "ISBN number must be at least 10 digits",
-        "isbnInvalidFormat": "ISBN number can only contain digits, hyphens, and X",
-        "addSuccess": "Book added successfully"
+        "isbnMinLength": "ISBN must be at least 10 digits",
+        "isbnInvalidFormat": "ISBN can only contain digits, hyphens and X",
+        "addSuccess": "Book added successfully",
+        "barcodeRecognition": "Barcode Recognition",
+        "selectImageForBarcode": "Select image containing barcode"
     },
     "readingState": {
         "reading": "Reading",
