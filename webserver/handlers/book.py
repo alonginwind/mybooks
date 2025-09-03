@@ -1073,7 +1073,7 @@ class BookAddByISBN(BaseHandler):
 
             # 更新calibre custom data中的real_book_cnt
             self.calibre_db.add_custom_book_data(book_id, "real_book_cnt", book_count)
-            return {"err": "ok", "msg": _(u"实体书数量已更新，当前数量：%d") % book_count}
+            return {"err": "ok", "msg": _(u"实体书数量已更新，当前数量：%d") % book_count, "book_id": book_id}
 
         logging.info("Adding new book by ISBN: %s" % isbn)
         # 通过Douban API查询ISBN的图书信息
