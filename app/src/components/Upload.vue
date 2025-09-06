@@ -1,11 +1,31 @@
 <template>
     <div>
-        <v-btn bottom color="pink" dark fab fixed right @click="dialog = !dialog" style="z-index: 10; margin-bottom: 80px;">
+        <v-btn
+            v-show="showUploadButtons"
+            bottom
+            color="pink"
+            dark
+            fab
+            fixed
+            right
+            @click="dialog = !dialog"
+            style="z-index: 10; margin-bottom: 80px;"
+        >
             <v-icon>mdi-upload</v-icon>
         </v-btn>
 
         <!-- 添加实体书按钮 -->
-        <v-btn bottom color="green" dark fab fixed right @click="isbn_dialog = !isbn_dialog" style="z-index: 10;">
+        <v-btn
+            v-show="showUploadButtons"
+            bottom
+            color="green"
+            dark
+            fab
+            fixed
+            right
+            @click="isbn_dialog = !isbn_dialog"
+            style="z-index: 10;"
+        >
             <v-icon>mdi-book-plus</v-icon>
         </v-btn>
 
@@ -144,6 +164,10 @@ export default {
                 return localStorage.getItem('max_upload_size') || '100MB';
             }
             return '100MB';
+        },
+        showUploadButtons() {
+            // 在音频播放器页面隐藏上传按钮
+            return !this.$route.path.startsWith('/audio/');
         },
         isValidIsbn() {
             // 使用缓存避免重复计算
