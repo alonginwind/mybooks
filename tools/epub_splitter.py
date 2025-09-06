@@ -512,6 +512,8 @@ class EPUBDirectorySplitter:
         # 添加作者信息
         if metadata.get('author'):
             book.add_author(metadata['author'])
+        else:
+            logger.error("未找到作者信息，使用默认值 '未知作者'")
 
         # 添加其他元数据
         if metadata.get('publisher'):
