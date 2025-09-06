@@ -668,22 +668,29 @@ export default {
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #404040;
+  flex-wrap: nowrap;
 }
 
 .playlist-header h3 {
   margin: 0;
   color: #ffffff;
+  flex-shrink: 0;
 }
 
 .playlist-controls {
   display: flex;
   align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .close-btn {
   background-color: #404040 !important;
   color: white !important;
   border-color: #666666 !important;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chapter-info {
@@ -691,10 +698,13 @@ export default {
   color: white !important;
   border-color: #666666 !important;
   margin-right: 8px;
+  white-space: nowrap;
+  font-weight: 500;
 }
 
 .chapter-info .v-chip__content {
   color: white !important;
+  font-size: 13px;
 }
 
 .playlist-container {
@@ -869,37 +879,126 @@ export default {
   margin: 0;
 }
 
+/* 中等屏幕适配 (平板横屏) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .audio-upper-section {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .cover-container {
+    max-width: 250px;
+  }
+
+  .playlist-header h3 {
+    font-size: 1.3rem;
+  }
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .audio-upper-section {
     flex-direction: column;
     height: 50%;
+    padding: 10px;
   }
 
   .cover-section {
-    flex: 0 0 auto;
-  }
-
-  .cover-container {
-    max-width: 200px;
+    display: none; /* 移动端隐藏封面 */
   }
 
   .playlist-section {
     flex: 1;
-    min-height: 200px;
+    min-height: 0;
+  }
+
+  .playlist-header {
+    position: sticky;
+    top: 0;
+    background: #2c2c2c;
+    z-index: 10;
+    margin-bottom: 8px;
+    padding: 8px 0;
+  }
+
+  .playlist-controls {
+    flex-direction: row;
+    gap: 8px;
+    justify-content: flex-end; /* 保持右对齐 */
+  }
+
+  .chapter-info {
+    order: 1;
+  }
+
+  .close-btn {
+    order: 2;
+  }
+
+  .playlist-container {
+    padding-top: 0;
   }
 
   .audio-controls-section {
     height: 50%;
+    padding: 15px;
   }
 
   .secondary-controls {
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 15px;
+    justify-content: center;
   }
 
   .main-controls {
-    gap: 10px;
+    gap: 15px;
+  }
+
+  .progress-section {
+    margin-bottom: 15px;
+  }
+}
+
+/* 竖屏专用样式 */
+@media (max-width: 480px) and (orientation: portrait) {
+  .audio-upper-section {
+    height: 60%;
+    padding: 8px;
+  }
+
+  .audio-controls-section {
+    height: 40%;
+    padding: 12px;
+  }
+
+  .playlist-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .playlist-controls {
+    gap: 6px;
+  }
+
+  .chapter-info {
+    font-size: 12px;
+    height: 24px;
+  }
+
+  .close-btn {
+    min-width: auto;
+    padding: 0 8px;
+  }
+
+  .close-btn .v-icon {
+    margin-right: 4px !important;
+  }
+
+  .track-title {
+    font-size: 14px;
+  }
+
+  .track-duration {
+    font-size: 12px;
   }
 }
 
