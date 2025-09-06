@@ -528,7 +528,8 @@ class BaseHandler(web.RequestHandler):
         item.count_guest += kwargs.get("count_guest", 0)
         item.count_visit += kwargs.get("count_visit", 0)
         item.count_download += kwargs.get("count_download", 0)
-        item.save()
+        self.sqlite_session.add(item)
+        self.sqlite_session.commit()
 
     def search_for_books(self, query):
         self.search_restriction = ""

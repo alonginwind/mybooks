@@ -880,14 +880,16 @@ class BookEdit(BaseHandler):
             existing_item = self.sqlite_session.query(Item).filter(Item.book_id == bid).first()
             if existing_item:
                 existing_item.book_count = book_cnt
-                existing_item.save()
+                self.sqlite_session.add(existing_item)
+                self.sqlite_session.commit()
             else:
                 item = Item()
                 item.book_id = bid
                 item.collector_id = self.user_id()
                 item.book_type = BOOK_TYPE_PHYSICAL
                 item.book_count = book_cnt
-                item.save()
+                self.sqlite_session.add(item)
+                self.sqlite_session.commit()
 
         if "tags" in data and not data["tags"]:
             self.calibre_db.set_tags(bid, [])
@@ -1062,14 +1064,16 @@ class BookAddByISBN(BaseHandler):
             if existing_item:
                 book_count = (existing_item.book_count or 0) + 1
                 existing_item.book_count = book_count
-                existing_item.save()
+                self.sqlite_session.add(existing_item)
+                self.sqlite_session.commit()
             else:
                 item = Item()
                 item.book_id = book_id
                 item.collector_id = self.user_id()
                 item.book_type = BOOK_TYPE_PHYSICAL
                 item.book_count = book_count
-                item.save()
+                self.sqlite_session.add(item)
+                self.sqlite_session.commit()
 
             # 更新calibre custom data中的real_book_cnt
             self.calibre_db.add_custom_book_data(book_id, "real_book_cnt", book_count)
@@ -1103,7 +1107,8 @@ class BookAddByISBN(BaseHandler):
             item.collector_id = self.user_id()
             item.book_type = BOOK_TYPE_PHYSICAL
             item.book_count = 1
-            item.save()
+            self.sqlite_session.add(item)
+            self.sqlite_session.commit()
             return {"err": "ok", "msg": _(u"图书添加成功"), "book_id": book_id}
         except Exception as e:
             logging.error("Failed to add book by ISBN: %s", e)
@@ -1189,7 +1194,8 @@ class BookUpload(BaseHandler):
             item = Item()
             item.book_id = book_id
             item.collector_id = self.user_id()
-            item.save()
+            self.sqlite_session.add(item)
+            self.sqlite_session.commit()
         self.add_msg("success", _(u"导入书籍成功！"))
         AutoFillService().auto_fill(book_id)
         return {"err": "ok", "book_id": book_id}
