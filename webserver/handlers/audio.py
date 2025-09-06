@@ -395,6 +395,8 @@ class AudioDelete(BaseHandler):
 
 
 class AudioFile(BaseHandler):
+    @js
+    @auth
     def get(self, book_id, filename):
         """提供音频文件的静态文件服务"""
         try:
