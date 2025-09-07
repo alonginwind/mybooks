@@ -13,7 +13,7 @@
           ></v-img>
           <div class="book-info">
             <h2 class="book-title">{{ book.title }}</h2>
-            <p class="book-author">{{ book.authors }}</p>
+            <p v-if="shouldShowAuthors" class="book-author">{{ book.authors }}</p>
           </div>
         </div>
       </div>
@@ -297,6 +297,20 @@ export default {
   computed: {
     currentAudio() {
       return this.audioFiles[this.currentTrackIndex];
+    },
+
+    shouldShowAuthors() {
+      // 如果作者信息不存在，隐藏
+      if (!this.book.authors) {
+        return false;
+      }
+
+      // 如果作者只有一个元素且是 "Unknown"，隐藏
+      if (this.book.authors === 'Unknown') {
+        return false;
+      }
+
+      return true;
     }
   },
 
