@@ -235,7 +235,14 @@
                     >
                         {{ readingStateButtonText }}
                     </v-btn>
-                    <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" @click="switch_audio_dialog">
+                    <v-btn
+                        :small="tiny"
+                        dark
+                        color="primary"
+                        class="mx-2 d-flex d-sm-flex"
+                        @click="switch_audio_dialog"
+                        v-if="book.book_type != 1"
+                    >
                         <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'error' : 'audiotrack' }}</v-icon>
                         {{ $t('book.convertToAudio') }}
                         <span v-if="audios.status === AUDIO_STATUS.PROCESSING && audios.progress && audios.progress.converted_chapters !== undefined"
@@ -551,12 +558,12 @@
         <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
             <v-card outlined>
                 <v-list>
-                    <v-list-item @click="switch_audio_dialog">
-                        <v-list-item-avatar large :color="audios.status === AUDIO_STATUS.FAILED ? 'red' : 'primary'">
+                    <v-list-item @click="switch_audio_dialog" :disabled="book.book_type == 1">
+                        <v-list-item-avatar large :color="book.book_type == 1 ? 'grey' : (audios.status === AUDIO_STATUS.FAILED ? 'red' : 'primary')">
                             <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'error' : 'audiotrack' }}</v-icon>
                         </v-list-item-avatar>
                         <v-list-item-content>
-                            <v-list-item-title>
+                            <v-list-item-title :class="{ 'grey--text': book.book_type == 1 }">
                                 {{ $t('book.convertToAudio') }}
                                 <span v-if="audios.status === AUDIO_STATUS.PROCESSING && audios.progress && audios.progress.converted_chapters !== undefined"
                                       class="ml-1 text-caption">
@@ -1061,6 +1068,11 @@ export default {
             if (next) next();
         },
         switch_audio_dialog() {
+            // 如果是实体书，则不允许转换音频
+            if (this.book.book_type == 1) {
+                return;
+            }
+
             if (this.audios.status === this.AUDIO_STATUS.UNAVAILABLE || this.audios.status === this.AUDIO_STATUS.FAILED) {
                 this.dialog_epub2audio = !this.dialog_epub2audio
             } else {

@@ -19,7 +19,7 @@ import tornado
 from tornado import web
 
 from webserver import loader, utils
-from webserver.handlers.base import BaseHandler, auth, js
+from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import BizKey, ReaderPaidBook, ReaderLog
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
 
@@ -44,6 +44,18 @@ class AudioUtils:
     def get_running_worker_count():
         """Get the count of currently running audio conversion workers."""
         return sum(1 for worker in ConversionWorkerMap.values() if worker.is_running())
+
+    @staticmethod
+    def get_audio_books_count():
+        """Get the total count of books with audio files."""
+        if not os.path.exists(AUDIO_OUTPUT_FOLDER):
+            return 0
+        count = 0
+        for item in os.listdir(AUDIO_OUTPUT_FOLDER):
+            item_path = os.path.join(AUDIO_OUTPUT_FOLDER, item)
+            if os.path.isdir(item_path) and item.isdigit():
+                count += 1
+        return count
 
     @staticmethod
     def get_audios(bid, uid=None):
@@ -220,14 +232,9 @@ class AudioBooks(BaseHandler):
 
 class AudioConversion(BaseHandler):
     @js
-    @auth
     def get(self, bid):
         # get the conversion status, check it in the worker map,
         # return the status json if found it in the map, otherwise, return not found status.
-        user = self.get_current_user()
-        if not user.is_admin():
-            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
-
         try:
             book_id = int(bid)
             worker = ConversionWorkerMap.get(book_id)
@@ -250,8 +257,11 @@ class AudioConversion(BaseHandler):
             return {"err": "server.error", "msg": str(e)}
 
     @js
-    @auth
+    @is_admin
     def post(self, bid):
+        if not self.is_admin():
+            return {"err": "permission.not_admin", "msg": _(u"只有管理员可以进行有声书转换")}
+
         try:
             if AudioUtils.get_running_worker_count() >= ALLOW_MAX_RUNNING_WORKERS:
                 return {"err": "audio.too_many_conversions", "msg": _(u"当前转换任务超过2项, 请稍后再试")}
@@ -361,11 +371,12 @@ class AudioConversion(BaseHandler):
 
 class AudioConversionCancel(BaseHandler):
     @js
-    @auth
+    @is_admin
     def post(self, book_id):
         # cancel the conversion for the book id, if the worker exists, stop it and remove it from the map.
-        if not self.get_current_user().is_admin():
-            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
+        if not self.is_admin():
+            return {"err": "permission.not_admin", "msg": _(u"只有管理员可以取消有声书转换")}
+
         try:
             book_id = int(book_id)
             worker = ConversionWorkerMap.get(book_id)
@@ -396,12 +407,12 @@ class AudioConversionCancel(BaseHandler):
 
 class AudioDelete(BaseHandler):
     @js
-    @auth
+    @is_admin
     def post(self, book_id):
         # delete the audio file for the book id, if the file exists, remove it.
         # if not found, return not found status.
-        if not self.get_current_user().is_admin():
-            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
+        if not self.is_admin():
+            return {"err": "permission.not_admin", "msg": _(u"只有管理员可以删除音频文件")}
 
         try:
             book_id = int(book_id)

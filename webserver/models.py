@@ -119,7 +119,7 @@ class Reader(Base, SQLAlchemyMixin):
     vipexpire = Column(DateTime)  # VIP用户的到期时间
 
     def __str__(self):
-        return "<id=%d, username=%s, email=%s>" % (self.id, self.username, self.email)
+        return "<id=%d, username=%s, email=%s, admin:%d>" % (self.id, self.username, self.email, self.admin)
 
     def shrink_column_extra(self):
         # Clear the unused item in the extra

@@ -62,7 +62,6 @@ class Index(BaseHandler):
 class BookDetail(BaseHandler):
     @js
     def get(self, bid):
-        logging.info("get book detail %s" % bid)
         book = None
         try:
             book_id = int(bid)

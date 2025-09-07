@@ -88,7 +88,7 @@ def is_admin(func):
         if not self.current_user:
             return {"err": "user.need_login", "msg": _(u"请先登录")}
         if not self.admin_user:
-            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
+            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员, 无权限操作")}
         return func(self, *args, **kwargs)
 
     return do

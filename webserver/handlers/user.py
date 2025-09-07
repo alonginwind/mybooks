@@ -12,6 +12,7 @@ from tornado import web
 from webserver import loader
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, auth, js
+from webserver.handlers.audio import AudioUtils
 from webserver.models import Message, Reader
 from webserver.version import VERSION
 
@@ -299,10 +300,14 @@ class UserInfo(BaseHandler):
         last_week = datetime.datetime.now() - datetime.timedelta(days=7)
         count_all_users = self.sqlite_session.query(func.count(Reader.id)).scalar()
         count_hot_users = self.sqlite_session.query(func.count(Reader.id)).filter(Reader.access_time > last_week).scalar()
+
+        audio_book_cnt = AudioUtils.get_audio_books_count()
+
         return {
             "books": db.count(),
             "tags": len(db.all_tags()),
             "authors": len(db.all_authors()),
+            "audiobooks": audio_book_cnt,
             "publishers": len(db.all_publishers()),
             "series": len(db.all_series()),
             "mtime": db.last_modified().strftime("%Y-%m-%d"),

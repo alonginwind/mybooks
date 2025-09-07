@@ -272,6 +272,7 @@ export default {
             ];
             var nav_links = [
                 { heading: "appHeader.categoryBrowse" },
+                { icon: "mdi-headphones", href: "/audiobooks", text: "appHeader.audioBooks", count: this.sys.audiobooks, color: "purple"},
                 { icon: "widgets", href: "/nav", text: "appHeader.categoryNavigation", count: this.sys.books, color: "primary" },
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
                 { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors, color: "primary"},
@@ -279,7 +280,6 @@ export default {
                 {
                     target: "",
                     links: [
-                        { icon: "mdi-headphones", href: "/audiobooks", text: "appHeader.audioBooks", color: "purple"},
                         { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},
                         { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "black"},
                         { icon: "mdi-history", href: "/recent", text: "appHeader.recentBooks", color: "primary"},
