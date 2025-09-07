@@ -28,6 +28,7 @@ ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
 ConversionWorkerMap = {}
 ALLOW_MAX_RUNNING_WORKERS = CONF.get("BOOK2AUDIO_MAX_WORKERS", 2)
 AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
+SKIP_FILE_PREFIX = "图书在版编目CIP数据"
 
 
 class AudioUtils:
@@ -112,6 +113,8 @@ class AudioDetail(BaseHandler):
                     # Generate download URLs for audio files
                     file_urls = []
                     for file in sorted(audio_files):
+                        if file.find(SKIP_FILE_PREFIX) > 0:
+                            continue
                         file_urls.append({
                             "filename": os.path.splitext(file)[0],
                             "url": f"{self.site_url}/audios/{book_id}/{file}",
@@ -557,6 +560,8 @@ class AudioCollection(BaseHandler):
                 try:
                     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                         for audio_file in sorted(audio_files):
+                            if audio_file.find(SKIP_FILE_PREFIX) > 0:
+                                continue
                             file_path = os.path.join(audio_dir, audio_file)
                             zipf.write(file_path, audio_file)
                 except Exception as e:
