@@ -565,6 +565,7 @@
         "timer30min": "30分钟",
         "timer1hour": "1小时",
         "playbackSpeed": "播放速度",
-        "volume": "音量"
+        "volume": "音量",
+        "downloadCollection": "下载音频合集"
     }
 }

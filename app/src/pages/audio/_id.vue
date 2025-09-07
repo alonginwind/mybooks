@@ -29,6 +29,17 @@
             <v-btn
               small
               outlined
+              @click="downloadCollection"
+              class="download-btn"
+              :disabled="audioFiles.length === 0"
+              :loading="downloadLoading"
+            >
+              <v-icon small left>mdi-download</v-icon>
+              {{ $t('audio.downloadCollection') }}
+            </v-btn>
+            <v-btn
+              small
+              outlined
               @click="closePlayer"
               class="close-btn"
             >
@@ -187,6 +198,22 @@
       @pause="onPause"
       preload="metadata"
     ></audio>
+
+    <!-- VIP信息对话框 -->
+    <v-dialog v-model="showVipDialog" max-width="600px">
+      <v-card>
+        <v-card-title class="headline">{{ vipDialogTitle }}</v-card-title>
+        <v-card-text>
+          <div v-html="vipDialogContent"></div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="showVipDialog = false">
+            {{ $t('common.close') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -257,7 +284,13 @@ export default {
 
       // 播放位置记录
       saveProgressInterval: null,
-      bookId: null
+      bookId: null,
+
+      // 下载相关
+      downloadLoading: false,
+      showVipDialog: false,
+      vipDialogTitle: '',
+      vipDialogContent: ''
     };
   },
 
@@ -591,6 +624,40 @@ export default {
       console.log('Started from beginning');
     },
 
+    async downloadCollection() {
+      if (!this.bookId || this.audioFiles.length === 0) {
+        return;
+      }
+
+      this.downloadLoading = true;
+
+      try {
+        const response = await this.$backend(`/audios/${this.bookId}/collection`);
+
+        if (response.err === 'ok') {
+          // 成功获取下载链接，直接下载
+          const link = document.createElement('a');
+          link.href = response.download_url;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          // 显示错误信息和VIP说明
+          this.vipDialogTitle = response.message || '下载失败';
+          this.vipDialogContent = response.notes || '无法获取详细信息';
+          this.showVipDialog = true;
+        }
+      } catch (error) {
+        console.error('Download collection error:', error);
+        this.vipDialogTitle = '下载失败';
+        this.vipDialogContent = '网络错误，请稍后重试';
+        this.showVipDialog = true;
+      } finally {
+        this.downloadLoading = false;
+      }
+    },
+
     closePlayer() {
       // 停止播放并保存当前位置
       if (this.$refs.audioPlayer) {
@@ -691,6 +758,24 @@ export default {
   border-color: #666666 !important;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.download-btn {
+  background-color: #404040 !important;
+  color: white !important;
+  border-color: #666666 !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.download-btn:hover {
+  background-color: #9C27B0 !important;
+}
+
+.download-btn:disabled {
+  background-color: #2a2a2a !important;
+  color: #666666 !important;
 }
 
 .chapter-info {
@@ -925,14 +1010,22 @@ export default {
     flex-direction: row;
     gap: 8px;
     justify-content: flex-end; /* 保持右对齐 */
+    flex-wrap: wrap; /* 允许换行 */
   }
 
   .chapter-info {
     order: 1;
   }
 
-  .close-btn {
+  .download-btn {
     order: 2;
+    font-size: 12px;
+    padding: 0 6px;
+    min-width: auto;
+  }
+
+  .close-btn {
+    order: 3;
   }
 
   .playlist-container {
@@ -982,6 +1075,16 @@ export default {
   .chapter-info {
     font-size: 12px;
     height: 24px;
+  }
+
+  .download-btn {
+    min-width: auto;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .download-btn .v-icon {
+    margin-right: 2px !important;
   }
 
   .close-btn {

@@ -565,6 +565,7 @@
         "timer30min": "30 minutes",
         "timer1hour": "1 hour",
         "playbackSpeed": "Playback Speed",
-        "volume": "Volume"
+        "volume": "Volume",
+        "downloadCollection": "Download Audio Collection"
     }
 }

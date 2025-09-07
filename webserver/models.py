@@ -278,6 +278,28 @@ class ReaderLog(Base, SQLAlchemyMixin):
         return self.extra.get(key, default)
 
 
+###
+# 存放一些业务相关的Key
+# 像下载业务，在下载链接后面加上一个key，防止盗链
+###
+class BizKey(Base, SQLAlchemyMixin):
+    TYPE_DOWNLOAD = 1
+
+    __tablename__ = "biz_key"
+    id = Column(Integer, primary_key=True)
+    key = Column(String(200))
+    expire = Column(DateTime)
+    create_time = Column(DateTime)
+    type = Column(Integer)
+
+    def __init__(self, key, expire, type=0):
+        super(BizKey, self).__init__()
+        self.key = key
+        self.expire = expire
+        self.create_time = datetime.datetime.now()
+        self.type = type
+
+
 class Message(Base, SQLAlchemyMixin):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)

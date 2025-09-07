@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import datetime
 import logging
 import os
 import re
 import shutil
 import threading
 import time
+import uuid
+import zipfile
 from gettext import gettext as _
 
 import tornado
@@ -14,6 +17,7 @@ from tornado import web
 
 from webserver import loader, utils
 from webserver.handlers.base import BaseHandler, auth, js
+from webserver.models import BizKey, Reader
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
 
 CONF = loader.get_settings()
@@ -472,6 +476,197 @@ class AudioFile(BaseHandler):
             raise web.HTTPError(500, "Internal server error")
 
 
+class AudioCollectionDownload(BaseHandler):
+    @js
+    @auth
+    def get(self, book_id):
+        """音频合集下载接口"""
+        try:
+            book_id = int(book_id)
+
+            # 获取当前用户
+            user = self.get_current_user()
+            if not user:
+                return {"err": "auth.required", "msg": _("需要登录")}
+
+            # 检查是否启用VIP配额功能
+            enable_vip_quota = CONF.get("enable_vip_quota", False)
+
+            if enable_vip_quota:
+                # 检查VIP是否过期
+                if not user.vipexpire or user.vipexpire < datetime.datetime.now():
+                    # 读取VIP说明文件
+                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
+                    vip_notes = ""
+                    try:
+                        if os.path.exists(vip_notes_path):
+                            with open(vip_notes_path, 'r', encoding='utf-8') as f:
+                                vip_notes = f.read()
+                    except Exception as e:
+                        logging.error(f"Error reading vip_notes.txt: {e}")
+                        vip_notes = "无法读取VIP说明文件"
+
+                    return {
+                        "err": "vip.expired",
+                        "message": "VIP已过期",
+                        "notes": vip_notes
+                    }
+
+                # 检查VIP配额
+                if user.vipquota <= 0:
+                    # 读取VIP说明文件
+                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
+                    vip_notes = ""
+                    try:
+                        if os.path.exists(vip_notes_path):
+                            with open(vip_notes_path, 'r', encoding='utf-8') as f:
+                                vip_notes = f.read()
+                    except Exception as e:
+                        logging.error(f"Error reading vip_notes.txt: {e}")
+                        vip_notes = "无法读取VIP说明文件"
+
+                    return {
+                        "err": "vip.quota_insufficient",
+                        "message": "合集下载的额度不足",
+                        "notes": vip_notes
+                    }
+
+            # 检查书籍是否存在
+            book = self.get_book(book_id)
+            if not book:
+                return {"err": "book.not_found", "msg": _("书籍未找到")}
+
+            # 检查音频目录
+            audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
+            if not os.path.exists(audio_dir):
+                return {"err": "audio.not_found", "msg": _("音频文件不存在")}
+
+            audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav', '.m4a', '.opus'))]
+            if not audio_files:
+                return {"err": "audio.not_found", "msg": _("音频文件不存在")}
+
+            # 检查zip文件是否已存在
+            zip_filename = f"audio_collection_{book_id}.zip"
+            zip_path = os.path.join(audio_dir, zip_filename)
+
+            # 如果zip不存在，创建它
+            if not os.path.exists(zip_path):
+                try:
+                    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                        for audio_file in sorted(audio_files):
+                            file_path = os.path.join(audio_dir, audio_file)
+                            zipf.write(file_path, audio_file)
+                except Exception as e:
+                    logging.error(f"Error creating zip file: {e}")
+                    return {"err": "server.error", "msg": _("创建压缩文件失败")}
+
+            # 生成32位随机key
+            download_key = uuid.uuid4().hex
+
+            # 保存key到BizKey表，设置过期时间为24小时
+            expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
+            biz_key = BizKey(key=download_key, expire=expire_time, type=BizKey.TYPE_DOWNLOAD)
+
+            try:
+                biz_key.save()
+            except Exception as e:
+                logging.error(f"Error saving BizKey: {e}")
+                return {"err": "server.error", "msg": _("保存下载密钥失败")}
+
+            # 如果启用VIP配额功能，则扣减用户VIP配额
+            if enable_vip_quota:
+                try:
+                    user.vipquota -= 1
+                    user.save()
+                except Exception as e:
+                    logging.error(f"Error updating user quota: {e}")
+                    # 如果配额扣减失败，删除已创建的key
+                    try:
+                        biz_key.delete()
+                    except:
+                        pass
+                    return {"err": "server.error", "msg": _("内部处理错误")}
+
+            # 生成下载链接
+            download_url = f"{self.get_site_url()}/api/audios/{book_id}/collection/download?key={download_key}"
+
+            return {
+                "err": "ok",
+                "download_url": download_url,
+                "message": "下载链接已生成"
+            }
+
+        except ValueError:
+            return {"err": "params.invalid", "msg": _("无效的书籍ID")}
+        except Exception as e:
+            logging.error(f"Error in AudioCollectionDownload.get: {e}")
+            return {"err": "server.error", "msg": str(e)}
+
+
+class AudioCollectionDownloadFile(BaseHandler):
+    def get(self, book_id):
+        """音频合集文件下载接口"""
+        try:
+            book_id = int(book_id)
+            download_key = self.get_argument("key", "")
+
+            if not download_key:
+                raise web.HTTPError(400, "Missing download key")
+
+            # 验证下载key
+
+            biz_key = self._session().query(BizKey).filter_by(key=download_key, type=BizKey.TYPE_DOWNLOAD).first()
+            if not biz_key:
+                raise web.HTTPError(403, "Invalid download key")
+
+            if biz_key.expire < datetime.datetime.now():
+                # 清理过期的key
+                biz_key.delete()
+                raise web.HTTPError(403, "Download key expired")
+
+            # 检查zip文件
+            audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
+            zip_filename = f"audio_collection_{book_id}.zip"
+            zip_path = os.path.join(audio_dir, zip_filename)
+
+            if not os.path.exists(zip_path):
+                raise web.HTTPError(404, "Collection file not found")
+
+            # 获取书籍信息用于文件名
+            book = self.get_book(book_id)
+            safe_title = "".join(c for c in (book.get('title', f'book_{book_id}') if book else f'book_{book_id}') if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            download_filename = f"{safe_title}_音频合集.zip"
+
+            # 设置响应头
+            self.set_header("Content-Type", "application/zip")
+            self.set_header("Content-Disposition", f'attachment; filename="{download_filename}"')
+
+            # 获取文件大小
+            file_size = os.path.getsize(zip_path)
+            self.set_header("Content-Length", str(file_size))
+
+            # 传输文件
+            chunk_size = 2 * 1024 * 1024  # 2MB
+            with open(zip_path, "rb") as f:
+                while True:
+                    chunk = f.read(chunk_size)
+                    if not chunk:
+                        break
+                    self.write(chunk)
+
+            # 下载完成后清理key
+            try:
+                biz_key.delete()
+            except Exception as e:
+                logging.error(f"Error deleting key: {e}")
+
+        except ValueError:
+            raise web.HTTPError(400, "Invalid book ID")
+        except Exception as e:
+            logging.error(f"Error in AudioCollectionDownloadFile.get: {e}")
+            raise web.HTTPError(500, "Internal server error")
+
+
 def routes():
     return [
         (r"/api/audio/([0-9]+)", AudioDetail),
@@ -480,4 +675,6 @@ def routes():
         (r"/api/audio/([0-9]+)/delete", AudioDelete),
         (r"/api/audiobooks", AudioBooks),  # 音频书籍列表
         (r"/api/audios/([0-9]+)/([^/]+)", AudioFile),
+        (r"/api/audios/([0-9]+)/collection", AudioCollectionDownload),  # 音频合集下载接口
+        (r"/api/audios/([0-9]+)/collection/download", AudioCollectionDownloadFile),  # 音频合集文件下载
     ]
