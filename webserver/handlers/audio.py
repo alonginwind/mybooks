@@ -19,8 +19,8 @@ import tornado
 from tornado import web
 
 from webserver import loader, utils
-from webserver.handlers.base import BaseHandler, auth, js
-from webserver.models import BizKey, ReaderLog
+from webserver.handlers.base import BaseHandler, auth, js, is_admin
+from webserver.models import BizKey, Reader, ReaderPaidBook, ReaderLog
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
 
 CONF = loader.get_settings()
@@ -28,6 +28,9 @@ ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
 
 # map of conversion workers, key is book id, value is instance of the worker
 ConversionWorkerMap = {}
+
+# 每日下载记录，格式: {(user_id, book_id): datetime}
+DailyDownloadMap = {}
 ALLOW_MAX_RUNNING_WORKERS = CONF.get("BOOK2AUDIO_MAX_WORKERS", 2)
 AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
 SKIP_FILE_PREFIX = "图书在版编目CIP数据"
@@ -107,11 +110,26 @@ class AudioDetail(BaseHandler):
             if not book:
                 return {"err": "params.book.invalid", "msg": _(u"书籍未找到")}
 
+            enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
+
             # Check if audio file already exists
             audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
             if os.path.exists(audio_dir) and os.listdir(audio_dir):
                 audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav', '.m4a', '.opus'))]
                 if audio_files:
+                    user = self.get_current_user()
+                    is_paid = False
+                    if user:
+                        if enable_vip_quota:
+                            # 检查用户是否已购买此书
+                            paid_record = self.sqlite_session.query(ReaderPaidBook).filter_by(
+                                reader_id=user.id,
+                                book_id=book_id
+                            ).first()
+                            is_paid = paid_record is not None
+                        else:
+                            is_paid = True
+
                     # Generate download URLs for audio files
                     file_urls = []
                     for file in sorted(audio_files):
@@ -126,7 +144,8 @@ class AudioDetail(BaseHandler):
                         "err": "ok",
                         "audio_dir": audio_dir,
                         "audios": file_urls,
-                        "total_files": len(audio_files)
+                        "total_files": len(audio_files),
+                        "is_paid": is_paid
                     }
 
             # Check if conversion is in progress
@@ -200,10 +219,13 @@ class AudioBooks(BaseHandler):
 
 class AudioConversion(BaseHandler):
     @js
-    @auth
+    @is_admin
     def get(self, bid):
         # get the conversion status, check it in the worker map,
         # return the status json if found it in the map, otherwise, return not found status.
+        if not self.admin_user:
+            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
+
         try:
             book_id = int(bid)
             worker = ConversionWorkerMap.get(book_id)
@@ -337,9 +359,11 @@ class AudioConversion(BaseHandler):
 
 class AudioConversionCancel(BaseHandler):
     @js
-    @auth
+    @is_admin
     def post(self, book_id):
         # cancel the conversion for the book id, if the worker exists, stop it and remove it from the map.
+        if not self.admin_user:
+            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
         try:
             book_id = int(book_id)
             worker = ConversionWorkerMap.get(book_id)
@@ -370,10 +394,13 @@ class AudioConversionCancel(BaseHandler):
 
 class AudioDelete(BaseHandler):
     @js
-    @auth
+    @is_admin
     def post(self, book_id):
         # delete the audio file for the book id, if the file exists, remove it.
         # if not found, return not found status.
+        if not self.admin_user:
+            return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
+
         try:
             book_id = int(book_id)
 
@@ -484,6 +511,20 @@ class AudioFile(BaseHandler):
 
 
 class AudioCollection(BaseHandler):
+    def create_biz_key(self):
+        user = self.get_current_user()
+        # 生成32位随机key
+        download_key = uuid.uuid4().hex
+        # 保存key到BizKey表，设置过期时间为24小时
+        expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
+        biz_key = BizKey(user.id, key=download_key, expire=expire_time, type=BizKey.TYPE_DOWNLOAD)
+        try:
+            biz_key.save()
+        except Exception as e:
+            logging.error(f"Error saving BizKey: {e}")
+            return None
+        return download_key
+
     @js
     @auth
     def get(self, book_id):
@@ -496,57 +537,8 @@ class AudioCollection(BaseHandler):
             if not user:
                 return {"err": "auth.required", "msg": _("需要登录")}
 
-            # 检查是否启用VIP配额功能
-            enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
-
             db_log = ReaderLog(user.id, ReaderLog.ACTION_COLLECTION_DOWNLOAD, user.id, revision=VERSION)
             db_log.set_extra('book_id', book_id)
-
-            if enable_vip_quota:
-                # 检查VIP是否过期
-                if not user.vipexpire or user.vipexpire < datetime.datetime.now():
-                    # 读取VIP说明文件
-                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
-                    vip_notes = ""
-                    try:
-                        if os.path.exists(vip_notes_path):
-                            with open(vip_notes_path, 'r', encoding='utf-8') as f:
-                                vip_notes = f.read()
-                    except Exception as e:
-                        logging.error(f"Error reading vip_notes.txt: {e}")
-                        vip_notes = "无法读取VIP说明文件"
-
-                    db_log.set_extra('result', -1)
-                    db_log.set_extra('reason', "vip.expired")
-                    db_log.save()
-                    return {
-                        "err": "vip.expired",
-                        "message": "非VIP用户或VIP已过期",
-                        "vipexpired": user.vipexpire.strftime("%Y-%m-%d %H:%M:%S") if user.vipexpire else "",
-                        "notes": vip_notes
-                    }
-
-                # 检查VIP配额
-                if user.vipquota <= 0:
-                    # 读取VIP说明文件
-                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
-                    vip_notes = ""
-                    try:
-                        if os.path.exists(vip_notes_path):
-                            with open(vip_notes_path, 'r', encoding='utf-8') as f:
-                                vip_notes = f.read()
-                    except Exception as e:
-                        logging.error(f"Error reading vip_notes.txt: {e}")
-                        vip_notes = "无法读取VIP说明文件"
-
-                    db_log.set_extra('result', -1)
-                    db_log.set_extra('reason', "vip.quota_insufficient")
-                    db_log.save()
-                    return {
-                        "err": "vip.quota_insufficient",
-                        "message": "合集下载的额度不足",
-                        "notes": vip_notes
-                    }
 
             # 检查书籍是否存在
             book = self.get_book(book_id)
@@ -555,6 +547,30 @@ class AudioCollection(BaseHandler):
                 db_log.set_extra('reason', "book.not_found")
                 db_log.save()
                 return {"err": "book.not_found", "msg": _("书籍未找到")}
+
+            # 检查用户是否已购买此书
+            paid_record = self.sqlite_session.query(ReaderPaidBook).filter_by(
+                reader_id=user.id,
+                book_id=book_id
+            ).first()
+
+            if not paid_record:
+                db_log.set_extra('result', -1)
+                db_log.set_extra('reason', "not.purchased")
+                db_log.save()
+                return {"err": "not.purchased", "msg": _("您还未购买此音频，请先购买")}
+
+            # 检查每日下载限制
+            download_key = (user.id, book_id)
+            today = datetime.datetime.now().date()
+
+            if download_key in DailyDownloadMap:
+                last_download = DailyDownloadMap[download_key]
+                if last_download.date() == today:
+                    db_log.set_extra('result', -1)
+                    db_log.set_extra('reason', "daily.limit.exceeded")
+                    db_log.save()
+                    return {"err": "daily.limit.exceeded", "msg": _("今日已下载过此音频合集，请明天再试")}
 
             # 检查音频目录
             audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
@@ -583,33 +599,22 @@ class AudioCollection(BaseHandler):
                     logging.error(f"Error creating zip file: {e}")
                     return {"err": "server.error", "msg": _("创建压缩文件失败")}
 
-            # 生成32位随机key
-            download_key = uuid.uuid4().hex
+            # 查询是否已有未过期的下载key
+            existing_key = self.sqlite_session.query(BizKey).filter_by(
+                reader_id=user.id,
+                type=BizKey.TYPE_DOWNLOAD
+            ).filter(BizKey.expire > datetime.datetime.now()).first()
+            if existing_key:
+                download_key = existing_key.key
+            else:
+                # 创建下载key，不需要扣减VIP配额
+                download_key = self.create_biz_key()
 
-            # 保存key到BizKey表，设置过期时间为24小时
-            expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
-            biz_key = BizKey(user.id, key=download_key, expire=expire_time, type=BizKey.TYPE_DOWNLOAD)
-
-            try:
-                biz_key.save()
-            except Exception as e:
-                logging.error(f"Error saving BizKey: {e}")
+            if not download_key:
                 return {"err": "server.error", "msg": _("内部处理错误")}
 
-            # 如果启用VIP配额功能，则扣减用户VIP配额
-            if enable_vip_quota:
-                try:
-                    user.vipquota -= 1
-                    user.save()
-                except Exception as e:
-                    logging.error(f"Error updating user quota: {e}")
-                    # 如果配额扣减失败，删除已创建的key
-                    try:
-                        self.sqlite_session.delete(biz_key)
-                        self.sqlite_session.commit()
-                    except:
-                        pass
-                    return {"err": "server.error", "msg": _("内部处理错误")}
+            # 记录下载时间
+            DailyDownloadMap[(user.id, book_id)] = datetime.datetime.now()
 
             # 生成下载链接
             download_url = f"{self.get_site_url()}/api/audios/{book_id}/collection/download?key={download_key}"
@@ -695,12 +700,13 @@ class AudioCollectionDownloadFile(BaseHandler):
                         break
                     self.write(chunk)
             duration = int(time.time() - start)
-            # 删除使用过的key
+
             try:
                 db_log = ReaderLog(uid, ReaderLog.ACTION_COLLECTION_DOWNLOAD_FINISHED, uid, revision=VERSION)
                 db_log.set_extra('book_id', book_id)
                 db_log.set_extra('duration', duration)
                 db_log.save()
+                # 删除使用过的key
                 self.sqlite_session.delete(biz_key)
                 self.sqlite_session.commit()
             except Exception as e:
@@ -712,12 +718,148 @@ class AudioCollectionDownloadFile(BaseHandler):
             raise web.HTTPError(500, "Internal server error")
 
 
+class AudioPurchase(BaseHandler):
+    @js
+    @auth
+    def post(self, book_id):
+        """音频购买接口"""
+        try:
+            book_id = int(book_id)
+
+            # 获取当前用户
+            user = self.get_current_user()
+            if not user:
+                return {"err": "auth.required", "msg": _("需要登录")}
+
+            # 检查书籍是否存在
+            book = self.get_book(book_id)
+            if not book:
+                return {"err": "book.not_found", "msg": _("书籍未找到")}
+
+            # 检查是否启用VIP配额功能
+            enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
+
+            if enable_vip_quota:
+                # 检查VIP是否过期
+                if not user.vipexpire or user.vipexpire < datetime.datetime.now():
+                    # 读取VIP说明文件
+                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
+                    vip_notes = ""
+                    try:
+                        if os.path.exists(vip_notes_path):
+                            with open(vip_notes_path, 'r', encoding='utf-8') as f:
+                                vip_notes = f.read()
+                    except Exception as e:
+                        logging.error(f"Error reading vip_notes.txt: {e}")
+                        vip_notes = "无法读取VIP说明文件"
+
+                    return {
+                        "err": "vip.expired",
+                        "message": "非VIP用户或VIP已过期，无法购买音频",
+                        "vipexpired": user.vipexpire.strftime("%Y-%m-%d %H:%M:%S") if user.vipexpire else "",
+                        "notes": vip_notes
+                    }
+
+                # 检查VIP配额
+                if user.vipquota <= 0:
+                    # 读取VIP说明文件
+                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
+                    vip_notes = ""
+                    try:
+                        if os.path.exists(vip_notes_path):
+                            with open(vip_notes_path, 'r', encoding='utf-8') as f:
+                                vip_notes = f.read()
+                    except Exception as e:
+                        logging.error(f"Error reading vip_notes.txt: {e}")
+                        vip_notes = "无法读取VIP说明文件"
+
+                    return {
+                        "err": "vip.quota_insufficient",
+                        "message": "购买的额度不足",
+                        "notes": vip_notes
+                    }
+
+            # 检查是否已经购买过
+            existing_purchase = self.sqlite_session.query(ReaderPaidBook).filter_by(
+                reader_id=user.id,
+                book_id=book_id
+            ).first()
+
+            if existing_purchase:
+                return {"err": "already.purchased", "msg": _("您已经购买过此音频")}
+
+            # 检查音频是否存在
+            audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
+            if not os.path.exists(audio_dir):
+                return {"err": "audio.not_found", "msg": _("音频文件不存在")}
+
+            audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav', '.m4a', '.opus'))]
+            if not audio_files:
+                return {"err": "audio.not_found", "msg": _("音频文件不存在")}
+
+            # 创建购买记录
+            # 生成订单ID
+            import uuid
+            order_id = uuid.uuid4().hex
+
+            # 这里可以设置音频的价格，暂时设为1（可以从配置或书籍信息中获取）
+            price = CONF.get("audio_price", 1)
+
+            paid_book = ReaderPaidBook(
+                reader_id=user.id,
+                book_id=book_id,
+                order_id=order_id,
+                price=price
+            )
+
+            try:
+                paid_book.save()
+
+                # 如果启用VIP配额功能，则扣减用户VIP配额
+                if enable_vip_quota:
+                    try:
+                        user.vipquota -= 1
+                        user.save()
+                    except Exception as e:
+                        logging.error(f"Error updating user quota after purchase: {e}")
+                        # 如果配额扣减失败，回滚购买记录
+                        try:
+                            self.sqlite_session.delete(paid_book)
+                            self.sqlite_session.commit()
+                        except:
+                            pass
+                        return {"err": "server.error", "msg": _("购买失败，配额扣减出错")}
+
+                # 记录购买日志
+                log = ReaderLog(user.id, "AUDIO_PURCHASE", user.id)
+                log.set_extra("book_id", book_id)
+                log.set_extra("order_id", order_id)
+                log.set_extra("price", price)
+                log.save()
+
+                return {
+                    "err": "ok",
+                    "message": _("购买成功"),
+                    "order_id": order_id
+                }
+            except Exception as e:
+                logging.error(f"Error saving purchase record: {e}")
+                return {"err": "server.error", "msg": _("购买失败，请稍后重试")}
+
+        except ValueError:
+            return {"err": "params.invalid", "msg": _("无效的书籍ID")}
+        except Exception as e:
+            logging.error(f"Error in AudioPurchase.post: {e}")
+            return {"err": "server.error", "msg": str(e)}
+
+
 def routes():
     return [
         (r"/api/audio/([0-9]+)", AudioDetail),
         (r"/api/audio/([0-9]+)/conversion", AudioConversion),
         (r"/api/audio/([0-9]+)/cancel", AudioConversionCancel),
         (r"/api/audio/([0-9]+)/delete", AudioDelete),
+        (r"/api/audio/([0-9]+)/purchase", AudioPurchase),  # 音频购买接口
         (r"/api/audiobooks", AudioBooks),  # 音频书籍列表
         # (r"/api/audios/([0-9]+)/([^/]+)", AudioFile),
         (r"/api/audios/([0-9]+)/collection", AudioCollection),  # 音频合集下载接口

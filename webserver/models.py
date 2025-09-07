@@ -255,11 +255,12 @@ class ReaderLog(Base, SQLAlchemyMixin):
     ACTION_COLLECTION_DOWNLOAD = 20
     ACTION_COLLECTION_DOWNLOAD_START = 21
     ACTION_COLLECTION_DOWNLOAD_FINISHED = 22
+    ACTION_PURCHASE = 30
 
     __tablename__ = "readerlogs"
     id = Column(Integer, primary_key=True)
     reader_id = Column(Integer, ForeignKey("readers.id"))
-    action = Column(String(100))
+    action = Column(Integer, default=0)
     create_time = Column(DateTime)
     extra = Column(MutableDict.as_mutable(JSONType), default={})
     revision = Column(String(100), default=0)
@@ -435,6 +436,26 @@ class ScanFile(Base, SQLAlchemyMixin):
         self.status = self.NEW
         self.create_time = datetime.datetime.now()
         self.update_time = datetime.datetime.now()
+
+
+class ReaderPaidBook(Base, SQLAlchemyMixin):
+    __tablename__ = "reader_paid_books"
+
+    id = Column(Integer, primary_key=True)
+    reader_id = Column(Integer, ForeignKey("readers.id"))
+    book_id = Column(Integer)
+    order_id = Column(String(100))
+    create_time = Column(DateTime)
+    price = Column(Integer, default=0)  # 价格
+    reader = relationship(Reader, backref="paid_books")
+
+    def __init__(self, reader_id, book_id, order_id=None, price=1):
+        super(ReaderPaidBook, self).__init__()
+        self.reader_id = reader_id
+        self.book_id = book_id
+        self.order_id = order_id
+        self.price = price
+        self.create_time = datetime.datetime.now()
 
 
 # 用户对某本书的阅读状态

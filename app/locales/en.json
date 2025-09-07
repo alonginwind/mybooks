@@ -566,6 +566,15 @@
         "timer1hour": "1 hour",
         "playbackSpeed": "Playback Speed",
         "volume": "Volume",
-        "downloadCollection": "Download Audio Collection"
+        "downloadCollection": "Download Audio Collection",
+        "purchase": "Purchase",
+        "confirmPurchase": "Confirm Purchase",
+        "purchaseDescription": "Purchase the full version of \"{title}\" audiobook to unlock all chapters",
+        "price": "Price",
+        "purchaseSuccess": "Purchase successful!",
+        "purchaseFailed": "Purchase failed, please try again later",
+        "notPurchased": "You have not purchased this audio yet, please purchase first",
+        "dailyLimitExceeded": "You have already downloaded this audio collection today, please try again tomorrow",
+        "purchaseHint": "Purchase to unlock all chapters and download functionality"
     }
 }

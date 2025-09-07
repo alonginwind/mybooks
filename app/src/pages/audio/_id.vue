@@ -27,11 +27,22 @@
               {{ currentTrackIndex + 1 }}/{{ audioFiles.length }}
             </v-chip>
             <v-btn
+              v-if="!isPaid && audioFiles.length > 0"
+              small
+              color="orange"
+              @click="showPurchaseDialog = true"
+              class="purchase-btn"
+              :loading="purchaseLoading"
+            >
+              <v-icon small left>mdi-cart</v-icon>
+              {{ $t('audio.purchase') }}
+            </v-btn>
+            <v-btn
               small
               outlined
               @click="downloadCollection"
               class="download-btn"
-              :disabled="audioFiles.length === 0"
+              :disabled="audioFiles.length === 0 || !isPaid"
               :loading="downloadLoading"
             >
               <v-icon small left>mdi-download</v-icon>
@@ -54,7 +65,10 @@
             v-for="(audio, index) in audioFiles"
             :key="index"
             class="playlist-item"
-            :class="{ 'active': currentTrackIndex === index }"
+            :class="{
+              'active': currentTrackIndex === index,
+              'locked': !isPaid && index >= 5
+            }"
             @click="selectTrack(index)"
           >
             <div class="track-number">{{ index + 1 }}</div>
@@ -62,10 +76,32 @@
               <div class="track-title">{{ getDisplayName(audio.filename) }}</div>
               <div class="track-duration">{{ formatFileSize(audio.size) }}</div>
             </div>
-            <v-icon v-if="currentTrackIndex === index && isPlaying" color="primary">
+            <v-chip
+              v-if="!isPaid && index >= 5"
+              x-small
+              color="blue darken-2"
+              text-color="yellow"
+              class="vip-badge"
+            >
+              VIP
+            </v-chip>
+            <v-icon v-else-if="currentTrackIndex === index && isPlaying" color="primary">
               mdi-volume-high
             </v-icon>
           </div>
+        </div>
+
+        <!-- 未购买提示信息 -->
+        <div v-if="!isPaid && audioFiles.length > 0" class="purchase-hint">
+          <v-alert
+            type="info"
+            outlined
+            dense
+            class="ma-2"
+          >
+            <v-icon left>mdi-information</v-icon>
+            {{ $t('audio.purchaseHint') }}
+          </v-alert>
         </div>
 
         <div v-else class="no-audio-message">
@@ -214,6 +250,30 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 购买确认对话框 -->
+    <v-dialog v-model="showPurchaseDialog" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">{{ $t('audio.confirmPurchase') }}</v-card-title>
+        <v-card-text>
+          <p>{{ $t('audio.purchaseDescription', { title: book.title }) }}</p>
+          <p class="price-text">{{ $t('audio.price') }}1个额度</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" text @click="showPurchaseDialog = false">
+            {{ $t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="orange"
+            @click="purchaseAudio"
+            :loading="purchaseLoading"
+          >
+            {{ $t('audio.confirmPurchase') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -236,7 +296,8 @@ export default {
         book: bookResponse.book,
         audioFiles: audioResponse.audios || [],
         audioStatus: audioResponse.status || 'unavailable',
-        bookId: bookId
+        bookId: bookId,
+        isPaid: audioResponse.is_paid || false
       };
     } catch (error) {
       console.error('Error loading audio data:', error);
@@ -244,7 +305,8 @@ export default {
         book: {},
         audioFiles: [],
         audioStatus: 'unavailable',
-        bookId: params.id
+        bookId: params.id,
+        isPaid: false
       };
     }
   },
@@ -290,7 +352,12 @@ export default {
       downloadLoading: false,
       showVipDialog: false,
       vipDialogTitle: '',
-      vipDialogContent: ''
+      vipDialogContent: '',
+
+      // 购买相关
+      purchaseLoading: false,
+      isPaid: false,
+      showPurchaseDialog: false
     };
   },
 
@@ -346,6 +413,12 @@ export default {
     },
 
     selectTrack(index) {
+      // 检查是否为付费内容
+      if (!this.isPaid && index >= 5) {
+        this.showPurchaseDialog = true;
+        return;
+      }
+
       if (index !== this.currentTrackIndex) {
         // 保存当前播放位置
         this.savePlaybackPosition();
@@ -672,6 +745,36 @@ export default {
       }
     },
 
+    async purchaseAudio() {
+      if (!this.bookId) {
+        return;
+      }
+
+      this.purchaseLoading = true;
+
+      try {
+        const response = await this.$backend(`/audio/${this.bookId}/purchase`, {
+          method: 'POST',
+          data: {
+            price: 10.00
+          }
+        });
+
+        if (response.err === 'ok') {
+          this.isPaid = true;
+          this.showPurchaseDialog = false;
+          this.$toast.success(this.$t('audio.purchaseSuccess'));
+        } else {
+          this.$toast.error(response.msg || this.$t('audio.purchaseFailed'));
+        }
+      } catch (error) {
+        console.error('Purchase audio error:', error);
+        this.$toast.error(this.$t('audio.purchaseFailed'));
+      } finally {
+        this.purchaseLoading = false;
+      }
+    },
+
     closePlayer() {
       // 停止播放并保存当前位置
       if (this.$refs.audioPlayer) {
@@ -859,6 +962,28 @@ export default {
 
 .playlist-item.active .track-number {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+.playlist-item.locked {
+  opacity: 0.5;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.playlist-item.locked:hover {
+  background-color: transparent;
+}
+
+.vip-badge {
+  margin-left: 8px;
+}
+
+.purchase-btn {
+  margin-right: 8px;
+}
+
+.purchase-hint {
+  margin-top: 8px;
 }
 
 .track-info {

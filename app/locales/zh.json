@@ -566,6 +566,15 @@
         "timer1hour": "1小时",
         "playbackSpeed": "播放速度",
         "volume": "音量",
-        "downloadCollection": "下载音频合集"
+        "downloadCollection": "下载音频合集",
+        "purchase": "购买",
+        "confirmPurchase": "确认购买",
+        "purchaseDescription": "购买《{title}》有声书完整版，解锁全部章节及下载功能。",
+        "price": "需扣除",
+        "purchaseSuccess": "购买成功！",
+        "purchaseFailed": "购买失败，请稍后重试",
+        "notPurchased": "您还未购买此音频，请先购买",
+        "dailyLimitExceeded": "今日已下载过此音频合集，请明天再试",
+        "purchaseHint": "购买后解锁全部章节及下载功能"
     }
 }
