@@ -856,7 +856,7 @@ class AudioPurchase(BaseHandler):
                         return {"err": "server.error", "msg": _("购买失败，配额扣减出错")}
 
                 # 记录购买日志
-                log = ReaderLog(user.id, "AUDIO_PURCHASE", user.id)
+                log = ReaderLog(user.id, ReaderLog.ACTION_PURCHASE, user.id)
                 log.set_extra("book_id", book_id)
                 log.set_extra("order_id", order_id)
                 log.set_extra("price", price)

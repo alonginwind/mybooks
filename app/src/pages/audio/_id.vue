@@ -99,12 +99,11 @@
             dense
             class="ma-2"
           >
-            <v-icon left>mdi-information</v-icon>
             {{ $t('audio.purchaseHint') }}
           </v-alert>
         </div>
 
-        <div v-else class="no-audio-message">
+        <div  v-if="audioFiles.length == 0" class="no-audio-message">
           <v-icon large color="grey">mdi-headphones-off</v-icon>
           <p>{{ $t('audio.noAudioFiles') }}</p>
         </div>
@@ -763,13 +762,13 @@ export default {
         if (response.err === 'ok') {
           this.isPaid = true;
           this.showPurchaseDialog = false;
-          this.$toast.success(this.$t('audio.purchaseSuccess'));
+          this.$alert('success', this.$t('audio.purchaseSuccess'));
         } else {
-          this.$toast.error(response.msg || this.$t('audio.purchaseFailed'));
+          this.$alert('error', response.msg || this.$t('audio.purchaseFailed'));
         }
       } catch (error) {
         console.error('Purchase audio error:', error);
-        this.$toast.error(this.$t('audio.purchaseFailed'));
+        this.$alert('error', this.$t('audio.purchaseFailed'));
       } finally {
         this.purchaseLoading = false;
       }
