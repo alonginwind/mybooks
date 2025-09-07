@@ -19,8 +19,8 @@ import tornado
 from tornado import web
 
 from webserver import loader, utils
-from webserver.handlers.base import BaseHandler, auth, js, is_admin
-from webserver.models import BizKey, Reader, ReaderPaidBook, ReaderLog
+from webserver.handlers.base import BaseHandler, auth, js
+from webserver.models import BizKey, ReaderPaidBook, ReaderLog
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
 
 CONF = loader.get_settings()
@@ -220,11 +220,12 @@ class AudioBooks(BaseHandler):
 
 class AudioConversion(BaseHandler):
     @js
-    @is_admin
+    @auth
     def get(self, bid):
         # get the conversion status, check it in the worker map,
         # return the status json if found it in the map, otherwise, return not found status.
-        if not self.admin_user:
+        user = self.get_current_user()
+        if not user.is_admin():
             return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
 
         try:
@@ -360,10 +361,10 @@ class AudioConversion(BaseHandler):
 
 class AudioConversionCancel(BaseHandler):
     @js
-    @is_admin
+    @auth
     def post(self, book_id):
         # cancel the conversion for the book id, if the worker exists, stop it and remove it from the map.
-        if not self.admin_user:
+        if not self.get_current_user().is_admin():
             return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
         try:
             book_id = int(book_id)
@@ -395,11 +396,11 @@ class AudioConversionCancel(BaseHandler):
 
 class AudioDelete(BaseHandler):
     @js
-    @is_admin
+    @auth
     def post(self, book_id):
         # delete the audio file for the book id, if the file exists, remove it.
         # if not found, return not found status.
-        if not self.admin_user:
+        if not self.get_current_user().is_admin():
             return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
 
         try:

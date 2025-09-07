@@ -17,6 +17,7 @@ from webserver.version import VERSION
 
 CONF = loader.get_settings()
 COOKIE_REDIRECT = "login_redirect"
+ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
 
 
 class Done(BaseHandler):
@@ -326,7 +327,7 @@ class UserInfo(BaseHandler):
         }
 
     def get_user_info(self, detail):
-        enable_vip_quota = CONF.get("ENABLE_VIP_QUOTA", False)
+        enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
         if enable_vip_quota:
             user = self.get_current_user_sync()
             logging.info("Refreshed user info for VIP quota check: %s", user)
@@ -408,7 +409,7 @@ class UserVipInfo(BaseHandler):
     @js
     @auth
     def get(self):
-        enable_vip_quota = CONF.get("ENABLE_VIP_QUOTA", False)
+        enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
         if not enable_vip_quota:
             return {
                 "err": "ok",

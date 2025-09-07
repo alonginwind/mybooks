@@ -300,6 +300,8 @@ class BaseHandler(web.RequestHandler):
         return user
 
     def get_current_user_sync(self):
+        if not self.current_user:
+            return None
         user_id = self.user_id()
         if user_id:
             user_id = int(user_id)

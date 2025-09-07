@@ -124,6 +124,12 @@ export default {
                 return b;
             });
         },
+        get_audio_books: function() {
+            return this.audio_books.map( b => {
+                b['href'] = "/book/" + b.id;
+                return b;
+            });
+        },
     },
     methods: {
         async loadLibraryStats() {
@@ -195,6 +201,7 @@ export default {
     data: () => ({
         random_books: [],
         new_books: [],
+        audio_books: [],
         navs: [],
         libraryStats: null,
         releaseNotesDialog: false,
