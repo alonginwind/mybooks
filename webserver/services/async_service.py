@@ -39,12 +39,12 @@ class AsyncService(metaclass=SingletonType):
             # Alter the item table to add a new bool column sole if it doesn't exist
             try:
                 need_sync_item_time, changed = self.adjust_item_table()
-
+                reader_changed = self.adjust_reader_table()
+                changed = changed or reader_changed
                 if changed:
                     self.session.commit()
-
             except Exception as err:
-                logging.warning("Failed to alter table 'items': %s", err)
+                logging.warning("Failed to alter tables: %s", err)
                 self.session.rollback()
         # logging.info("<%s> setup: db=%s, session=%s", self, self.db, self.session)
         logging.info("AsyncService setup completed")
@@ -83,7 +83,7 @@ class AsyncService(metaclass=SingletonType):
                 """))
                 need_sync_item_time = True
                 changed = True
-            return need_sync_item_time, changed
+        return need_sync_item_time, changed
 
     def adjust_reader_table(self):
         result = self.session.execute(text("""

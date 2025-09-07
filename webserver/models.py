@@ -287,7 +287,7 @@ class BizKey(Base, SQLAlchemyMixin):
 
     __tablename__ = "biz_key"
     id = Column(Integer, primary_key=True)
-    key = Column(String(200))
+    key = Column(String(100))
     expire = Column(DateTime)
     create_time = Column(DateTime)
     type = Column(Integer)

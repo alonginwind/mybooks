@@ -8,6 +8,7 @@ import re
 import shutil
 import threading
 import time
+import urllib.parse
 import uuid
 import zipfile
 from gettext import gettext as _
@@ -21,6 +22,7 @@ from webserver.models import BizKey, Reader
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
 
 CONF = loader.get_settings()
+ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
 
 # map of conversion workers, key is book id, value is instance of the worker
 ConversionWorkerMap = {}
@@ -473,10 +475,10 @@ class AudioFile(BaseHandler):
             raise web.HTTPError(400, "Invalid book ID")
         except Exception as e:
             logging.error(f"Error in AudioFile.get: {e}")
-            raise web.HTTPError(500, "Internal server error")
+            raise web.HTTPError(500, "内部错误")
 
 
-class AudioCollectionDownload(BaseHandler):
+class AudioCollection(BaseHandler):
     @js
     @auth
     def get(self, book_id):
@@ -490,7 +492,7 @@ class AudioCollectionDownload(BaseHandler):
                 return {"err": "auth.required", "msg": _("需要登录")}
 
             # 检查是否启用VIP配额功能
-            enable_vip_quota = CONF.get("enable_vip_quota", False)
+            enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
 
             if enable_vip_quota:
                 # 检查VIP是否过期
@@ -508,7 +510,7 @@ class AudioCollectionDownload(BaseHandler):
 
                     return {
                         "err": "vip.expired",
-                        "message": "VIP已过期",
+                        "message": "非VIP用户或VIP已过期",
                         "notes": vip_notes
                     }
 
@@ -539,6 +541,7 @@ class AudioCollectionDownload(BaseHandler):
             # 检查音频目录
             audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
             if not os.path.exists(audio_dir):
+                logging.error(f"Audio directory does not exist: {audio_dir}")
                 return {"err": "audio.not_found", "msg": _("音频文件不存在")}
 
             audio_files = [f for f in os.listdir(audio_dir) if f.endswith(('.mp3', '.wav', '.m4a', '.opus'))]
@@ -582,7 +585,8 @@ class AudioCollectionDownload(BaseHandler):
                     logging.error(f"Error updating user quota: {e}")
                     # 如果配额扣减失败，删除已创建的key
                     try:
-                        biz_key.delete()
+                        self.sqlite_session.delete(biz_key)
+                        self.sqlite_session.commit()
                     except:
                         pass
                     return {"err": "server.error", "msg": _("内部处理错误")}
@@ -595,7 +599,6 @@ class AudioCollectionDownload(BaseHandler):
                 "download_url": download_url,
                 "message": "下载链接已生成"
             }
-
         except ValueError:
             return {"err": "params.invalid", "msg": _("无效的书籍ID")}
         except Exception as e:
@@ -607,6 +610,7 @@ class AudioCollectionDownloadFile(BaseHandler):
     def get(self, book_id):
         """音频合集文件下载接口"""
         try:
+            logging.info(f"AudioCollectionDownloadFile called for book_id: {book_id}")
             book_id = int(book_id)
             download_key = self.get_argument("key", "")
 
@@ -614,8 +618,7 @@ class AudioCollectionDownloadFile(BaseHandler):
                 raise web.HTTPError(400, "Missing download key")
 
             # 验证下载key
-
-            biz_key = self._session().query(BizKey).filter_by(key=download_key, type=BizKey.TYPE_DOWNLOAD).first()
+            biz_key = self.sqlite_session.query(BizKey).filter_by(key=download_key, type=BizKey.TYPE_DOWNLOAD).first()
             if not biz_key:
                 raise web.HTTPError(403, "Invalid download key")
 
@@ -630,16 +633,21 @@ class AudioCollectionDownloadFile(BaseHandler):
             zip_path = os.path.join(audio_dir, zip_filename)
 
             if not os.path.exists(zip_path):
-                raise web.HTTPError(404, "Collection file not found")
+                raise web.HTTPError(404, "合集文件不存在")
 
             # 获取书籍信息用于文件名
             book = self.get_book(book_id)
             safe_title = "".join(c for c in (book.get('title', f'book_{book_id}') if book else f'book_{book_id}') if c.isalnum() or c in (' ', '-', '_')).rstrip()
-            download_filename = f"{safe_title}_音频合集.zip"
+
+            # 构建文件名，处理中文字符
+            filename_base = f"{safe_title}_音频合集.zip"
+            # URL编码文件名以支持中文
+            encoded_filename = urllib.parse.quote(filename_base.encode('utf-8'))
 
             # 设置响应头
             self.set_header("Content-Type", "application/zip")
-            self.set_header("Content-Disposition", f'attachment; filename="{download_filename}"')
+            # 使用 RFC 5987 标准来支持非ASCII字符的文件名
+            self.set_header("Content-Disposition", f"attachment; filename*=UTF-8''{encoded_filename}")
 
             # 获取文件大小
             file_size = os.path.getsize(zip_path)
@@ -654,12 +662,12 @@ class AudioCollectionDownloadFile(BaseHandler):
                         break
                     self.write(chunk)
 
-            # 下载完成后清理key
+            # 删除使用过的key
             try:
-                biz_key.delete()
+                self.sqlite_session.delete(biz_key)
+                self.sqlite_session.commit()
             except Exception as e:
-                logging.error(f"Error deleting key: {e}")
-
+                logging.error(f"Error deleting BizKey after download: {e}")
         except ValueError:
             raise web.HTTPError(400, "Invalid book ID")
         except Exception as e:
@@ -674,7 +682,7 @@ def routes():
         (r"/api/audio/([0-9]+)/cancel", AudioConversionCancel),
         (r"/api/audio/([0-9]+)/delete", AudioDelete),
         (r"/api/audiobooks", AudioBooks),  # 音频书籍列表
-        (r"/api/audios/([0-9]+)/([^/]+)", AudioFile),
-        (r"/api/audios/([0-9]+)/collection", AudioCollectionDownload),  # 音频合集下载接口
+        # (r"/api/audios/([0-9]+)/([^/]+)", AudioFile),
+        (r"/api/audios/([0-9]+)/collection", AudioCollection),  # 音频合集下载接口
         (r"/api/audios/([0-9]+)/collection/download", AudioCollectionDownloadFile),  # 音频合集文件下载
     ]

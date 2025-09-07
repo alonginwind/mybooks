@@ -83,9 +83,8 @@ export default {
         displayTitle = this.$t('listBook.physicalBooks');
         break;
 
-      case "/audios":
+      case "/audiobooks":
         displayTitle = this.$t('listBook.audioBooks');
-        this.isAudioPage = true;
         break;
 
       default:
@@ -130,15 +129,25 @@ export default {
     }
     this.page_cnt = Math.max(1, Math.ceil(this.total / this.page_size))
 
+    // 检查是否为音频页面
+    this.checkIfAudioPage();
   },
 
   beforeRouteUpdate(to, from, next) {
     this.init(to, next);
   },
   methods: {
+    checkIfAudioPage() {
+      // 检查当前路径是否为音频页面
+      this.isAudioPage = this.$route.path === '/audiobooks';
+    },
     init(route, next) {
       this.inited = true;
       this.$store.commit('navbar', true);
+
+      // 更新音频页面状态
+      this.isAudioPage = route.path === '/audiobooks';
+
       this.$backend(route.fullPath)
         .then(rsp => {
           if (rsp.err != 'ok') {
