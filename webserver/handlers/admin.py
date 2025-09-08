@@ -28,6 +28,7 @@ from webserver.version import VERSION
 CONF = loader.get_settings()
 USER_UPDATE_TS_MAP = {}
 
+
 class AdminUsers(BaseHandler):
     @js
     @auth

@@ -716,7 +716,8 @@ class AudioCollectionDownloadFile(BaseHandler):
 
             # 获取书籍信息用于文件名
             book = self.get_book(book_id)
-            safe_title = "".join(c for c in (book.get('title', f'book_{book_id}') if book else f'book_{book_id}') if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            safe_title = "".join(c for c in (book.get('title', f'book_{book_id}') if book else f'book_{book_id}')
+                                 if c.isalnum() or c in (' ', '-', '_')).rstrip()
 
             # 构建文件名，处理中文字符
             filename_base = f"{safe_title}_音频合集.zip"
@@ -785,7 +786,8 @@ class AudioPurchase(BaseHandler):
                 # 检查VIP是否过期
                 if not user.vipexpire or user.vipexpire < datetime.datetime.now():
                     # 读取VIP说明文件
-                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
+                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                                                  "app", "public", "vip_notes.txt")
                     vip_notes = ""
                     try:
                         if os.path.exists(vip_notes_path):
@@ -805,7 +807,8 @@ class AudioPurchase(BaseHandler):
                 # 检查VIP配额
                 if user.vipquota <= 0:
                     # 读取VIP说明文件
-                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "app", "public", "vip_notes.txt")
+                    vip_notes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                                                  "app", "public", "vip_notes.txt")
                     vip_notes = ""
                     try:
                         if os.path.exists(vip_notes_path):

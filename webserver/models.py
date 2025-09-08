@@ -266,7 +266,6 @@ class ReaderLog(Base, SQLAlchemyMixin):
     revision = Column(String(100), default=0)
     operator_id = Column(Integer, ForeignKey("readers.id"), default=0)
 
-
     def __init__(self, reader_id, action, operator_id=0, revision=""):
         super(ReaderLog, self).__init__()
         self.reader_id = reader_id
