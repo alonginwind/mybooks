@@ -335,7 +335,6 @@ class UserInfo(BaseHandler):
         enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
         if enable_vip_quota:
             user = self.get_current_user_sync()
-            logging.info("Refreshed user info for VIP quota check: %s", user)
         else:
             user = self.get_current_user()
         d = {
@@ -366,7 +365,6 @@ class UserInfo(BaseHandler):
         if enable_vip_quota:
             d["vipquota"] = user.vipquota or 0
             d["vip_expire"] = user.vipexpire.strftime("%Y-%m-%d") if user.vipexpire else ""
-            logging.debug("VIP QUOTA = %s", d["vipquota"])
 
         if user.avatar:
             if user.avatar.startswith("http"):

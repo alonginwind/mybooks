@@ -1222,6 +1222,23 @@ class BookRead(BaseHandler):
         self.user_history("read_history", book)
         self.count_increase(book_id, count_download=1)
 
+        # 优先阅读epub/azw3/mobi/txt格式
+        for fmt in ["epub", "mobi", "azw", "azw3", "txt"]:
+            fpath = book.get("fmt_%s" % fmt, None)
+            if not fpath:
+                continue
+
+            if fmt != 'epub':
+                ConvertService().convert_and_save(self.user_id(), book, fpath, "epub")
+
+            # epub_dir is for javascript
+            epub_dir = "/get/extract/%s" % book["id"]
+            return self.html_page("book/" + CONF["EPUB_VIEWER"], {
+                "book": book,
+                "epub_dir": epub_dir,
+                "is_ready": (fmt == 'epub'),
+            })
+
         if "fmt_pdf" in book:
             # PDF类书籍需要检查下载权限。
             if not CONF["ALLOW_GUEST_DOWNLOAD"] and not self.current_user:
@@ -1239,22 +1256,6 @@ class BookRead(BaseHandler):
             txt_reader_url = f'/book/{book_id}/readtxt'
             return self.redirect(txt_reader_url)
 
-        # 其他格式，转换为EPUB进行在线阅读
-        for fmt in ["epub", "mobi", "azw", "azw3", "txt"]:
-            fpath = book.get("fmt_%s" % fmt, None)
-            if not fpath:
-                continue
-
-            if fmt != 'epub':
-                ConvertService().convert_and_save(self.user_id(), book, fpath, "epub")
-
-            # epub_dir is for javascript
-            epub_dir = "/get/extract/%s" % book["id"]
-            return self.html_page("book/" + CONF["EPUB_VIEWER"], {
-                "book": book,
-                "epub_dir": epub_dir,
-                "is_ready": (fmt == 'epub'),
-            })
         raise web.HTTPError(404, reason=_(u"抱歉，在线阅读器暂不支持该格式的书籍"))
 
 
