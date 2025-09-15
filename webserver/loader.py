@@ -38,7 +38,6 @@ class SettingsLoader(dict):
 
         try:
             import auto
-
             self.update(auto.settings)
         except:
             pass
