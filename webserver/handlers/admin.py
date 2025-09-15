@@ -27,6 +27,7 @@ from webserver.version import VERSION
 
 CONF = loader.get_settings()
 USER_UPDATE_TS_MAP = {}
+ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
 
 
 class AdminUsers(BaseHandler):
@@ -54,7 +55,7 @@ class AdminUsers(BaseHandler):
         else:
             f = f.desc()
 
-        enable_vip_quota = CONF.get("ENABLE_VIP_QUOTA", False)
+        enable_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
         query = self.sqlite_session.query(Reader).order_by(f)
         total = query.count()
         start = page * num
@@ -314,6 +315,7 @@ class AdminSettings(BaseHandler):
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon
+        current_vip_quota = CONF.get(ENABLE_VIP_QUOTA_KEY, False)
         args = loader.SettingsLoader()
         args.clear()
 
@@ -327,6 +329,9 @@ class AdminSettings(BaseHandler):
         # Check and set the favicon
         if "site_icon" not in args or not args["site_icon"]:
             args["site_icon"] = "favicon_0"
+
+        if ENABLE_VIP_QUOTA_KEY not in args:
+            args[ENABLE_VIP_QUOTA_KEY] = current_vip_quota
 
         if args["site_icon"] != "favicon_0" and args["site_icon"] != current_icon:
             new_icon_path = CONF["static_path"] + "/logo/" + args["site_icon"] + ".ico"
