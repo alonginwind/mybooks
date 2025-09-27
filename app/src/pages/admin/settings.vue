@@ -19,13 +19,13 @@
 
             <template v-for="f in card.fields">
               <v-checkbox small hide-details v-if="f.type === 'checkbox'" :prepend-icon="f.icon"
-                v-model="settings[f.key]" :key="f.key" :label="$t(f.label)"></v-checkbox>
+                v-model="settings[f.key]" :key="f.key + '-checkbox'" :label="$t(f.label)"></v-checkbox>
               <v-textarea outlined v-else-if="f.type === 'textarea'" :prepend-icon="f.icon" v-model="settings[f.key]"
-                :key="f.key" :label="$t(f.label)"></v-textarea>
+                :key="f.key + '-textarea'" :label="$t(f.label)"></v-textarea>
               <v-select small v-else-if="f.type === 'select'" :prepend-icon="f.icon" v-model="settings[f.key]"
-                :items="f.items" :key="f.key" :label="$t(f.label)"> </v-select>
+                :items="f.items" :key="f.key + '-select'" :label="$t(f.label)"> </v-select>
               <v-select small v-else-if="f.type === 'select_image'" :prepend-icon="f.icon"
-                v-model="settings[f.key]" :items="f.items" :key="f.key" :label="$t(f.label)">
+                v-model="settings[f.key]" :items="f.items" :key="f.key + '-select_image'" :label="$t(f.label)">
                 <template #item="{ item }">
                   <v-img :src="`${site_url}/logo/${item.image_file}.ico`" max-width="32" max-height="32" />
                 </template>
@@ -33,22 +33,22 @@
                   <v-img :src="`${site_url}/logo/${item.image_file}.ico`" max-width="32" max-height="32" />
                 </template>
               </v-select>
-              <v-text-field v-else :prepend-icon="f.icon" v-model="settings[f.key]" :key="f.key" :label="$t(f.label)"
+              <v-text-field v-else :prepend-icon="f.icon" v-model="settings[f.key]" :key="f.key + '-text'" :label="$t(f.label)"
                 type="text"></v-text-field>
             </template>
 
-            <template v-for="b in card.buttons">
-              <v-btn :key="b.label" @click="run(b.action)" color="primary"><v-icon>{{ b.icon }}</v-icon>{{ $t(b.label)
+            <template v-for="b in card.buttons" :key="b.label">
+              <v-btn @click="run(b.action)" color="primary"><v-icon>{{ b.icon }}</v-icon>{{ $t(b.label)
                 }}</v-btn>
             </template>
 
-            <template v-for="g in card.groups">
-              <v-checkbox small hide-details v-model="settings[g.key]" :key="g.label" :label="$t(g.label)"></v-checkbox>
+            <template v-for="g in card.groups" :key="g.label">
+              <v-checkbox small hide-details v-model="settings[g.key]" :label="$t(g.label)"></v-checkbox>
               <template v-if="settings[g.key]">
                 <template v-for="f in g.fields">
                   <v-textarea outlined v-if="f.type === 'textarea'" :prepend-icon="f.icon" v-model="settings[f.key]"
                     :key="f.key" :label="$t(f.label)"></v-textarea>
-                  <v-text-field v-else :prepend-icon="f.icon" v-model="settings[f.key]" :key="f.key"
+                  <v-text-field v-else :prepend-icon="f.icon" v-model="settings[f.key]" :key="f.key + '-text'"
                     :label="$t(f.label)" type="text"></v-text-field>
                 </template>
               </template>
@@ -76,20 +76,20 @@
             <template v-if="card.show_bookbarn">
               <p>{{ $t('settings.book_barn_description') }}</p>
               <v-checkbox small hide-details
-                v-model="settings['ENABLE_BOOKBARN']" :key="ENABLE_BOOKBARN" :label="$t('settings.bookbarn_enable')"></v-checkbox>
+                v-model="settings['ENABLE_BOOKBARN']" :key="'ENABLE_BOOKBARN'" :label="$t('settings.bookbarn_enable')"></v-checkbox>
               <v-text-field flat small v-model="settings['BOOKBARN_TOKEN']" :label="$t('settings.bookbarn_token')"
                 type="text" :disabled="true"></v-text-field>
               <v-btn color="primary" :disabled="!settings['ENABLE_BOOKBARN'] || appliedToken" style="margin-bottom:24px" @click="apply_bookbarn_token">
                 <v-icon>key</v-icon>{{ $t('settings.bookbarn_apply_token') }}
               </v-btn>
-              <v-checkbox small hide-details v-model="settings['ENABLE_RECEIVING_BOOKS']" :key="ENABLE_RECEIVING_BOOKS"
+              <v-checkbox small hide-details v-model="settings['ENABLE_RECEIVING_BOOKS']" :key="'ENABLE_RECEIVING_BOOKS'"
                 :label="$t('settings.enable_receiving_books')" :disabled="!settings['ENABLE_BOOKBARN']">
               </v-checkbox>
               <v-select small :prepend-icon="clock" v-model="settings['BOOKBARN_COLLECTION_HOUR']" :disabled="!settings['ENABLE_BOOKBARN']||!settings['ENABLE_RECEIVING_BOOKS']"
-                :items=card.hours :key="BOOKBARN_COLLECTION_HOUR" :label="$t('settings.bookbarn_collection_hour')"> </v-select>
+                :items=card.hours :key="'BOOKBARN_COLLECTION_HOUR'" :label="$t('settings.bookbarn_collection_hour')"> </v-select>
               <p><strong>{{ $t('settings.book2audio_proxy') }}</strong></p>
               <p>{{ $t('settings.book2audio_proxy_comment') }}</p>
-              <v-checkbox small hide-details v-model="settings['USE_BOOKBARN_PROXY']" :key="USE_BOOKBARN_PROXY"
+              <v-checkbox small hide-details v-model="settings['USE_BOOKBARN_PROXY']" :key="'USE_BOOKBARN_PROXY'"
                 :label="$t('settings.use_bookbarn_proxy')" :disabled="!settings['ENABLE_BOOKBARN']">
               </v-checkbox>
               <v-text-field flat hide-details v-model="settings['BOOK2AUDIO_PROXY']" :disabled="!settings['ENABLE_BOOKBARN'] || settings['USE_BOOKBARN_PROXY']" :label="$t('settings.book2audio_proxy_address')"
