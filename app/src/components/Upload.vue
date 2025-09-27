@@ -1,7 +1,7 @@
 <template>
     <div>
         <v-btn
-            v-show="showUploadButtons"
+            v-show="showUploadButtons && ($store.state.sys.allow.upload || $store.state.user.is_login)"
             bottom
             color="pink"
             dark
@@ -16,7 +16,7 @@
 
         <!-- 添加实体书按钮 -->
         <v-btn
-            v-show="showUploadButtons && $store.state.sys.allow.physical_books"
+            v-show="showUploadButtons && ($store.state.sys.allow.upload || $store.state.user.is_login) && $store.state.sys.allow.physical_books"
             bottom
             color="green"
             dark
@@ -38,7 +38,6 @@
                 </v-toolbar>
                 <v-card-title></v-card-title>
                 <v-card-text>
-                    <p>{{ $t('upload.warning', { max_size: maxSizeStr}) }}</p>
                     <v-form ref="form" @submit="do_upload">
                         <v-file-input v-model="ebooks" :label="$t('upload.selectFile')"></v-file-input>
                     </v-form>
@@ -52,7 +51,8 @@
         </v-dialog>
 
         <!-- 添加实体书对话框 -->
-        <v-dialog v-if="$store.state.sys.allow.physical_books" v-model="isbn_dialog" persistent transition="dialog-bottom-transition" width="410">
+        <v-dialog v-if="($store.state.sys.allow.upload || $store.state.user.is_login) && $store.state.sys.allow.physical_books"
+                            v-model="isbn_dialog" persistent transition="dialog-bottom-transition" width="410">
             <v-card>
                 <v-toolbar flat dense dark color="green">
                     <v-icon>mdi-book-plus</v-icon>
