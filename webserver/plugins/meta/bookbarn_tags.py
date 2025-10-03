@@ -37,6 +37,7 @@ class BookBarnTags:
             return ""
 
         clean = author.replace("\r", "").replace("，", ",").replace('"', "").replace('“', "").replace('”', "")
+        clean = clean.replace("•", "·")
         for pattern in (r"\[.*?\]", r"【.*?】", r"\(.*?\)", r"（.*?）"):
             clean = re.sub(pattern, "", clean)
 
