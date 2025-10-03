@@ -276,6 +276,10 @@
                                     <v-icon>apps</v-icon>
                                     {{ $t('book.updateInfoFromInternet') }}
                                 </v-list-item>
+                                <v-list-item @click="update_tags">
+                                    <v-icon>mdi-bookmark-plus</v-icon>
+                                    {{ $t('book.updateTags') }}
+                                </v-list-item>
                                 <v-list-item @click="reset_refer">
                                     <v-icon>apps</v-icon>
                                     {{ $t('book.resetInfo') }}
@@ -1204,6 +1208,19 @@ export default {
                     this.$alert("success", this.$t('book.resetSuccessful'));
                     this.$router.push("/book/" + this.book.id);
                     location.reload();
+                } else {
+                    this.$alert("error", rsp.msg);
+                }
+            });
+        },
+        update_tags() {
+            // this.$router.push("/book/" + this.book.id + "/tags");
+            this.$backend("/book/" + this.book.id + "/tags", {
+                method: "POST"
+            }).then((rsp) => {
+                if (rsp.err === "ok") {
+                    this.$alert("success", this.$t('book.updateTagsSuccessful'));
+                    this.$router.push("/book/" + this.book.id);
                 } else {
                     this.$alert("error", rsp.msg);
                 }

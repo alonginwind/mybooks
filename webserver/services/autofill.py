@@ -167,7 +167,7 @@ class AutoFillService(AsyncService):
             logging.info(_("忽略获取标签书籍 id=%d : 无有效数据"), mi.id)
             return None
 
-        api = BookBarnTags(token=CONF.get("bookbarn_token", ""))
+        api = BookBarnTags(token=CONF.get("BOOKBARN_TOKEN", ""))
         try:
             author = mi.authors[0] if mi.authors else ""
             logging.info(_("调用 bookbarn_tags 接口查询 %s, %s, %s"), mi.title, author, mi.isbn)

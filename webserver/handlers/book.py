@@ -21,6 +21,7 @@ from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, ListHandler, auth, js
 from webserver.models import Item, BOOK_TYPE_PHYSICAL, ReadingState
 from webserver.plugins.meta import baike, douban, youshu
+from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.plugins.parser.txt import get_content_encoding
 from webserver.handlers.audio import AudioUtils
 
@@ -106,6 +107,45 @@ class BookDetail(BaseHandler):
             "book": utils.BookFormatter(self, book).format(with_files=True, with_perms=True),
             "audios": AudioUtils.get_audios(bid, self.current_user.id if self.current_user else None),
         }
+
+
+class BookTags(BaseHandler):
+    # Update the tags by BookBarn Tags API
+    @js
+    @auth
+    def post(self, id):
+        book_id = int(id)
+        book = self.get_book(book_id)
+        if not book:
+            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+
+        if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
+            return {"err": "user.no_permission", "msg": _(u"无权限")}
+
+        isbn = book.get("isbn", "")
+        title = book.get("title", "")
+        author = book.get("author_sort", "")
+
+        try:
+            api = BookBarnTags(token=CONF.get("BOOKBARN_TOKEN", ""))
+            if not api:
+                return {"err": "plugin.missing", "msg": _(u"BookBarn Tags插件未安装")}
+            tags = api.get_tags(isbn=isbn, title=title, author=author)
+            if not tags:
+                return {"err": "plugin.fail", "msg": _(u"BookBarn Tags插件拉取标签失败")}
+            logging.info(f"BookBarn Tags for book {book_id} ({title}): {tags}")
+            if len(tags) > 0:
+                current_tags = set(book.get("tags", []))
+                new_tags = set(tags) - current_tags
+                if len(new_tags) > 0:
+                    updated_tags = list(current_tags | new_tags)
+                    self.calibre_db.set_tags(book_id, updated_tags)
+                    logging.info(f"Updated tags for book {book_id}: {updated_tags}")
+                    return {"err": "ok", "msg": _(u"标签更新成功"), "tags": updated_tags}
+            return {"err": "ok", "msg": _(u"标签已是最新，无需更新"), "tags": list(current_tags)}
+        except Exception as e:
+            logging.error(f"Error updating tags for book {book_id}: {e}")
+            return {"err": "internal", "msg": _(u"更新标签时发生错误，请稍后再试")}
 
 
 class BookConverter(BaseHandler):
@@ -1608,4 +1648,5 @@ def routes():
         (r"/api/read-done", BookReadDone),
         (r"/api/reading/stats", BookReadingStats),
         (r"/api/library/stats", LibraryStats),
+        (r"/api/book/([0-9]+)/tags", BookTags),
     ]

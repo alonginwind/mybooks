@@ -68,7 +68,6 @@ class BookBarnTags:
             r = requests.get(url, params=params, timeout=10)
             r.raise_for_status()
             data = r.json()
-            logging.info(f"Response from {url}: {data}")
         except Exception as e:
             logging.error(f"Error fetching data from {url}: {e}")
             return None
