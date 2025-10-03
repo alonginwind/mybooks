@@ -45,7 +45,10 @@ class BookBarnTags:
             clean = clean[: min(cut_positions)]
 
         parts = [part.strip() for part in clean.strip().split(",") if part.strip()]
-        return parts[0] if parts else ""
+        clean_author = parts[0] if parts else ""
+        if clean_author and clean_author in ("佚名", "未知", "无名氏", "Unknown"):
+            clean_author = ""
+        return clean_author
 
     def get_tags(self, isbn, title=None, author=None):
         if not isbn and not title and not author:

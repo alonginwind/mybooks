@@ -5,6 +5,7 @@ import asyncio
 import base64
 import datetime
 import logging
+import random
 import time
 from collections import defaultdict
 from gettext import gettext as _
@@ -641,7 +642,8 @@ class ListHandler(BaseHandler):
 
         ids = self.calibre_db.get_books_for_category(category, item_id)
         if (max_count > 0) and (len(ids) > max_count):
-            ids = ids[:max_count]
+            import random
+            ids = set(random.sample(list(ids), max_count))
         books = self.calibre_db.get_data_as_dict(ids=ids)
 
         item = Item()

@@ -124,7 +124,8 @@ class BookTags(BaseHandler):
 
         isbn = book.get("isbn", "")
         title = book.get("title", "")
-        author = book.get("author_sort", "")
+        authors = book.get("authors", [])
+        author = authors[0] if authors else ""
 
         try:
             api = BookBarnTags(token=CONF.get("BOOKBARN_TOKEN", ""))
@@ -132,7 +133,7 @@ class BookTags(BaseHandler):
                 return {"err": "plugin.missing", "msg": _(u"BookBarn Tags插件未安装")}
             tags = api.get_tags(isbn=isbn, title=title, author=author)
             if not tags:
-                return {"err": "plugin.fail", "msg": _(u"BookBarn Tags插件拉取标签失败")}
+                tags = ""
             logging.info(f"BookBarn Tags for book {book_id} ({title}): {tags}")
             if len(tags) > 0:
                 new_tags = tags.split(",") if tags else None
