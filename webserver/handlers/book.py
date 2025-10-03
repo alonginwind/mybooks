@@ -1615,6 +1615,42 @@ class BookPush(BaseHandler):
         return {"err": "ok", "msg": _(u"服务器正在转换格式，稍后将自动推送。您可关闭此窗口，继续浏览其他书籍。")}
 
 
+class BookSuggestion(ListHandler):
+    @js
+    @auth
+    def get(self, id):
+        book = self.get_book(id)
+        if not book:
+            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+
+        tags = book.get("tags", [])
+        similar_books = []
+
+        if tags:
+            random_tag = random.choice(tags)
+            similar_books = self.get_item_books("tags", random_tag, max_count=12)
+
+        if not similar_books:
+            # 如果没有标签或没有找到匹配的书籍，则使用作者查询
+            authors = book.get("authors", [])
+            if authors:
+                similar_books = self.get_item_books("authors", authors[0], max_count=12)
+        # 移除结果中的当前书籍
+        similar_books = [b for b in similar_books if b["id"] != book["id"]]
+
+        # if not similar_books:
+        #     # 如果以上查询为空，则从 Index 中随机选取 12 本书
+        #     ids = list(self.calibre_db_cache.search(""))
+        #     random_ids = random.sample(ids, 12)
+        #     similar_books = [b for b in self.get_books(ids=random_ids)]
+
+        return {
+            "err": "ok",
+            "msg": _(u"推荐成功"),
+            "books": [self.fmt(b) for b in similar_books]
+        }
+
+
 def routes():
     return [
         (r"/api/index", Index),
@@ -1649,4 +1685,5 @@ def routes():
         (r"/api/reading/stats", BookReadingStats),
         (r"/api/library/stats", LibraryStats),
         (r"/api/book/([0-9]+)/tags", BookTags),
+        (r"/api/book/([0-9]+)/suggestion", BookSuggestion),
     ]

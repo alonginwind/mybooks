@@ -397,7 +397,8 @@
         "download":"Download",
         "bookPhysical":"Physical Book",
         "bookCount":"Count",
-        "chooseVoice":"Choose voice"
+        "chooseVoice":"Choose voice",
+        "recommendedBooks":"Others"
     },
     "reader": {
         "tip": {

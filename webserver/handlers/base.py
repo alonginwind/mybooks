@@ -633,13 +633,15 @@ class BaseHandler(web.RequestHandler):
 
 
 class ListHandler(BaseHandler):
-    def get_item_books(self, category, name):
+    def get_item_books(self, category, name, max_count=0):
         books = []
         item_id = self.calibre_db_cache.get_item_id(category, name)
         if not item_id:
             return books
 
         ids = self.calibre_db.get_books_for_category(category, item_id)
+        if (max_count > 0) and (len(ids) > max_count):
+            ids = ids[:max_count]
         books = self.calibre_db.get_data_as_dict(ids=ids)
 
         item = Item()

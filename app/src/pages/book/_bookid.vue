@@ -588,6 +588,33 @@
         </v-col>
     </v-row>
 
+    <!-- 推荐图书列表 -->
+    <v-row v-if="suggestionBooks.length > 0" class="mt-6">
+        <v-col cols="12">
+            <v-card>
+                <v-card-title class="headline">
+                    <v-icon left>mdi-book-multiple</v-icon>
+                    {{ $t('book.recommendedBooks') || '推荐图书' }}
+                </v-card-title>
+                <v-card-text>
+                    <v-progress-circular
+                        v-if="suggestionBooksLoading"
+                        indeterminate
+                        color="primary"
+                        class="d-block mx-auto my-4"
+                    ></v-progress-circular>
+                    <book-cards v-else :books="suggestionBooks">
+                        <template #introduce="{ book }">
+                            <div class="text-caption grey--text mt-1">
+                                {{ book.author }}
+                            </div>
+                        </template>
+                    </book-cards>
+                </v-card-text>
+            </v-card>
+        </v-col>
+    </v-row>
+
     <v-dialog v-model="dialog_set_cover" persistent max-width="400">
       <v-card>
         <v-card-title>{{ $t('book.setCover') }}</v-card-title>
@@ -792,6 +819,8 @@ export default {
         msg: "",
         book: {id: 0, title: "", files: [], tags: [], pubdate: "", state: {favorite: 0, wants: 0, read_state: 0}},
         audios: {count: 0, files: [], status: "ok"},
+        suggestionBooks: [],
+        suggestionBooksLoading: false,
         // Audio status constants
         AUDIO_STATUS: {
             UNAVAILABLE: "unavailable",
@@ -936,6 +965,10 @@ export default {
             // 服务端渲染时使用默认语音
             this.voice_name = "zh-CN-XiaoxiaoNeural";
         }
+    },
+    mounted() {
+        // 异步加载推荐图书
+        this.loadSuggestionBooks();
     },
     watch: {
         // 监听audios数据变化，当数据加载完成后检查是否需要启动进度轮询
@@ -1596,6 +1629,22 @@ export default {
                 // 清空文件输入框，允许重复选择同一文件
                 event.target.value = '';
             });
+        },
+        async loadSuggestionBooks() {
+            if (!this.book || !this.book.id) return;
+
+            this.suggestionBooksLoading = true;
+            try {
+                const response = await this.$backend(`/book/${this.book.id}/suggestion`);
+                if (response.err === 'ok' && response.books) {
+                    // 后端已经通过 self.fmt(b) 格式化了数据，直接使用即可
+                    this.suggestionBooks = response.books;
+                }
+            } catch (error) {
+                console.error('加载推荐图书失败:', error);
+            } finally {
+                this.suggestionBooksLoading = false;
+            }
         },
     },
 };

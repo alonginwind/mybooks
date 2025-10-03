@@ -314,7 +314,8 @@
         "download":"下载",
         "bookPhysical":"实体书",
         "bookCount":"在库数",
-        "chooseVoice":"选择声音"
+        "chooseVoice":"选择声音",
+        "recommendedBooks":"其它书籍"
     },
     "reader": {
         "tip": {
