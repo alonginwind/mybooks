@@ -642,7 +642,6 @@ class ListHandler(BaseHandler):
 
         ids = self.calibre_db.get_books_for_category(category, item_id)
         if (max_count > 0) and (len(ids) > max_count):
-            import random
             ids = set(random.sample(list(ids), max_count))
         books = self.calibre_db.get_data_as_dict(ids=ids)
 
