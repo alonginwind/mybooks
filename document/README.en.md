@@ -3,7 +3,7 @@
 
 
 # Tale Book: Personal Calibre WebServer
-A enhanced personal books management webserver built on Calibre + Vue, beautiful and easy-to-use. ([中文说明](document/README.zh_CN.md))
+An enhanced personal books management webserver built on Calibre + Vue, beautiful and easy-to-use. ([中文说明](document/README.zh_CN.md))
 
 **Noted: Online publishing is prohibited for personal websites in China. This project is recommended for personal use only!**
 
@@ -40,7 +40,7 @@ Deployment is straightforward, and Docker is recommended. The Docker image is av
 ### Using Docker Compose
 Download the configuration file [docker-compose.yml](docker-compose.yml) from the repository and execute the following command to start:
 ```bash
-wget https://raw.githubusercontent.com/HorkyChen/talebook/master/docker-compose.yml
+wget https://raw.githubusercontent.com/PoxenStudio/talebook/master/docker-compose.yml
 docker-compose -f docker-compose.yml up -d
 ```
 
@@ -71,7 +71,7 @@ Refer to the following user posts:
 **Disclaimer**: This project does not maintain any public book library sites, such as joyeuse, wenyuange, etc., which are built by users. Please do not consult the author regarding related issues, as assistance cannot be provided.
 
 ## Contributors
-[![](https://contrib.rocks/image?repo=HorkyChen/talebook)](https://github.com/HorkyChen/talebook/graphs/contributors)
+[![](https://contrib.rocks/image?repo=PoxenStudio/talebook)](https://github.com/PoxenStudio/talebook/graphs/contributors)
 
 ## Demonstration
 

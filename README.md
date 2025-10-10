@@ -103,7 +103,7 @@ poxenstudio/talebook增加的特性包括:
 若希望修改挂载的目录或端口，请修改docker-compose.yml文件。
 
 ```
-wget https://raw.githubusercontent.com/HorkyChen/talebook/master/docker-compose.yml
+wget https://raw.githubusercontent.com/PoxenStudio/talebook/master/docker-compose.yml
 docker-compose -f docker-compose.yml  up -d
 ```
 
@@ -147,7 +147,7 @@ NAS安装指南：请参考网友们的帖子：[帖子1](https://post.smzdm.com
 
 
 ## 贡献者
-[![](https://contrib.rocks/image?repo=HorkyChen/talebook)](https://github.com/HorkyChen/talebook/graphs/contributors)
+[![](https://contrib.rocks/image?repo=PoxenStudio/talebook)](https://github.com/PoxenStudio/talebook/graphs/contributors)
 
 
 ## 演示

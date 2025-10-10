@@ -508,7 +508,7 @@
         "message_notification": "Message Notifications",
         "clear_messages": "Clear All",
         "defaultFooter": "This site is built on Calibre, thanks to the power of open source. All resources are collected from the internet. If there is any infringement, please contact us via email.",
-        "defaultHeader": "Welcome! If you like this project, please visit Github <a target=\"_blank\" href=\"https://github.com/HorkyChen/talebook\"> and give talebook a Star!</a>",
+        "defaultHeader": "Welcome! If you like this project, please visit Github <a target=\"_blank\" href=\"https://github.com/PoxenStudio/talebook\"> and give talebook a Star!</a>",
         "favorites": "My Favorites",
         "wants": "Want to Read",
         "reading": "Reading",

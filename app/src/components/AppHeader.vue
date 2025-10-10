@@ -174,7 +174,7 @@
                                 <v-list-item-action><v-icon>history</v-icon></v-list-item-action>
                                 <v-list-item-title> {{ $t('appHeader.reading_history') }} </v-list-item-title>
                             </v-list-item>
-                            <v-list-item target="_blank" href="https://github.com/HorkyChen/talebook/issues">
+                            <v-list-item target="_blank" href="https://github.com/PoxenStudio/talebook/issues">
                                 <v-list-item-action><v-icon>sms_failed</v-icon></v-list-item-action>
                                 <v-list-item-title> {{ $t('appHeader.feedback') }} </v-list-item-title>
                             </v-list-item>
