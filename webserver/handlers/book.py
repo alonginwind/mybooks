@@ -127,6 +127,9 @@ class BookTags(BaseHandler):
         authors = book.get("authors", [])
         author = authors[0] if authors else ""
 
+        if title.startswith("百度百科"):
+            return {"err": "ok", "msg": _(u"无需更新")}
+
         try:
             api = BookBarnTags(token=CONF.get("BOOKBARN_TOKEN", ""))
             if not api:
