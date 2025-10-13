@@ -47,7 +47,7 @@
         "title": "Book List",
         "hotBooks": "Hot Books",
         "search": "Search",
-        "recentUpdates": "Recent Updates",
+        "recentUpdates": "All Books",
         "tagBooks": "Books tagged \"{name}\"",
         "seriesBooks": "{name} Series",
         "ratingBooks": "{name} Star Books",
