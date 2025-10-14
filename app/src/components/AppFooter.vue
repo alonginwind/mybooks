@@ -9,6 +9,7 @@
                 <v-btn small text target="_blank" href="https://github.com/PoxenStudio/talebook">Project</v-btn>
                 | <v-btn small text target="_blank" href="https://hub.docker.com/r/poxenstudio/talebook">Docker</v-btn>
                 | <v-btn small text target="_blank" href="http://talebook.org">DEMO</v-btn>
+                | <v-btn small text target="_blank" href="opds-readme"> {{ $t('appHeader.opdsIntroduction') }} </v-btn>
             </p>
             <!-- 系统版本信息 -->
             <p v-if="version" class="version-info">
