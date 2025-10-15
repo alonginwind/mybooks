@@ -14,12 +14,14 @@ class BaseUploader:
     def _check_file(self):
         if not self.file_path.exists():
             raise FileNotFoundError(f"文件不存在: {self.file_path}")
-        if self.file_extension not in ['.epub', '.pdf']:
-            raise ValueError(f"不支持的文件格式: {self.file_extension}, 只支持 .epub 和 .pdf 文件")
+        if self.file_extension not in ['.epub', '.azw3', '.pdf']:
+            raise ValueError(f"不支持的文件格式: {self.file_extension}, 只支持 .epub、.azw3 和 .pdf 文件")
 
     def _get_content_type(self):
         if self.file_extension == '.epub':
             return 'application/epub+zip'
+        elif self.file_extension == '.azw3':
+            return 'application/vnd.amazon.ebook'
         elif self.file_extension == '.pdf':
             return 'application/pdf'
         return 'application/octet-stream'
@@ -104,18 +106,17 @@ class HanwangUploader(BaseUploader):
 
 class IReaderUploader(BaseUploader):
     def upload(self, server_url):
-        from requests_toolbelt.multipart.encoder import MultipartEncoder
         try:
+            # 使用标准的 multipart/form-data 方式
             with open(self.file_path, 'rb') as file:
-                m = MultipartEncoder(
-                    fields={
-                        'Filename': self.filename,
-                        'Filedata': (self.filename, file, self.content_type),
-                        'Upload': 'Submit Query'
-                    }
-                )
-                headers = {'Content-Type': 'application/octet-stream'}
-                response = requests.post(server_url, data=m, headers=headers, timeout=self.timeout)
+                files = {
+                    'Filedata': (self.filename, file, self.content_type)
+                }
+                data = {
+                    'Filename': self.filename,
+                    'Upload': 'Submit Query'
+                }
+                response = requests.post(server_url, files=files, data=data, timeout=self.timeout)
                 response.raise_for_status()
                 try:
                     return {'success': True, 'data': response.json()}

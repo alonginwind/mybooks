@@ -586,6 +586,25 @@
                 </v-list>
             </v-card>
         </v-col>
+        <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
+            <v-card outlined>
+                <v-list>
+                    <v-list-item @click="dialog_send_to_device = true" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats">
+                        <v-list-item-avatar large :color="book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats ? 'grey' : 'primary'">
+                            <v-icon dark>devices</v-icon>
+                        </v-list-item-avatar>
+                        <v-list-item-content>
+                            <v-list-item-title :class="{ 'grey--text': book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats }">
+                                发送到设备
+                            </v-list-item-title>
+                        </v-list-item-content>
+                        <v-list-item-action>
+                            <v-icon>mdi-arrow-right</v-icon>
+                        </v-list-item-action>
+                    </v-list-item>
+                </v-list>
+            </v-card>
+        </v-col>
     </v-row>
 
     <!-- 推荐图书列表 -->
@@ -721,6 +740,55 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+    <!-- 发送到设备对话框 -->
+    <v-dialog v-model="dialog_send_to_device" persistent max-width="500">
+        <v-card>
+            <v-card-title class="headline">
+                <v-icon class="mr-2">devices</v-icon>
+                发送到设备
+            </v-card-title>
+            <v-card-text>
+                <div v-if="!devices || devices.length === 0" class="text-center py-4">
+                    <v-icon size="48" color="grey">device_unknown</v-icon>
+                    <p class="mt-2 grey--text">
+                        还没有配置任何设备<br>
+                        请先在系统设置中配置阅读设备
+                    </p>
+                </div>
+                <div v-else>
+                    <p class="mb-4">
+                        选择要发送到的设备：
+                        <span class="caption grey--text">
+                            (将发送 {{ selectedFormat }} 格式)
+                        </span>
+                    </p>
+                    <v-radio-group v-model="selectedDevice" mandatory>
+                        <v-radio
+                            v-for="(device, idx) in devices"
+                            :key="idx"
+                            :value="device"
+                            :label="`${device.name} (${getDeviceTypeText(device.type)}) - ${device.ip}:${device.port}`"
+                        ></v-radio>
+                    </v-radio-group>
+                </div>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text @click="dialog_send_to_device = false">
+                    取消
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    :loading="sending_to_device"
+                    @click="sendToDevice"
+                    :disabled="!selectedDevice || !devices || devices.length === 0"
+                >
+                    发送
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -788,6 +856,28 @@ export default {
             const cleanIsbn = this.isbn.replace(/[-\s]/g, '');
             // 检查是否为10位或13位数字（可能包含X）
             return /^[0-9]{9}[0-9X]$/.test(cleanIsbn) || /^[0-9]{13}$/.test(cleanIsbn);
+        },
+
+        // 检查是否有兼容的文件格式
+        hasCompatibleFormats: function() {
+            if (!this.book || !this.book.files) return false;
+            const supportedFormats = ['epub', 'azw3', 'pdf'];
+            return this.book.files.some(file =>
+                supportedFormats.includes(file.format.toLowerCase())
+            );
+        },
+
+        // 获取要发送的文件格式（优先级：epub > azw3 > pdf）
+        selectedFormat: function() {
+            if (!this.book || !this.book.files) return '';
+            const formatPriority = ['epub', 'azw3', 'pdf'];
+            for (const format of formatPriority) {
+                const file = this.book.files.find(f =>
+                    f.format.toLowerCase() === format
+                );
+                if (file) return format.toUpperCase();
+            }
+            return '';
         },
 
         // ISBN验证规则
@@ -858,6 +948,11 @@ export default {
         dialog_set_cover: false,
         // 添加实体书对话框
         isbn_dialog: false,
+        // 发送到设备对话框
+        dialog_send_to_device: false,
+        sending_to_device: false,
+        devices: [],
+        selectedDevice: null,
         adding_book: false,
         isbn: "",
         continueAdding: false,
@@ -950,7 +1045,8 @@ export default {
     created() {
         this.init(this.$route);
         this.mail_to = this.$store.state.user.kindle_email;
-        this.get_txt_parse_status()
+        this.get_txt_parse_status();
+        this.loadDevices(); // 加载设备列表
         if (process.client) {
             this.mail_to = this.$cookies.get("last_mailto");
             // 从localStorage获取上次使用的语音名称
@@ -1647,6 +1743,61 @@ export default {
                 console.error('加载推荐图书失败:', error);
             } finally {
                 this.suggestionBooksLoading = false;
+            }
+        },
+
+        // 加载设备列表
+        async loadDevices() {
+            try {
+                const response = await this.$backend('/admin/settings');
+                if (response.err === 'ok' && response.settings && response.settings.DEVICES) {
+                    this.devices = response.settings.DEVICES;
+                }
+            } catch (error) {
+                console.error('加载设备列表失败:', error);
+            }
+        },
+
+        // 获取设备类型文本
+        getDeviceTypeText(type) {
+            const typeMap = {
+                'duokan': '多看阅读器',
+                'ireader': '掌阅',
+                'hanwang': '汉王'
+            };
+            return typeMap[type] || type;
+        },
+
+        // 发送到设备
+        async sendToDevice() {
+            if (!this.selectedDevice) {
+                this.$alert('error', '请选择要发送到的设备');
+                return;
+            }
+
+            this.sending_to_device = true;
+            try {
+                const url = `${this.selectedDevice.schema}://${this.selectedDevice.ip}:${this.selectedDevice.port}`;
+                const response = await this.$backend(`/book/${this.book.id}/send_to_device`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        device_type: this.selectedDevice.type,
+                        device_url: url
+                    })
+                });
+
+                if (response.err === 'ok') {
+                    this.$alert('success', `书籍已成功发送到 ${this.selectedDevice.name}`);
+                    this.dialog_send_to_device = false;
+                    this.selectedDevice = null;
+                } else {
+                    this.$alert('error', response.msg || '发送失败');
+                }
+            } catch (error) {
+                console.error('发送到设备失败:', error);
+                this.$alert('error', '发送失败，请稍后重试');
+            } finally {
+                this.sending_to_device = false;
             }
         },
     },

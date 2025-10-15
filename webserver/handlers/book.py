@@ -1646,6 +1646,120 @@ class BookSuggestion(ListHandler):
         }
 
 
+class BookSendToDevice(BaseHandler):
+    @js
+    @auth
+    def post(self, bid):
+        """发送书籍到指定设备"""
+        book_id = int(bid)
+        book = self.get_book(book_id)
+        if not book:
+            return {"err": "book.not_found", "msg": _(u"书籍不存在")}
+
+        # 检查用户权限
+        if not self.current_user.can_save():
+            return {"err": "user.no_permission", "msg": _(u"无权限发送书籍到设备")}
+
+        # 解析请求参数
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+            device_type = data.get("device_type", "").lower()
+            device_url = data.get("device_url", "")
+        except:
+            return {"err": "params.invalid", "msg": _(u"请求参数格式错误")}
+
+        if not device_type or not device_url:
+            return {"err": "params.missing", "msg": _(u"设备类型和设备地址不能为空")}
+
+        # 支持的设备类型
+        supported_types = ["duokan", "ireader", "hanwang"]
+        if device_type not in supported_types:
+            return {"err": "device.unsupported", "msg": _(u"不支持的设备类型: %s") % device_type}
+
+        # 查找合适的文件格式（优先级：epub > azw3 > pdf）
+        file_path = None
+        file_format = None
+        format_priority = ["epub", "azw3", "pdf"]
+
+        for fmt in format_priority:
+            fmt_key = "fmt_%s" % fmt
+            if fmt_key in book:
+                file_path = book[fmt_key]
+                file_format = fmt
+                break
+
+        if not file_path:
+            return {"err": "file.not_found", "msg": _(u"书籍没有支持的文件格式（epub/azw3/pdf）")}
+
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            return {"err": "file.missing", "msg": _(u"书籍文件不存在: %s") % file_path}
+
+        # 导入对应的上传器
+        try:
+            from webserver.plugins.sending.uploader import DuokanUploader, IReaderUploader, HanwangUploader
+
+            uploader_map = {
+                "duokan": DuokanUploader,
+                "ireader": IReaderUploader,
+                "hanwang": HanwangUploader
+            }
+
+            uploader_class = uploader_map.get(device_type)
+            if not uploader_class:
+                return {"err": "uploader.not_found", "msg": _(u"找不到对应的上传器: %s") % device_type}
+
+            # 创建上传器实例
+            uploader = uploader_class(file_path)
+
+            # 构建设备上传URL
+            if not device_url.startswith(('http://', 'https://')):
+                device_url = 'http://' + device_url
+
+            # 根据设备类型添加相应的路径
+            upload_url = device_url
+            if device_type == "duokan":
+                if not upload_url.endswith('/'):
+                    upload_url += '/'
+                upload_url += 'kindleService/upload'
+            elif device_type == "ireader":
+                if not upload_url.endswith('/'):
+                    upload_url += '/'
+                upload_url += 'uploadFile'
+            elif device_type == "hanwang":
+                if not upload_url.endswith('/'):
+                    upload_url += '/'
+                upload_url += 'upload'
+
+            # 执行上传
+            logging.info(f"[SEND_TO_DEVICE] 开始发送书籍 {book_id} ({file_format}) 到设备 {device_type}: {upload_url}")
+            result = uploader.upload(upload_url)
+
+            if result.get('success'):
+                logging.info(f"[SEND_TO_DEVICE] 发送成功: {book_id} -> {device_type}")
+                return {"err": "ok", "msg": _(u"书籍发送成功")}
+            else:
+                error_type = result.get('error_type', 'unknown')
+                error_msg = result.get('message', '发送失败')
+
+                if error_type == 'connection':
+                    return {"err": "connection.failed", "msg": _(u"无法连接到设备。请确认IP地址正确，且设备已开启WiFi上传功能")}
+                elif error_type == 'timeout':
+                    return {"err": "upload.timeout", "msg": _(u"上传超时。请检查网络连接和设备状态")}
+                elif error_type == 'http':
+                    status_code = result.get('status_code', 0)
+                    return {"err": "upload.failed", "msg": _(u"上传失败 (HTTP %d)。请查看日志获取详细信息") % status_code}
+                else:
+                    return {"err": "upload.error", "msg": _(u"上传过程出错: %s。请查看日志获取详细信息") % error_msg}
+
+        except ImportError as e:
+            logging.error(f"[SEND_TO_DEVICE] 导入上传器失败: {e}")
+            return {"err": "uploader.import_error", "msg": _(u"设备上传功能不可用")}
+        except Exception as e:
+            logging.error(f"[SEND_TO_DEVICE] 发送失败: {e}")
+            return {"err": "upload.error", "msg": _(u"发送过程出错，请查看日志获取详细信息")}
+
+
 def routes():
     return [
         (r"/api/index", Index),
@@ -1664,6 +1778,7 @@ def routes():
         (r"/api/book/([0-9]+\..+)", BookDownload),
         (r"/api/book/([0-9]+)/push", BookPush),
         (r"/api/book/([0-9]+)/refer", BookRefer),
+        (r"/api/book/([0-9]+)/send_to_device", BookSendToDevice),
         (r"/read/([0-9]+)", BookRead),
         (r"/api/read/txt", TxtRead),
         (r"/api/book/txt/init", BookTxtInit),
