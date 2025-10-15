@@ -1,9 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
-
+import os
 from pathlib import Path
 import requests
-
 
 class BaseUploader:
     def __init__(self, file_path, timeout=60):
@@ -18,13 +15,11 @@ class BaseUploader:
         if not self.file_path.exists():
             raise FileNotFoundError(f"文件不存在: {self.file_path}")
         if self.file_extension not in ['.epub', '.azw3', '.pdf']:
-            raise ValueError(f"不支持的文件格式: {self.file_extension}, 只支持 .epub、.azw3 和 .pdf 文件")
+            raise ValueError(f"不支持的文件格式: {self.file_extension}, 只支持epub, azw3和pdf文件")
 
     def _get_content_type(self):
         if self.file_extension == '.epub':
             return 'application/epub+zip'
-        elif self.file_extension == '.azw3':
-            return 'application/vnd.amazon.ebook'
         elif self.file_extension == '.pdf':
             return 'application/pdf'
         return 'application/octet-stream'
@@ -65,13 +60,32 @@ class BaseUploader:
                 'response_text': str(e)
             }
 
+    def get_upload_url(self, base_url):
+        """
+        子类可重写此方法来构建特定的上传URL
+
+        Args:
+            base_url: 基础URL（如 http://192.168.1.1:8080）
+
+        Returns:
+            完整的上传URL
+        """
+        return base_url
+
     def upload(self, server_url):
         raise NotImplementedError("子类需实现 upload 方法")
 
 
 class DuokanUploader(BaseUploader):
+    def get_upload_url(self, base_url):
+        """构建多看设备的上传URL"""
+        if not base_url.endswith('/'):
+            base_url += '/'
+        return base_url + 'files'
+
     def upload(self, server_url):
         try:
+            upload_url = self.get_upload_url(server_url)
             with open(self.file_path, 'rb') as file:
                 files = {
                     'newfile': (self.filename, file, self.content_type)
@@ -87,9 +101,16 @@ class DuokanUploader(BaseUploader):
 
 
 class HanwangUploader(BaseUploader):
+    def get_upload_url(self, base_url):
+        """构建汉王设备的上传URL"""
+        if not base_url.endswith('/'):
+            base_url += '/'
+        return base_url + 'files'
+
     def upload(self, server_url):
         from urllib.parse import quote
         try:
+            upload_url = self.get_upload_url(server_url)
             with open(self.file_path, 'rb') as file:
                 files = {
                     'newfile': (self.filename, file, self.content_type)
@@ -108,18 +129,26 @@ class HanwangUploader(BaseUploader):
 
 
 class IReaderUploader(BaseUploader):
+    def get_upload_url(self, base_url):
+        """构建iReader设备的上传URL"""
+        if not base_url.endswith('/'):
+            base_url += '/'
+        return base_url + '?action=addBook'
+
     def upload(self, server_url):
+        from requests_toolbelt.multipart.encoder import MultipartEncoder
         try:
-            # 使用标准的 multipart/form-data 方式
+            upload_url = self.get_upload_url(server_url)
             with open(self.file_path, 'rb') as file:
-                files = {
-                    'Filedata': (self.filename, file, self.content_type)
-                }
-                data = {
-                    'Filename': self.filename,
-                    'Upload': 'Submit Query'
-                }
-                response = requests.post(server_url, files=files, data=data, timeout=self.timeout)
+                m = MultipartEncoder(
+                    fields={
+                        'Filename': self.filename,
+                        'Filedata': (self.filename, file, self.content_type),
+                        'Upload': 'Submit Query'
+                    }
+                )
+                headers = {'Content-Type': 'application/octet-stream'}
+                response = requests.post(server_url, data=m, headers=headers, timeout=self.timeout)
                 response.raise_for_status()
                 try:
                     return {'success': True, 'data': response.json()}

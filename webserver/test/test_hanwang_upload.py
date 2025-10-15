@@ -18,7 +18,7 @@ def main():
         return
 
     file_path = sys.argv[1]
-    server_url = "http://192.168.31.230:9310/files"
+    server_url = "http://192.168.31.230:9310"
 
     try:
         print(f"开始上传文件: {file_path}")

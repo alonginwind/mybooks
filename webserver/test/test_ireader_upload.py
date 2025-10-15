@@ -8,7 +8,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from uploader import IReaderUploader
 
 
-def upload_file_to_ireader(file_path, server_url="http://192.168.31.179:10123/?action=addBook"):
+def upload_file_to_ireader(file_path, server_url="http://192.168.31.179:10123"):
     """
     上传文件到iReader服务器
 

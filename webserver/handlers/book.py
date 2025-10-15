@@ -1716,24 +1716,12 @@ class BookSendToDevice(BaseHandler):
             if not device_url.startswith(('http://', 'https://')):
                 device_url = 'http://' + device_url
 
-            # 根据设备类型添加相应的路径
-            upload_url = device_url
-            if device_type == "duokan":
-                if not upload_url.endswith('/'):
-                    upload_url += '/'
-                upload_url += 'files'
-            elif device_type == "ireader":
-                if not upload_url.endswith('/'):
-                    upload_url += '/'
-                upload_url += '?action=addBook'
-            elif device_type == "hanwang":
-                if not upload_url.endswith('/'):
-                    upload_url += '/'
-                upload_url += 'files'
+            # 使用uploader的get_upload_url方法构建完整URL
+            upload_url = uploader.get_upload_url(device_url)
 
             # 执行上传
             logging.info(f"[SEND_TO_DEVICE] 开始发送书籍 {book_id} ({file_format}) 到设备 {device_type}: {upload_url}")
-            result = uploader.upload(upload_url)
+            result = uploader.upload(device_url)
 
             if result.get('success'):
                 logging.info(f"[SEND_TO_DEVICE] 发送成功: {book_id} -> {device_type}")
