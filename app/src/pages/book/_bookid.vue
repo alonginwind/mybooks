@@ -508,7 +508,7 @@
                 </v-card-text>
             </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
+        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
             <v-card outlined>
                 <v-list>
                     <v-list-item :href="'/read/' + book.id" target="_blank">
@@ -525,7 +525,7 @@
                 </v-list>
             </v-card>
         </v-col>
-        <v-col cols="12" sm="5" md="3" v-show="is_txt">
+        <v-col cols="12" sm="4" md="2" v-show="is_txt">
           <v-card outlined>
             <v-list>
               <v-list-item :href="'/book/' + book.id+'/readtxt'" target="_blank">
@@ -542,7 +542,7 @@
             </v-list>
           </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
+        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
             <v-card outlined>
                 <v-list>
                     <v-list-item @click="dialog_download = !dialog_download">
@@ -559,7 +559,7 @@
                 </v-list>
             </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
+        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
             <v-card outlined>
                 <v-list>
                     <v-list-item @click="switch_audio_dialog" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL">
@@ -586,7 +586,7 @@
                 </v-list>
             </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?6:5" :md="is_txt?3:4">
+        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
             <v-card outlined>
                 <v-list>
                     <v-list-item @click="dialog_send_to_device = true" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats">

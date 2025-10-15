@@ -1721,15 +1721,15 @@ class BookSendToDevice(BaseHandler):
             if device_type == "duokan":
                 if not upload_url.endswith('/'):
                     upload_url += '/'
-                upload_url += 'kindleService/upload'
+                upload_url += 'files'
             elif device_type == "ireader":
                 if not upload_url.endswith('/'):
                     upload_url += '/'
-                upload_url += 'uploadFile'
+                upload_url += '?action=addBook'
             elif device_type == "hanwang":
                 if not upload_url.endswith('/'):
                     upload_url += '/'
-                upload_url += 'upload'
+                upload_url += 'files'
 
             # 执行上传
             logging.info(f"[SEND_TO_DEVICE] 开始发送书籍 {book_id} ({file_format}) 到设备 {device_type}: {upload_url}")

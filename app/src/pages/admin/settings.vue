@@ -77,7 +77,7 @@
               <v-row v-for="(device, idx) in settings.DEVICES" :key="'device-' + idx">
                 <v-col class='py-0' cols=2>
                   <v-text-field flat small hide-details single-line v-model="device.name" :label="$t('settings.device_name')"
-                    type="text"></v-text-field>
+                    type="text" maxlength="64"></v-text-field>
                 </v-col>
                 <v-col class='py-0' cols=2>
                   <v-select flat small hide-details single-line v-model="device.type" :items="deviceTypes" :label="$t('settings.device_type')">
@@ -95,7 +95,7 @@
                   <v-select flat small hide-details single-line v-model="device.schema" :items="deviceSchemas" :label="$t('settings.device_schema')">
                   </v-select>
                 </v-col>
-                <v-col class='py-0' cols=1>
+                <v-col class='py-0' cols=1 align-self="end">
                   <v-btn icon small @click="settings.DEVICES.splice(idx, 1)">
                     <v-icon>delete</v-icon>
                   </v-btn>
@@ -103,7 +103,7 @@
               </v-row>
               <v-row>
                 <v-col align="center">
-                  <v-btn color="primary" @click="settings.DEVICES.push({ name: '', type: 'duokan', ip: '', port: 80, schema: 'http' })">
+                  <v-btn color="primary" @click="settings.DEVICES.push({ name: '阅读器', type: 'duokan', ip: '', port: 80, schema: 'http' })">
                     <v-icon>add</v-icon>{{ $t('settings.add') }}
                   </v-btn>
                 </v-col>
