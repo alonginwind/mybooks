@@ -134,7 +134,8 @@ settings = {
     ],
     'SOCIALS': [
     ],
-
+    'DEVICES': [
+    ],
     'SIGNUP_MAIL_TITLE': u'欢迎注册个人书屋',
     'SIGNUP_MAIL_CONTENT': u'''
 Hi, %(username)s！
