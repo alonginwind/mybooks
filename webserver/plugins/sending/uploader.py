@@ -1,6 +1,6 @@
-import os
 from pathlib import Path
 import requests
+
 
 class BaseUploader:
     def __init__(self, file_path, file_name=None, timeout=60):
