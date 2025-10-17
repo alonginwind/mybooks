@@ -3,9 +3,9 @@ from pathlib import Path
 import requests
 
 class BaseUploader:
-    def __init__(self, file_path, timeout=60):
+    def __init__(self, file_path, filename=None, timeout=60):
         self.file_path = Path(file_path)
-        self.filename = self.file_path.name
+        self.filename = self.file_path.name if filename is None else filename
         self.file_extension = self.file_path.suffix.lower()
         self.content_type = self._get_content_type()
         self.timeout = timeout
@@ -90,7 +90,7 @@ class DuokanUploader(BaseUploader):
                 files = {
                     'newfile': (self.filename, file, self.content_type)
                 }
-                response = requests.post(server_url, files=files, timeout=self.timeout)
+                response = requests.post(upload_url, files=files, timeout=self.timeout)
                 response.raise_for_status()
                 try:
                     return {'success': True, 'data': response.json()}
@@ -118,7 +118,7 @@ class HanwangUploader(BaseUploader):
                 data = {
                     'fileName': quote(self.filename)
                 }
-                response = requests.post(server_url, files=files, data=data, timeout=self.timeout)
+                response = requests.post(upload_url, files=files, data=data, timeout=self.timeout)
                 response.raise_for_status()
                 try:
                     return {'success': True, 'data': response.json()}
@@ -148,7 +148,7 @@ class IReaderUploader(BaseUploader):
                     }
                 )
                 headers = {'Content-Type': 'application/octet-stream'}
-                response = requests.post(server_url, data=m, headers=headers, timeout=self.timeout)
+                response = requests.post(upload_url, data=m, headers=headers, timeout=self.timeout)
                 response.raise_for_status()
                 try:
                     return {'success': True, 'data': response.json()}

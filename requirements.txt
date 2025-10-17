@@ -28,3 +28,4 @@ sentencex==0.6.1
 mcp>=1.0.0
 Pillow
 pyzbar
+requests_toolbelt

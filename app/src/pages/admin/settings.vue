@@ -103,7 +103,7 @@
               </v-row>
               <v-row>
                 <v-col align="center">
-                  <v-btn color="primary" @click="settings.DEVICES.push({ name: '阅读器', type: 'duokan', ip: '', port: 80, schema: 'http' })">
+                  <v-btn color="primary" @click="settings.DEVICES.push({ name: '阅读器', type: 'duokan', ip: '', port: 12121, schema: 'http' })">
                     <v-icon>add</v-icon>{{ $t('settings.add') }}
                   </v-btn>
                 </v-col>
