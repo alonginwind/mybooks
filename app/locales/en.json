@@ -156,10 +156,11 @@
             "bookPhysical": "Book",
             "search": "Search",
             "status": {
-                "ready": "Ready to Import",
-                "exist": "Already Exists",
-                "imported": "Successfully Imported",
-                "new": "Pending Scan"
+                "ready": "Ready",
+                "exist": "Existed",
+                "imported": "Imported",
+                "new": "Pending",
+                "drop": "Dropped"
             },
             "close": "Close",
             "reminderTitle": "Reminder",

@@ -18,6 +18,17 @@ SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
 
 
 class ScanService(AsyncService):
+    static_is_scanning = False
+    static_is_importing = False
+
+    @staticmethod
+    def is_scanning():
+        return ScanService.static_is_scanning
+
+    @staticmethod
+    def is_importing():
+        return ScanService.static_is_importing
+
     def save_or_rollback(self, row):
         try:
             row.save()
@@ -45,6 +56,19 @@ class ScanService(AsyncService):
 
     @AsyncService.register_service
     def do_scan(self, path_dir):
+        if ScanService.static_is_scanning:
+            logging.error("Scanning is running, please wait...")
+            return
+
+        ScanService.static_is_scanning = True
+        try:
+            self.do_scan_internal(path_dir)
+            logging.info("Scanning completed")
+        except Exception as err:
+            logging.error(f"Scanning failed: {err}")
+        ScanService.static_is_scanning = False
+
+    def do_scan_internal(self, path_dir):
         from calibre.ebooks.metadata.meta import get_metadata
 
         logging.info("<%s> we are: db=%s, session=%s",
@@ -181,9 +205,25 @@ class ScanService(AsyncService):
             if not self.save_or_rollback(row):
                 continue
             pass
+        ScanService.static_is_scanning = False
+        logging.info("scan task %d completed.", scan_id)
+
 
     @AsyncService.register_service
     def do_import(self, hashlist, user_id):
+        if ScanService.static_is_importing:
+            logging.error("Importing is running, please wait...")
+            return
+        ScanService.static_is_importing = True
+
+        try:
+            self.do_import_internal(hashlist, user_id)
+            logging.info("Importing completed")
+        except Exception as err:
+            logging.error(f"Importing failed: {err}")
+        ScanService.static_is_importing = False
+
+    def do_import_internal(self, hashlist, user_id):
         from calibre.ebooks.metadata.meta import get_metadata
 
         # 生成任务ID
@@ -242,6 +282,7 @@ class ScanService(AsyncService):
                 except Exception as err:
                     self.session.rollback()
                     logging.error("save link error: %s", err)
-
+            pass
+        ScanService.static_is_importing = False
         # 全部导入完毕后，开始拉取书籍信息
         AutoFillService().auto_fill_all(imported)

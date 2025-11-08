@@ -48,6 +48,7 @@
                 <v-chip small v-else-if="item.status == 'exist'" class="lighten-4">{{ $t('imports.status.exist') }}</v-chip>
                 <v-chip small v-else-if="item.status == 'imported'" class="primary">{{ $t('imports.status.imported') }}</v-chip>
                 <v-chip small v-else-if="item.status == 'new'" class="grey">{{ $t('imports.status.new') }}</v-chip>
+                <v-chip small v-else-if="item.status == 'drop'" class="warning">{{ $t('imports.status.drop') }}</v-chip>
                 <v-chip small v-else class="info">{{ item.status }}</v-chip>
             </template>
             <template v-slot:item.title="{ item }">
@@ -70,6 +71,8 @@ export default {
         items: [],
         total: 0,
         loading: false,
+        imoprting: false,
+        scanning: false,
         options: {},
         count_todo: 0,
         count_done: 0,
@@ -96,6 +99,9 @@ export default {
     },
     mounted() {
         this.getDataFromApi();
+
+        this.loading = true;
+        this.checkCurrentState();
     },
     computed: {
         pageCount: function () {
@@ -134,6 +140,8 @@ export default {
                     this.scan_dir = rsp.scan_dir;
                     this.count_done = rsp.summary.done;
                     this.count_todo = rsp.summary.todo;
+                    this.scanning = rsp.scanning;
+                    this.importing = rsp.importing;
                 })
                 .finally(() => {
                     this.loading = false;
@@ -165,6 +173,7 @@ export default {
             }).then((rsp) => {
                     if (rsp.err !== "ok") {
                         this.$alert("error", rsp.msg);
+                        this.loading = false;
                         return;
                     }
 
@@ -173,7 +182,9 @@ export default {
                         this.scan = rsp.status;
                         this.count_done = rsp.summary.done;
                         this.count_todo = rsp.summary.todo;
-                        if (this.scan.new === 0) {
+                        this.scanning = rsp.scanning;
+                        this.importing = rsp.importing;
+                        if (!rsp.scanning) {
                             this.loading = false;
                             return false;
                         }
@@ -199,6 +210,8 @@ export default {
                 .then((rsp) => {
                     if (rsp.err !== "ok") {
                         this.$alert("error", rsp.msg);
+                        this.loading = false;
+                        return;
                     }
 
                     //this.check_import_status();
@@ -206,7 +219,9 @@ export default {
                         this.import = rsp.status;
                         this.count_done = rsp.summary.done;
                         this.count_todo = rsp.summary.todo;
-                        if (this.import.ready === 0) {
+                        this.scanning = rsp.scanning;
+                        this.importing = rsp.importing;
+                        if (!rsp.importing || this.import.ready === 0) {
                             this.loading = false;
                             return false;
                         }
@@ -257,6 +272,66 @@ export default {
                     v.status = status;
                 }
             });
+        },
+        checkCurrentState() {
+            // Check scan status first
+            this.$backend("/admin/scan/status")
+                .then((rsp) => {
+                    if (rsp.err !== "ok") {
+                        return;
+                    }
+                    // If scanning is in progress
+                    if (rsp.status && rsp.scanning) {
+                        this.loading = true;
+                        this.loop_check_status("/admin/scan/status", (rsp) => {
+                            this.scan = rsp.status;
+                            this.count_done = rsp.summary.done;
+                            this.count_todo = rsp.summary.todo;
+                            this.scanning = rsp.scanning;
+                            this.importing = rsp.importing;
+
+                            if (!rsp.scanning) {
+                                this.loading = false;
+                                // After scan completes, check import status
+                                if (rsp.importing) {
+                                    this.checkImportState();
+                                }
+                                return false;
+                            }
+                            this.loading = true;
+                            return true;
+                        });
+                    } else if (rsp.status && rsp.importing) {
+                        // check importing status
+                        this.checkImportState();
+                    }
+                });
+        },
+        checkImportState() {
+            this.$backend("/admin/import/status")
+                .then((rsp) => {
+                    if (rsp.err !== "ok") {
+                        return;
+                    }
+
+                    // If importing is in progress
+                    if (rsp.status && rsp.importing > 0) {
+                        this.loading = true;
+                        this.loop_check_status("/admin/import/status", (rsp) => {
+                            this.import = rsp.status;
+                            this.count_done = rsp.summary.done;
+                            this.count_todo = rsp.summary.todo;
+                            this.scanning = rsp.scanning;
+                            this.importing = rsp.importing;
+                            if (!rsp.importing || this.import.ready === 0) {
+                                this.loading = false;
+                                return false;
+                            }
+                            this.loading = true;
+                            return true;
+                        });
+                    }
+                });
         },
     },
 };
