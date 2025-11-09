@@ -233,10 +233,11 @@
         "todo": "To Process ({count})",
         "done": "Imported ({count})",
         "status": {
-            "ready": "Ready to Import",
-            "exist": "Already Exists",
-            "imported": "Successfully Imported",
-            "new": "To Scan"
+            "ready": "Ready",
+            "exist": "Existed",
+            "imported": "Imported",
+            "new": "To Scan",
+            "drop": "Duplicated"
         },
         "book_title": "Title:",
         "book_author": "Author:"

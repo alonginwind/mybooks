@@ -17,6 +17,17 @@
                 <v-btn :disabled="loading" color="warning" @click="import_books"><v-icon>mdi-import</v-icon>{{ $t('imports.import_all') }}</v-btn>
             </template>
         </v-card-actions>
+        <v-progress-linear
+            v-if="(scanning || importing) && count_total > 0"
+            :value="progressPercent"
+            height="24"
+            color="green"
+            background-color="green"
+            style="opacity: 1;"
+            class="mb-4"
+        >
+            <strong class="white--text">{{ progressPrefix }} {{ count_processed }} / {{ count_total }} ({{ progressPercent }}%)</strong>
+        </v-progress-linear>
         <v-card-text>
             <div v-if="selected.length == 0">{{ $t('imports.select_files') }}</div>
             <div v-else>{{ $t('imports.selected_count', { count: selected.length }) }}</div>
@@ -71,11 +82,13 @@ export default {
         items: [],
         total: 0,
         loading: false,
-        imoprting: false,
+        importing: false,
         scanning: false,
         options: {},
         count_todo: 0,
         count_done: 0,
+        count_total: 0,
+        count_processed: 0,
         headers: [
             { text: "ID", sortable: true, value: "id" },
             { text: "状态", sortable: true, value: "status" },
@@ -83,11 +96,6 @@ export default {
             { text: "扫描信息", sortable: false, value: "title" },
             { text: "时间", sortable: true, value: "create_time", width: "200px" },
         ],
-        progress: {
-            done: 0,
-            total: 0,
-            status: "finish",
-        },
     }),
     watch: {
         options: {
@@ -106,6 +114,20 @@ export default {
     computed: {
         pageCount: function () {
             return parseInt(this.total / 20);
+        },
+        progressPercent() {
+            if (!this.count_total) {
+                return 0;
+            }
+            const pct = Math.round((this.count_processed / this.count_total) * 100);
+            if (pct < 0) return 0;
+            if (pct > 100) return 100;
+            return pct;
+        },
+        progressPrefix() {
+            if (this.scanning) return "扫描中";
+            if (this.importing) return "导入中";
+            return "";
         },
     },
     methods: {
@@ -138,8 +160,9 @@ export default {
                     this.items = rsp.items;
                     this.total = rsp.total;
                     this.scan_dir = rsp.scan_dir;
-                    this.count_done = rsp.summary.done;
-                    this.count_todo = rsp.summary.todo;
+                    this.count_done = 0;
+                    this.count_todo = 0;
+                    this.count_total = 0;
                     this.scanning = rsp.scanning;
                     this.importing = rsp.importing;
                 })
@@ -177,11 +200,12 @@ export default {
                         return;
                     }
 
-                    //this.check_scan_status();
                     this.loop_check_status("/admin/scan/status", (rsp) => {
                         this.scan = rsp.status;
+                        this.count_processed = rsp.status.total - rsp.status.new;
                         this.count_done = rsp.summary.done;
                         this.count_todo = rsp.summary.todo;
+                        this.count_total = rsp.status.total;
                         this.scanning = rsp.scanning;
                         this.importing = rsp.importing;
                         if (!rsp.scanning) {
@@ -214,11 +238,14 @@ export default {
                         return;
                     }
 
-                    //this.check_import_status();
                     this.loop_check_status("/admin/import/status", (rsp) => {
                         this.import = rsp.status;
                         this.count_done = rsp.summary.done;
                         this.count_todo = rsp.summary.todo;
+
+                        this.count_total = rsp.status.ready + rsp.status.imported;
+                        this.count_processed = rsp.status.imported;
+
                         this.scanning = rsp.scanning;
                         this.importing = rsp.importing;
                         if (!rsp.importing || this.import.ready === 0) {
@@ -232,7 +259,6 @@ export default {
                 })
         },
         delete_record() {
-            console.log(this.selected);
             this.loading = true;
             this.$backend("/admin/scan/delete", {
                 method: "POST",
@@ -285,11 +311,12 @@ export default {
                         this.loading = true;
                         this.loop_check_status("/admin/scan/status", (rsp) => {
                             this.scan = rsp.status;
+                            this.count_processed = rsp.status.total - rsp.status.new;
                             this.count_done = rsp.summary.done;
                             this.count_todo = rsp.summary.todo;
+                            this.count_total = rsp.status.total;
                             this.scanning = rsp.scanning;
                             this.importing = rsp.importing;
-
                             if (!rsp.scanning) {
                                 this.loading = false;
                                 // After scan completes, check import status
@@ -321,6 +348,8 @@ export default {
                             this.import = rsp.status;
                             this.count_done = rsp.summary.done;
                             this.count_todo = rsp.summary.todo;
+                            this.count_total = rsp.status.ready + rsp.status.imported;
+                            this.count_processed = rsp.status.imported;
                             this.scanning = rsp.scanning;
                             this.importing = rsp.importing;
                             if (!rsp.importing || this.import.ready === 0) {

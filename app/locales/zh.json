@@ -236,7 +236,8 @@
             "ready": "可导入",
             "exist": "已存在",
             "imported": "导入成功",
-            "new": "待扫描"
+            "new": "待扫描",
+            "drop": "重复"
         },
         "book_title": "书名：",
         "book_author": "作者："
