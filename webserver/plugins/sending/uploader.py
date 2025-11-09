@@ -75,6 +75,10 @@ class BaseUploader:
     def upload(self, server_url):
         raise NotImplementedError("子类需实现 upload 方法")
 
+    def default_port(self):
+        """子类可重写此方法来指定默认端口"""
+        return 12121
+
 
 class DuokanUploader(BaseUploader):
     def get_upload_url(self, base_url):
@@ -98,6 +102,9 @@ class DuokanUploader(BaseUploader):
                     return {'success': True, 'data': response.text}
         except Exception as e:
             return self.handle_exception(e, server_url)
+
+    def default_port(self):
+        return 12121
 
 
 class HanwangUploader(BaseUploader):
@@ -126,6 +133,9 @@ class HanwangUploader(BaseUploader):
                     return {'success': True, 'data': response.text}
         except Exception as e:
             return self.handle_exception(e, server_url)
+
+    def default_port(self):
+        return 9310
 
 
 class IReaderUploader(BaseUploader):
@@ -156,3 +166,6 @@ class IReaderUploader(BaseUploader):
                     return {'success': True, 'data': response.text}
         except Exception as e:
             return self.handle_exception(e, server_url)
+
+    def default_port(self):
+        return 10123
