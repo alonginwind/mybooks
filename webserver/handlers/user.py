@@ -160,7 +160,7 @@ class UserNew(BaseHandler):
     def post(self):
         if not self.admin_user:
             return {"err": "permission.not_admin", "msg": _(u"当前用户非管理员")}
-        
+
         email = self.get_argument("email", "").strip()
         nickname = self.get_argument("nickname", "").strip()
         username = self.get_argument("username", "").strip().lower()
@@ -178,7 +178,7 @@ class UserNew(BaseHandler):
         user = self.sqlite_session.query(Reader).filter(Reader.username == username).first()
         if user:
             return {"err": "params.username.exist", "msg": _(u"用户名已被使用")}
-            
+
         user = Reader()
         user.username = username
         user.name = nickname
@@ -196,7 +196,7 @@ class UserNew(BaseHandler):
             import traceback
             logging.error(traceback.format_exc())
             return {"err": "db.error", "msg": _(u"系统异常，请重试或更换注册信息")}
-        
+
         return {"err": "ok", "msg": _(u"用户添加成功")}
 
 

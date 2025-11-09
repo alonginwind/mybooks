@@ -208,7 +208,6 @@ class ScanService(AsyncService):
         ScanService.static_is_scanning = False
         logging.info("scan task %d completed.", scan_id)
 
-
     @AsyncService.register_service
     def do_import(self, hashlist, user_id):
         if ScanService.static_is_importing:

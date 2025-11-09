@@ -281,12 +281,14 @@ class ScanStatus(BaseHandler):
             scanner = Scanner(self.calibre_db, self.settings["ScopedSession"])
             status = scanner.scan_status()[1]
             summary = scanner.summary()
-            return {"err": "ok", "msg": _("成功"),
-                    "status": status,
-                    "summary": summary,
-                    "scanning": ScanService.static_is_scanning,
-                    "importing": ScanService.static_is_importing
-                }
+            return {
+                "err": "ok",
+                "msg": _("成功"),
+                "status": status,
+                "summary": summary,
+                "scanning": ScanService.static_is_scanning,
+                "importing": ScanService.static_is_importing,
+            }
         finally:
             if scanner:
                 try:
@@ -334,12 +336,13 @@ class ImportStatus(BaseHandler):
             scanner = Scanner(self.calibre_db, self.settings["ScopedSession"])
             status = scanner.import_status()[1]
             summary = scanner.summary()
-            return {"err": "ok", "msg": _("成功"),
-                    "status": status,
-                    "summary": summary,
-                    "scanning": ScanService.static_is_scanning,
-                    "importing": ScanService.static_is_importing
-                   }
+            return {
+                "err": "ok", "msg": _("成功"),
+                "status": status,
+                "summary": summary,
+                "scanning": ScanService.static_is_scanning,
+                "importing": ScanService.static_is_importing
+            }
         finally:
             if scanner:
                 try:
