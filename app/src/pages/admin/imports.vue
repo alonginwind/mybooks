@@ -160,8 +160,8 @@ export default {
                     this.items = rsp.items;
                     this.total = rsp.total;
                     this.scan_dir = rsp.scan_dir;
-                    this.count_done = 0;
-                    this.count_todo = 0;
+                    this.count_done = rsp.summary.done;
+                    this.count_todo = rsp.summary.todo;
                     this.count_total = 0;
                     this.scanning = rsp.scanning;
                     this.importing = rsp.importing;
