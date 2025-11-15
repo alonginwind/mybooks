@@ -1008,7 +1008,7 @@ export default {
             { text: '多看阅读器', value: 'duokan' },
             { text: '掌阅', value: 'ireader' },
             { text: '汉王', value: 'hanwang' },
-            { text: '文石', value: 'boox' }
+            { text: '文石Boox', value: 'boox' }
         ],
         adding_book: false,
         isbn: "",
@@ -1166,7 +1166,7 @@ export default {
         tempDevice: {
             handler(newVal) {
                 if (process.client) {
-                    localStorage.setItem('tempDevice', JSON.stringify(newVal));
+                    localStorage.setItem('temp_device_info', JSON.stringify(newVal));
                 }
             },
             deep: true
@@ -1182,6 +1182,17 @@ export default {
                 this.tempDevice.port = portMap[newType];
             }
         },
+        // 监听设备选项变化，实时保存到localStorage
+        selectedDeviceOption: {
+            handler(newValue) {
+                if (!process.client || !newValue) return;
+                try {
+                    localStorage.setItem('last_selected_device_option', newValue);
+                } catch (error) {
+                    console.error('保存设备选项失败:', error);
+                }
+            }
+        }
     },
     beforeRouteUpdate(to, from, next) {
         this.init(to, next);
@@ -1907,7 +1918,8 @@ export default {
             const typeMap = {
                 'duokan': '多看阅读器',
                 'ireader': '掌阅',
-                'hanwang': '汉王'
+                'hanwang': '汉王',
+                'boox': '文石Boox'
             };
             return typeMap[type] || type;
         },
