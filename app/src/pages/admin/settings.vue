@@ -126,6 +126,34 @@
                 :items=card.hours :key="'BOOKBARN_COLLECTION_HOUR'" :label="$t('settings.bookbarn_collection_hour')"> </v-select>
             </template>
 
+            <template v-if="card.show_ai_capabilities">
+              <p>{{ $t('settings.ai_capabilities_description') }}</p>
+              <v-text-field 
+                :prepend-icon="'mdi-server'" 
+                v-model="settings['AI_OLLAMA_HOST']" 
+                :label="$t('settings.ai_ollama_host')" 
+                type="url"
+                placeholder="http://0.0.0.0:11434"
+                :rules="[urlRule]"
+              ></v-text-field>
+              <v-text-field 
+                :prepend-icon="'mdi-robot'" 
+                v-model="settings['AI_OLLAMA_MODEL']" 
+                :label="$t('settings.ai_ollama_model')" 
+                type="text"
+                placeholder="qwen3:0.6b"
+              ></v-text-field>
+              <v-text-field 
+                :prepend-icon="'mdi-key'" 
+                v-model="settings['AI_MCP_TOKEN']" 
+                :label="$t('settings.ai_mcp_token')" 
+                type="text"
+                :disabled="true"
+                :append-icon="'mdi-refresh'"
+                @click:append="generateMCPToken"
+              ></v-text-field>
+            </template>
+
             <template v-if="card.show_socials">
               <p>{{ $t('settings.socials_description') }}</p>
               <v-combobox v-model="settings.SOCIALS" :items="sns_items" :label="$t('settings.select_socials')" hide-selected
@@ -247,6 +275,13 @@ export default {
         buttons: [],
         hours: Array.from({ length: 24 }, (_, i) => ({ text: i.toString(), value: i.toString() })),
         show_bookbarn: true,
+      },
+      {
+        show: false,
+        title: 'settings.ai_capability',
+        fields: [],
+        buttons: [],
+        show_ai_capabilities: true,
       },
       {
         show: false,
@@ -391,6 +426,11 @@ export default {
       { text: "HTTP", value: "http" },
       { text: "HTTPS", value: "https" }
     ],
+    urlRule: v => {
+      if (!v) return true;
+      const pattern = /^https?:\/\/.+/;
+      return pattern.test(v) || 'Must be a valid HTTP/HTTPS URL';
+    },
   }),
   methods: {
     save_settings: function () {
@@ -468,6 +508,16 @@ export default {
     },
     run: function (func) {
       this[func]();
+    },
+    generateMCPToken: function () {
+      // Generate a random 32-character token
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let token = '';
+      for (let i = 0; i < 32; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      this.settings['AI_MCP_TOKEN'] = token;
+      this.$alert('success', this.$t('settings.ai_mcp_token_generated'));
     },
   },
 }

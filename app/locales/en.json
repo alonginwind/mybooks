@@ -331,11 +331,17 @@
         "device_ip": "IP",
         "device_port": "Port",
         "device_type": "Type",
-        "device_schema": "Schema",
+        "device_schema":"Schema",
+        "ai_capabilities_description":"Configure AI assistant features, requires Ollama service deployment",
+        "ai_ollama_host":"Ollama Service URL",
+        "ai_ollama_model":"Model Type",
+        "ai_mcp_token":"MCP Access Token",
+        "ai_mcp_token_generated":"MCP token has been generated",
         "device_type_duokan": "Duokan Reader",
         "device_type_ireader": "iReader",
         "device_type_hanwang": "Hanwang Reader",
-        "device_type_boox": "Boox Reader"
+        "device_type_boox": "Boox Reader",
+        "ai_capability": "AI Assistant"
     },
     "book": {
         "edit": {

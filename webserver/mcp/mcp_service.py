@@ -21,7 +21,7 @@ from webserver.utils import SimpleBookFormatter
 from webserver import loader
 
 CONF = loader.get_settings()
-MCP_TOKEN_KEY = "MCP_TOKEN"
+MCP_TOKEN_KEY = "AI_MCP_TOKEN"
 
 class MCPService:
     """MCP协议处理服务类"""

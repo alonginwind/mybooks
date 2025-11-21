@@ -463,7 +463,11 @@
         "device_type_duokan": "多看阅读器",
         "device_type_ireader": "掌阅",
         "device_type_hanwang": "汉王",
-        "device_type_boox": "文石Boox"
+        "device_type_boox": "文石Boox",
+        "ai_capability": "AI助手",
+        "ai_ollama_host": "Ollama服务地址",
+        "ai_ollama_model": "Ollama模型",
+        "ai_mcp_token": "MCP访问令牌"
     },
     "user": {
         "avatar": "头像",

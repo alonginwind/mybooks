@@ -315,7 +315,9 @@ class AdminSettings(BaseHandler):
             "BOOK2AUDIO_PROXY",
             "LAST_REVISION",
             "DEVICES",
-            "MCP_TOKEN"
+            "AI_OLLAMA_HOST",
+            "AI_OLLAMA_MODEL",
+            "AI_MCP_TOKEN"
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon
