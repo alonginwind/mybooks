@@ -65,6 +65,7 @@ settings = {
     "BOOK2AUDIO_PROXY": "",
     "ENABLE_PHYSICAL_BOOKS": True,
     "ALLOW_GUEST_UPLOAD": False,
+    "MCP_TOKEN": "",
 
     "EPUB_VIEWER": "epubjs.html",
     "CANDLE_READER_SERVER": "https://brs.talebook.org",

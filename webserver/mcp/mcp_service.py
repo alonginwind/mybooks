@@ -18,15 +18,19 @@ from mcp.server import Server
 from mcp.types import Tool, TextContent
 from webserver.handlers.base import BaseHandler
 from webserver.utils import SimpleBookFormatter
+from webserver import loader
 
+CONF = loader.get_settings()
+MCP_TOKEN_KEY = "MCP_TOKENS"
 
 class MCPService:
     """MCP协议处理服务类"""
     MAX_BOOKS_COUNT_IN_RESULT = 20  # 返回结果中最大书籍数量限制
     TOKEN_EXPIRE_HOURS = 24  # Token过期时间（小时）
 
-    def __init__(self, base_handler: BaseHandler = None):
+    def __init__(self, base_handler: BaseHandler = None, token: str = None):
         """初始化MCP服务"""
+        self.token = token
         self.server = Server("talebook-mcp")
         self.base_handler = base_handler
         self.authenticated_tokens = {}  # 存储有效的token和用户信息
@@ -34,6 +38,14 @@ class MCPService:
 
     def _setup_tools(self):
         """设置工具定义"""
+        if MCP_TOKEN_KEY in CONF and len(CONF[MCP_TOKEN_KEY]) > 0:
+            self.authenticated_tokens[CONF[MCP_TOKEN_KEY]] = {
+                "user_id": 0,
+                "username": "admin",
+                "created_at": time.time(),
+                "expires_at": time.time() + (self.TOKEN_EXPIRE_HOURS * 3600 * 365 * 5)  # 永不过期
+            }
+            logging.info("Loaded existing MCP token from configuration")
         pass
 
     def _generate_token(self, user_id: int, username: str) -> str:
@@ -99,7 +111,11 @@ class MCPService:
 
     def _require_auth(self, arguments: dict[str, Any]) -> Optional[Dict[str, Any]]:
         """检查请求是否已认证，返回用户信息或None"""
-        token = arguments.get("token")
+        if self.token is not None:
+            # 优先使用路径上带的token参数
+            token = self.token
+        else:
+            token = arguments.get("token")
         if not token:
             return None
 

@@ -19,11 +19,11 @@ CONF = loader.get_settings()
 mcp_service = None
 
 
-def create_mcp_service(base_handler: BaseHandler = None):
+def create_mcp_service(base_handler: BaseHandler = None, token: str = None):
     """Create and return a new MCP service instance."""
     global mcp_service
     if mcp_service is None:
-        mcp_service = MCPService(base_handler)
+        mcp_service = MCPService(base_handler, token=token)
     return mcp_service
 
 
@@ -47,7 +47,9 @@ class MCPHandler(ListHandler):
     def post(self):
         """Handle MCP over HTTP streaming."""
         logging.info("New HTTP stream connection from MCP client")
-        mcp_service = create_mcp_service(self)
+        # get token parameter from query string
+        token = self.get_argument("token", None)
+        mcp_service = create_mcp_service(self, token=token)
         try:
             # Read request body
             body = self.request.body

@@ -314,7 +314,8 @@ class AdminSettings(BaseHandler):
             "USE_BOOKBARN_PROXY",
             "BOOK2AUDIO_PROXY",
             "LAST_REVISION",
-            "DEVICES"
+            "DEVICES",
+            "MCP_TOKEN"
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon
