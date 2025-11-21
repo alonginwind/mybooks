@@ -124,16 +124,6 @@
               </v-checkbox>
               <v-select small :prepend-icon="clock" v-model="settings['BOOKBARN_COLLECTION_HOUR']" :disabled="!settings['ENABLE_BOOKBARN']||!settings['ENABLE_RECEIVING_BOOKS']"
                 :items=card.hours :key="'BOOKBARN_COLLECTION_HOUR'" :label="$t('settings.bookbarn_collection_hour')"> </v-select>
-              <p><strong>{{ $t('settings.book2audio_proxy') }}</strong></p>
-              <p>{{ $t('settings.book2audio_proxy_comment') }}</p>
-              <v-checkbox small hide-details v-model="settings['USE_BOOKBARN_PROXY']" :key="'USE_BOOKBARN_PROXY'"
-                :label="$t('settings.use_bookbarn_proxy')" :disabled="!settings['ENABLE_BOOKBARN']">
-              </v-checkbox>
-              <v-text-field flat hide-details v-model="settings['BOOK2AUDIO_PROXY']" :disabled="!settings['ENABLE_BOOKBARN'] || settings['USE_BOOKBARN_PROXY']" :label="$t('settings.book2audio_proxy_address')"
-                type="text"></v-text-field>
-              <v-btn color="primary" :disabled="!settings['ENABLE_BOOKBARN'] || testingConnection" style="margin-bottom:24px" @click="test_audio_connection">
-                <v-icon>link</v-icon>{{ $t('settings.book2audio_proxy_test') }}
-              </v-btn>
             </template>
 
             <template v-if="card.show_socials">
@@ -457,25 +447,6 @@ export default {
           this.$alert('success', rsp.msg);
           this.settings['BOOKBARN_TOKEN'] = rsp.token;
         }
-      });
-    },
-    test_audio_connection: function () {
-      this.testingConnection = true;
-      this.$backend("/admin/audio/test", {
-        method: 'POST',
-        body: JSON.stringify({
-          proxy: this.settings['BOOK2AUDIO_PROXY'] || '',
-          use_bookbarn_proxy: this.settings['USE_BOOKBARN_PROXY'] || false,
-        }),
-      }).then(rsp => {
-        this.testingConnection = false;
-        if (rsp.err != 'ok') {
-          this.$alert('error', rsp.msg);
-        } else {
-          this.$alert('success', rsp.msg);
-        }
-      }).catch(err => {
-        this.testingConnection = false;
       });
     },
     test_email: function () {

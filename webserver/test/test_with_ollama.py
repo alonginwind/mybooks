@@ -11,7 +11,7 @@ def main():
 
     ollama_url = f"http://{args.ollama_host}:11434/api/chat"
     mcp_url = args.mcp_url
-    model = "qwen3:0.6b"
+    model = "qwen2.5:0.5b" # "qwen3:0.6b"
     mcp_name = "talebook"
 
     print(f"Target MCP Service: {mcp_name} at {mcp_url}")
