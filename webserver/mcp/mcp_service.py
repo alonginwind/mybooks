@@ -21,7 +21,7 @@ from webserver.utils import SimpleBookFormatter
 from webserver import loader
 
 CONF = loader.get_settings()
-MCP_TOKEN_KEY = "MCP_TOKENS"
+MCP_TOKEN_KEY = "MCP_TOKEN"
 
 class MCPService:
     """MCP协议处理服务类"""
@@ -34,10 +34,13 @@ class MCPService:
         self.server = Server("talebook-mcp")
         self.base_handler = base_handler
         self.authenticated_tokens = {}  # 存储有效的token和用户信息
+        self.need_login = True
+        self.need_login_prompt = ""
         self._setup_tools()
 
     def _setup_tools(self):
         """设置工具定义"""
+        logging.info("[MCP Service]setup up tools")
         if MCP_TOKEN_KEY in CONF and len(CONF[MCP_TOKEN_KEY]) > 0:
             self.authenticated_tokens[CONF[MCP_TOKEN_KEY]] = {
                 "user_id": 0,
@@ -45,7 +48,14 @@ class MCPService:
                 "created_at": time.time(),
                 "expires_at": time.time() + (self.TOKEN_EXPIRE_HOURS * 3600 * 365 * 5)  # 永不过期
             }
-            logging.info("Loaded existing MCP token from configuration")
+            logging.info("[MCP Service]Loaded existing MCP token from configuration")
+            if self.token:
+                self.need_login = False
+        else:
+            logging.info("[MCP Service]Not setup token, need to login or token parameter")
+
+        if self.need_login:
+            self.need_login_prompt = "Requires an authentication token parameter which is obtained through login."
         pass
 
     def _generate_token(self, user_id: int, username: str) -> str:
@@ -445,65 +455,22 @@ class MCPService:
 
     async def list_tools(self) -> list[Tool]:
         """获取可用工具列表"""
-        return [
-            Tool(
-                name="login",
-                description="Authenticate with username and password to get access token",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "username": {
-                            "type": "string",
-                            "description": "Username for authentication"
-                        },
-                        "password": {
-                            "type": "string",
-                            "description": "Password for authentication"
-                        }
-                    },
-                    "required": ["username", "password"]
-                }
-            ),
-            Tool(
-                name="logout",
-                description="Logout and invalidate the authentication token obtained from login",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "token": {
-                            "type": "string",
-                            "description": "Authentication token to invalidate"
-                        }
-                    },
-                    "required": ["token"]
-                }
-            ),
+        tools = [
             Tool(
                 name="get_books_count",
-                description="Get the current count of books in the talebook collection."
-                            "Requires authentication token from login."
-                            "If authentication fails, call login tool again.",
+                description="Get the current count of books in the talebook collection." + self.need_login_prompt,
                 inputSchema={
                     "type": "object",
-                    "properties": {
-                        "token": {
-                            "type": "string",
-                            "description": "Authentication token obtained from login"
-                        }
-                    },
-                    "required": ["token"]
+                    "properties": {},
+                    "required": []
                 }
             ),
             Tool(
                 name="get_books",
-                description="Get a list of books in the collection by page. Requires authentication token from login.",
+                description="Get a list of books in the collection by page." + self.need_login_prompt,
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "token": {
-                            "type": "string",
-                            "description": "Authentication token obtained from login"
-                        },
                         "page": {
                             "type": "number",
                             "description": "Page number to retrieve books from, starting from 1"
@@ -524,20 +491,15 @@ class MCPService:
                             "default": False
                         }
                     },
-                    "required": ["token", "page"]
+                    "required": ["page"]
                 }
             ),
             Tool(
                 name="search_books",
-                description="Search for books in the collection. Requires authentication token from login. "
-                            "If authentication fails, call login tool again.",
+                description="Search for books in the collection." + self.need_login_prompt,
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "token": {
-                            "type": "string",
-                            "description": "Authentication token obtained from login"
-                        },
                         "name": {
                             "type": "string",
                             "description": "Name of the book, author to search for"
@@ -549,21 +511,15 @@ class MCPService:
                             "default": False
                         }
                     },
-                    "required": ["token", "name"]
+                    "required": ["name"]
                 }
             ),
             Tool(
                 name="update_book_info",
-                description="Update book information including title, authors, ISBN, and comments."
-                            "Requires authentication token from login and appropriate permissions."
-                            "If authentication fails, call login tool again.",
+                description="Update book information including title, authors, ISBN, and comments." + self.need_login_prompt,
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "token": {
-                            "type": "string",
-                            "description": "Authentication token obtained from login"
-                        },
                         "book_id": {
                             "type": ["string", "integer"],
                             "description": "ID of the book to update"
@@ -595,10 +551,96 @@ class MCPService:
                             }
                         },
                     },
-                    "required": ["token", "book_id"]
+                    "required": ["book_id"]
                 }
             )
         ]
+        if self.need_login:
+            for tool in tools:
+                if "token" not in tool.inputSchema.get("required", []):
+                    tool.inputSchema.setdefault("required", []).append("token")
+                    tool.inputSchema["properties"]["token"] = {
+                        "type": "string",
+                        "description": "Authentication token obtained t login"
+                    }
+
+            tools.append(
+                Tool(
+                    name="login",
+                    description="Authenticate with username and password to get access token",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "username": {
+                                "type": "string",
+                                "description": "Username for authentication"
+                            },
+                            "password": {
+                                "type": "string",
+                                "description": "Password for authentication"
+                            }
+                        },
+                        "required": ["username", "password"]
+                    }
+                )
+            )
+            tools.append(
+                Tool(
+                    name="logout",
+                    description="Logout and invalidate the authentication token obtained from login",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "token": {
+                                "type": "string",
+                                "description": "Authentication token to invalidate"
+                            }
+                        },
+                        "required": ["token"]
+                    }
+                )
+            )
+        return tools
+
+    def _create_jsonrpc_response(self, request_id: Any, result: Any = None, error: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        创建标准的JSON-RPC响应
+
+        Args:
+            request_id: 请求ID
+            result: 成功时的结果数据
+            error: 错误时的错误信息，格式为 {"code": int, "message": str}
+
+        Returns:
+            JSON-RPC响应字典
+        """
+        response = {
+            "jsonrpc": "2.0",
+            "id": request_id
+        }
+
+        if error is not None:
+            response["error"] = error
+        else:
+            response["result"] = result
+
+        return response
+
+    def _create_tool_result(self, request_id: Any, content_text: str) -> Dict[str, Any]:
+        """
+        创建工具调用的结果响应
+
+        Args:
+            request_id: 请求ID
+            content_text: 工具返回的文本内容
+
+        Returns:
+            JSON-RPC响应字典
+        """
+        return self._create_jsonrpc_response(
+            request_id,
+            result={"content": [{"type": "text", "text": content_text}]}
+        )
 
     def create_initialization_options(self) -> Dict[str, Any]:
         """创建初始化选项，包含会话ID"""
@@ -636,20 +678,15 @@ class MCPService:
             # 处理初始化请求
             if method == "initialize":
                 init_options = self.create_initialization_options()
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "result": init_options
-                }
+                return self._create_jsonrpc_response(request_id, result=init_options)
 
             # 处理工具列表请求（支持新旧两种方法名）
             elif method == "tools/list":
                 tools = await self.list_tools()
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "result": {"tools": [tool.model_dump(exclude_none=True) for tool in tools]}
-                }
+                return self._create_jsonrpc_response(
+                    request_id,
+                    result={"tools": [tool.model_dump(exclude_none=True) for tool in tools]}
+                )
 
             # 处理工具调用请求（支持新旧两种方法名）
             elif method == "tools/call":
@@ -658,65 +695,38 @@ class MCPService:
 
                 if tool_name == "login":
                     result = await self.login(arguments)
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {"content": [{"type": "text", "text": result[0].text}]}
-                    }
+                    return self._create_tool_result(request_id, result[0].text)
                 elif tool_name == "logout":
                     result = await self.logout(arguments)
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {"content": [{"type": "text", "text": result[0].text}]}
-                    }
+                    return self._create_tool_result(request_id, result[0].text)
                 elif tool_name == "get_books_count":
                     result = await self.get_books_count(arguments)
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {"content": [{"type": "text", "text": result[0].text}]}
-                    }
+                    return self._create_tool_result(request_id, result[0].text)
                 elif tool_name == "get_books":
                     result = await self.get_books(arguments)
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {"content": [{"type": "text", "text": result[0].text}]}
-                    }
+                    return self._create_tool_result(request_id, result[0].text)
                 elif tool_name == "search_books":
                     result = await self.search_books(arguments)
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {"content": [{"type": "text", "text": result[0].text}]}
-                    }
+                    return self._create_tool_result(request_id, result[0].text)
                 elif tool_name == "update_book_info":
                     result = await self.update_book_info(arguments)
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "result": {"content": [{"type": "text", "text": result[0].text}]}
-                    }
+                    return self._create_tool_result(request_id, result[0].text)
                 else:
-                    return {
-                        "jsonrpc": "2.0",
-                        "id": request_id,
-                        "error": {"code": -32601, "message": f"Unknown tool: {tool_name}"}
-                    }
+                    return self._create_jsonrpc_response(
+                        request_id,
+                        error={"code": -32601, "message": f"Unknown tool: {tool_name}"}
+                    )
 
             # 未知方法
             else:
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "error": {"code": -32601, "message": f"Method not found: {method}"}
-                }
+                return self._create_jsonrpc_response(
+                    request_id,
+                    error={"code": -32601, "message": f"Method not found: {method}"}
+                )
 
         except Exception as e:
             logging.error(f"Error handling MCP request: {e}")
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
-            }
+            return self._create_jsonrpc_response(
+                request_id,
+                error={"code": -32603, "message": f"Internal error: {str(e)}"}
+            )

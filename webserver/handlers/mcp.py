@@ -16,18 +16,31 @@ from webserver.mcp.mcp_service import MCPService
 
 CONF = loader.get_settings()
 
-mcp_service = None
-
-
-def create_mcp_service(base_handler: BaseHandler = None, token: str = None):
-    """Create and return a new MCP service instance."""
-    global mcp_service
-    if mcp_service is None:
-        mcp_service = MCPService(base_handler, token=token)
-    return mcp_service
-
 
 class MCPHandler(ListHandler):
+    mcp_service_single = None
+    mcp_service_with_token = None
+    last_service_token = None
+
+    @classmethod
+    def create_mcp_service(cls, base_handler: BaseHandler = None, token: str = None):
+        """
+        Create and return a new MCP service instance.
+        Different instances are created based on whether a token is provided.
+        """
+        if token is None or token == "":
+            if cls.mcp_service_single is None:
+                cls.mcp_service_single = MCPService(base_handler, token=token)
+            return cls.mcp_service_single
+        else:
+            if cls.last_service_token is not None \
+                and token == cls.last_service_token \
+                and cls.mcp_service_with_token is not None:
+                return cls.mcp_service_with_token
+            cls.mcp_service_with_token = MCPService(base_handler, token=token)
+            cls.last_service_token = token
+            return cls.mcp_service_with_token
+
     @js
     def get(self):
         """Serve MCP client with the current version and settings."""
@@ -49,7 +62,7 @@ class MCPHandler(ListHandler):
         logging.info("New HTTP stream connection from MCP client")
         # get token parameter from query string
         token = self.get_argument("token", None)
-        mcp_service = create_mcp_service(self, token=token)
+        mcp_service = self.create_mcp_service(self, token=token)
         try:
             # Read request body
             body = self.request.body
