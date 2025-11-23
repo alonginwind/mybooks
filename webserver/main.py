@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from gettext import gettext as _
+import traceback
 
 import tornado.httpserver
 import tornado.ioloop
@@ -43,7 +44,6 @@ def init_calibre():
     try:
         import calibre  # noqa: F401
     except Exception as e:
-        import logging
         import traceback
 
         logging.error(traceback.format_exc())
@@ -152,6 +152,7 @@ def make_app():
         init_social(models.Base, ScopedSession, CONF)
     except Exception as e:
         logging.error(f"Error binding session: {e}")
+        logging.error(traceback.format_exc())
         sys.exit(1)
 
     if options.syncdb:
@@ -163,6 +164,7 @@ def make_app():
         init_calibre()
     except Exception as e:
         logging.error(f"Error initializing calibre: {e}")
+        logging.error(traceback.format_exc())
         sys.exit(1)
 
     from calibre.db.legacy import LibraryDatabase
@@ -174,6 +176,7 @@ def make_app():
         cache = book_db.new_api
     except Exception as e:
         logging.error(f"Error initializing library database: {e}")
+        logging.error(traceback.format_exc())
         sys.exit(1)
 
     # hook 1: 按字母作为第一级目录，解决书库子目录太多的问题
@@ -187,10 +190,11 @@ def make_app():
     logging.info("Patching calibre GUI requirement...")
     from calibre import gui2
     old_must_use_qt = gui2.must_use_qt
+
     def new_must_use_qt(headless=True):
         try:
             old_must_use_qt(headless)
-        except Exception as e:
+        except Exception:
             pass
     gui2.must_use_qt = new_must_use_qt
 
