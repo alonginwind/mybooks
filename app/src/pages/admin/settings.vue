@@ -103,7 +103,7 @@
               </v-row>
               <v-row>
                 <v-col align="center">
-                  <v-btn color="primary" @click="settings.DEVICES.push({ name: '阅读器', type: 'duokan', ip: '', port: 12121, schema: 'http' })">
+                  <v-btn color="primary" @click="settings.DEVICES.push({ name: $t('settings.default_reader_name'), type: 'duokan', ip: '', port: 12121, schema: 'http' })">
                     <v-icon>add</v-icon>{{ $t('settings.add') }}
                   </v-btn>
                 </v-col>
@@ -128,25 +128,17 @@
 
             <template v-if="card.show_ai_capabilities">
               <p>{{ $t('settings.ai_capabilities_description') }}</p>
-              <v-text-field 
-                :prepend-icon="'mdi-server'" 
-                v-model="settings['AI_OLLAMA_HOST']" 
-                :label="$t('settings.ai_ollama_host')" 
-                type="url"
-                placeholder="http://0.0.0.0:11434"
-                :rules="[urlRule]"
-              ></v-text-field>
-              <v-text-field 
-                :prepend-icon="'mdi-robot'" 
-                v-model="settings['AI_OLLAMA_MODEL']" 
-                :label="$t('settings.ai_ollama_model')" 
+              <v-text-field
+                :prepend-icon="'mdi-robot'"
+                v-model="settings['AI_OLLAMA_MODEL']"
+                :label="$t('settings.ai_ollama_model')"
                 type="text"
                 placeholder="qwen3:0.6b"
               ></v-text-field>
-              <v-text-field 
-                :prepend-icon="'mdi-key'" 
-                v-model="settings['AI_MCP_TOKEN']" 
-                :label="$t('settings.ai_mcp_token')" 
+              <v-text-field
+                :prepend-icon="'mdi-key'"
+                v-model="settings['AI_MCP_TOKEN']"
+                :label="$t('settings.ai_mcp_token')"
                 type="text"
                 :disabled="true"
                 :append-icon="'mdi-refresh'"
