@@ -22,7 +22,7 @@ from webserver.services.convert import ConvertService
 from webserver.services.extract import ExtractService
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, ListHandler, auth, js
-from webserver.models import Item, BOOK_TYPE_PHYSICAL, ReadingState
+from webserver.models import Item, BOOK_TYPE_PHYSICAL, BOOK_TYPE_EBOOK, ReadingState
 from webserver.plugins.meta import baike, douban, youshu
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.plugins.parser.txt import get_content_encoding
@@ -1877,6 +1877,101 @@ class BookSperate(BaseHandler):
             return {"err": "internal", "msg": _(u"分离格式时发生错误: %s") % str(e)}
 
 
+class BookExchangeType(BaseHandler):
+    @js
+    @auth
+    def post(self):
+        """批量转换书籍类型：电子书 <-> 实体书"""
+        if not self.is_admin():
+            return {"err": "user.no_permission", "msg": _(u"无权限")}
+
+        data = tornado.escape.json_decode(self.request.body)
+        idlist = data.get("idlist", [])
+
+        if not idlist:
+            return {"err": "params.invalid", "msg": _(u"请提供书籍ID列表")}
+
+        success_count = 0
+        skip_count = 0
+        results = []
+
+        for book_id in idlist:
+            try:
+                book = self.get_book(book_id)
+                if not book:
+                    results.append({"book_id": book_id, "status": "not_found", "msg": _(u"书籍不存在")})
+                    skip_count += 1
+                    continue
+
+                # 获取或创建Item记录
+                item = self.sqlite_session.query(Item).filter(Item.book_id == book_id).first()
+                if not item:
+                    item = Item()
+                    item.book_id = book_id
+                    item.collector_id = self.user_id()
+                    self.sqlite_session.add(item)
+
+                current_type = item.book_type
+
+                # 如果是电子书，转为实体书
+                if current_type == BOOK_TYPE_EBOOK:
+                    # 检查是否有ISBN
+                    isbn = book.get("isbn", "")
+                    if not isbn:
+                        results.append({"book_id": book_id, "status": "skip", "msg": _(u"无ISBN，跳过")})
+                        skip_count += 1
+                        continue
+
+                    # 检查是否有任何电子书格式
+                    has_formats = False
+                    for fmt in ["epub", "mobi", "azw", "azw3", "txt", "pdf"]:
+                        if book.get("fmt_%s" % fmt):
+                            has_formats = True
+                            break
+
+                    if has_formats:
+                        results.append({"book_id": book_id, "status": "skip", "msg": _(u"已有电子书格式，跳过")})
+                        skip_count += 1
+                        continue
+
+                    # 转换为实体书
+                    item.book_type = BOOK_TYPE_PHYSICAL
+                    item.book_count = 1
+                    results.append({"book_id": book_id, "status": "success", "msg": _(u"已转为实体书")})
+                    success_count += 1
+
+                # 如果是实体书，转为电子书
+                elif current_type == BOOK_TYPE_PHYSICAL:
+                    item.book_type = BOOK_TYPE_EBOOK
+                    item.book_count = 1
+                    results.append({"book_id": book_id, "status": "success", "msg": _(u"已转为电子书")})
+                    success_count += 1
+
+                else:
+                    results.append({"book_id": book_id, "status": "skip", "msg": _(u"未知类型")})
+                    skip_count += 1
+
+            except Exception as e:
+                logging.error(f"Exchange type error for book {book_id}: {e}")
+                results.append({"book_id": book_id, "status": "error", "msg": str(e)})
+                skip_count += 1
+
+        # 提交所有更改
+        try:
+            self.sqlite_session.commit()
+        except Exception as e:
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _(u"数据库错误：%s") % str(e)}
+
+        return {
+            "err": "ok",
+            "msg": _(u"处理完成：成功 %d 本，跳过 %d 本") % (success_count, skip_count),
+            "success_count": success_count,
+            "skip_count": skip_count,
+            "results": results
+        }
+
+
 def routes():
     return [
         (r"/api/index", Index),
@@ -1914,4 +2009,5 @@ def routes():
         (r"/api/book/([0-9]+)/tags", BookTags),
         (r"/api/book/([0-9]+)/suggestion", BookSuggestion),
         (r"/api/book/([0-9]+)/separate", BookSperate),
+        (r"/api/book/exchange_type", BookExchangeType),
     ]

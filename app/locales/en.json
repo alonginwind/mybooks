@@ -150,6 +150,8 @@
             "refresh": "Refresh",
             "autoUpdate": "Auto-update book information...",
             "deleteSelected": "Delete Selected Books",
+            "exchangeType": "Exchange Book Type",
+            "exchangeTypeConfirm": "This will exchange the book type of selected books. eBooks will be converted to physical books, and physical books will be converted to eBooks. Books without valid ISBN or with existing eBook formats will be ignored. Please confirm.",
             "noSelectedBook": "No books selected",
             "addByIsbn": "Add Physical Book",
             "bookEBook": "eBook",

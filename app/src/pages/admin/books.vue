@@ -43,6 +43,19 @@
                         <v-icon>mdi-delete</v-icon>
                         <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.deleteSelected') }}</span>
                     </v-btn>
+                    <!-- 图书类型互转按钮 -->
+                    <v-btn
+                        v-if="!loading && books_selected.length > 0"
+                        outlined
+                        color="warning"
+                        @click="show_exchange_type_dialog"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                        :small="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-swap-horizontal</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.exchangeType') }}</span>
+                    </v-btn>
                     <v-text-field
                         dense
                         @keyup.enter="getDataFromApi"
@@ -308,6 +321,22 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <!-- 图书类型互转确认对话框 -->
+        <v-dialog v-model="exchange_type_dialog" persistent transition="dialog-bottom-transition" width="500">
+            <v-card>
+                <v-toolbar flat dense dark color="warning"> {{ $t('admin.books.reminderTitle') }} </v-toolbar>
+                <v-card-title></v-card-title>
+                <v-card-text>
+                    <p> {{ $t('admin.books.exchangeTypeConfirm') }} </p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn @click="exchange_type_dialog = false">{{ $t('admin.books.cancel') }}</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn color="warning" @click="exchangeBookType">{{ $t('admin.books.execute') }}</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
 </v-card>
 </template>
 
@@ -318,6 +347,7 @@ export default {
         snackColor: "",
         snackText: "",
         meta_dialog: false,
+        exchange_type_dialog: false,
         adding_book: false,
         books_selected: [],
         tag_input: null,
@@ -466,6 +496,38 @@ export default {
         },
         show_dialog_auto_file() {
             this.meta_dialog = true;
+        },
+        show_exchange_type_dialog() {
+            this.exchange_type_dialog = true;
+        },
+        exchangeBookType() {
+            if (this.books_selected.length == 0) {
+                this.$alert("info", this.$t("admin.books.noSelectedBook"));
+                return;
+            }
+            this.loading = true;
+            this.exchange_type_dialog = false;
+            const books_ids = this.books_selected.map((book) => {
+                return book.id;
+            });
+            this.$backend("/book/exchange_type", {
+                method: "POST",
+                body: JSON.stringify({"idlist": books_ids}),
+            })
+                .then((rsp) => {
+                    if (rsp.err != "ok") {
+                        this.$alert("error", rsp.msg);
+                    } else {
+                        this.snack = true;
+                        this.snackColor = "success";
+                        this.snackText = rsp.msg;
+                    }
+                    this.books_selected = [];
+                    this.getDataFromApi();
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
         },
         auto_fill() {
             this.$backend("/admin/book/fill", {
