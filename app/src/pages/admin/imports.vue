@@ -16,7 +16,7 @@
             <template v-else>
                 <v-btn :disabled="loading" color="secondary" @click="import_books"><v-icon>mdi-import</v-icon>{{ $t('imports.import_all') }}</v-btn>
             </template>
-            <v-btn :disabled="loading" color="warning" @click="show_batch_add_dialog"><v-icon>mdi-book-plus-multiple</v-icon>{{ $t('imports.batch_add_books') }}</v-btn>
+            <v-btn :disabled="loading" color="secondary" @click="show_batch_add_dialog"><v-icon>mdi-book-plus-multiple</v-icon>{{ $t('imports.batch_add_books') }}</v-btn>
         </v-card-actions>
         <v-progress-linear
             v-if="((scanning || importing || batchAdding) && count_total > 0)"
