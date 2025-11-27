@@ -26,28 +26,66 @@ class AutoFillService(AsyncService):
     def auto_fill_all(self, idlist: list, qpm=60):
         # 根据qpm，计算更新的间隔，避免刷爆豆瓣等服务
         sleep_seconds = 60.0 / qpm
+        batch_size = 10  # 每批处理的书籍数量
 
         self.count_total = len(idlist)
         self.count_skip = 0
         self.count_done = 0
         self.count_fail = 0
 
-        for book_id in idlist:
-            mi = self.db.get_metadata(book_id, index_is_id=True)
-            if not self.should_update(mi):
-                logging.info(_("忽略更新书籍 id=%d : 无需更新"), book_id)
-                self.count_skip += 1
-                continue
+        # 分批处理，减少长时间持有数据库锁
+        for batch_start in range(0, len(idlist), batch_size):
+            batch_end = min(batch_start + batch_size, len(idlist))
+            batch_ids = idlist[batch_start:batch_end]
 
-            time.sleep(sleep_seconds)
-            try:
-                if self.do_fill_metadata(book_id, mi):
-                    self.count_done += 1
-                else:
+            # 第一阶段：批量读取元数据（持有锁的时间短）
+            books_to_update = []
+            for book_id in batch_ids:
+                try:
+                    mi = self.db.get_metadata(book_id, index_is_id=True)
+                    if self.should_update(mi):
+                        books_to_update.append((book_id, mi))
+                    else:
+                        logging.info(_("忽略更新书籍 id=%d : 无需更新"), book_id)
+                        self.count_skip += 1
+                except Exception as err:
+                    logging.error(_("读取书籍元数据失败 id=%d: %s"), book_id, err)
                     self.count_fail += 1
-            except Exception as err:
-                self.count_fail += 1
-                logging.error(_("执行异常: %s"), err)
+
+            # 第二阶段：网络请求获取信息（不持有数据库锁）
+            updates = []
+            for book_id, mi in books_to_update:
+                time.sleep(sleep_seconds)
+                try:
+                    refer_mi = self.plugin_search_best_book_info(mi)
+                    if refer_mi and refer_mi.cover_data is not None:
+                        # 准备更新数据
+                        self.do_fill_tags(book_id, refer_mi, need_commit=False)
+                        if len(refer_mi.tags) == 0 and len(mi.tags) == 0:
+                            refer_mi.tags = self.guess_tags(refer_mi)
+                        # 保留书名不修改
+                        refer_mi.title = mi.title
+                        mi.smart_update(refer_mi, replace_metadata=True)
+                        updates.append((book_id, mi))
+                    else:
+                        self.count_fail += 1
+                        if not refer_mi:
+                            logging.info(_("忽略更新书籍 id=%d : 无法获取信息"), book_id)
+                        else:
+                            logging.info(_("忽略更新书籍 id=%d : 无法获取封面"), book_id)
+                except Exception as err:
+                    self.count_fail += 1
+                    logging.error(_("获取书籍信息失败 id=%d: %s"), book_id, err)
+
+            # 第三阶段：批量写入更新（减少数据库锁持有次数）
+            for book_id, mi in updates:
+                try:
+                    self.db.set_metadata(book_id, mi, ignore_errors=True)
+                    logging.info(_("自动更新书籍 id=[%d] 的信息，title=%s"), book_id, mi.title)
+                    self.count_done += 1
+                except Exception as err:
+                    self.count_fail += 1
+                    logging.error(_("更新书籍元数据失败 id=%d: %s"), book_id, err)
 
     @AsyncService.register_function
     def auto_fill(self, book_id):
