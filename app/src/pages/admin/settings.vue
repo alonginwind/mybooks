@@ -130,8 +130,8 @@
               <p>{{ $t('settings.ai_capabilities_description') }}</p>
               <v-text-field
                 :prepend-icon="'mdi-robot'"
-                v-model="settings['AI_OLLAMA_MODEL']"
-                :label="$t('settings.ai_ollama_model')"
+                v-model="settings['AI_MODEL']"
+                :label="$t('settings.ai_model')"
                 type="text"
                 placeholder="qwen3:0.6b"
               ></v-text-field>
@@ -140,7 +140,6 @@
                 v-model="settings['AI_MCP_TOKEN']"
                 :label="$t('settings.ai_mcp_token')"
                 type="text"
-                :disabled="true"
                 :append-icon="'mdi-refresh'"
                 @click:append="generateMCPToken"
               ></v-text-field>
@@ -502,14 +501,19 @@ export default {
       this[func]();
     },
     generateMCPToken: function () {
-      // Generate a random 32-character token
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let token = '';
-      for (let i = 0; i < 32; i++) {
-        token += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      this.settings['AI_MCP_TOKEN'] = token;
-      this.$alert('success', this.$t('settings.ai_mcp_token_generated'));
+      // Call backend API to generate token
+      this.$backend("/admin/token")
+        .then(rsp => {
+          if (rsp.err !== 'ok') {
+            this.$alert('error', this.$t('settings.ai_mcp_token_generate_failed'));
+          } else {
+            this.settings['AI_MCP_TOKEN'] = rsp.token;
+            this.$alert('success', this.$t('settings.ai_mcp_token_generated'));
+          }
+        })
+        .catch(err => {
+          this.$alert('error', this.$t('settings.ai_mcp_token_generate_failed'));
+        });
     },
   },
 }

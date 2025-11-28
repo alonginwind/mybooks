@@ -315,8 +315,7 @@ class AdminSettings(BaseHandler):
             "BOOK2AUDIO_PROXY",
             "LAST_REVISION",
             "DEVICES",
-            "AI_OLLAMA_HOST",
-            "AI_OLLAMA_MODEL",
+            "AI_MODEL",
             "AI_MCP_TOKEN"
         ]
 
@@ -675,6 +674,23 @@ class ReleaseNotes(BaseHandler):
             return {"err": "ok", "msg": ""}
 
 
+class AdminTokenHandler(BaseHandler):
+    @js
+    @auth
+    def get(self):
+        """Generate and return a new MCP token"""
+        if not self.admin_user:
+            return {"err": "permission.not_admin", "msg": _("当前用户非管理员")}
+
+        # Generate a random 32-character token using secure random
+        import secrets
+        import string
+        chars = string.ascii_letters + string.digits
+        token = ''.join(secrets.choice(chars) for _ in range(32))
+
+        return {"err": "ok", "token": token}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -688,4 +704,5 @@ def routes():
         (r"/api/admin/books/delete", AdminDeleteBooks),
         (r"/api/admin/audio/test", AudioTestConnection),
         (r"/api/admin/release/notes", ReleaseNotes),
+        (r"/api/admin/token", AdminTokenHandler),
     ]
