@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+
+import logging
+import re
+from gettext import gettext as _
+
+from webserver import loader
+from webserver.plugins.meta import baike, douban, youshu
+
+CONF = loader.get_settings()
+
+
+class BookSearch:
+    """图书搜索工具类，用于从多个来源搜索图书元数据"""
+
+    @staticmethod
+    def has_proper_book(books, title, isbn, publisher=None):
+        """
+        检查搜索结果中是否包含合适的图书
+
+        Args:
+            books: 搜索结果列表
+            title: 图书标题
+            isbn: ISBN号
+            publisher: 出版社（可选）
+
+        Returns:
+            bool: 如果找到合适的图书返回True，否则返回False
+        """
+        if not books or not isbn or isbn == baike.BAIKE_ISBN:
+            return False
+
+        for b in books:
+            if isbn == b.get("isbn13", "xxx"):
+                return True
+            if publisher and title == b.get("title") and publisher == b.get("publisher"):
+                return True
+        return False
+
+    @staticmethod
+    def plugin_search_books(title=None, isbn=None, publisher=None):
+        """
+        从多个插件源搜索图书信息
+
+        Args:
+            title: 图书标题（可选）
+            isbn: ISBN号（可选）
+            publisher: 出版社（可选）
+            * title & isbn 至少有一个
+        Returns:
+            list: 搜索到的图书元数据列表
+        """
+        if not title and not isbn:
+            return []
+
+        # 清理标题，移除括号及其内容
+        if title:
+            clean_title = re.sub(u"[(（].*", "", title)
+        else:
+            clean_title = ""
+
+        # 豆瓣搜索
+        douban_api = douban.DoubanBookApi(
+            CONF["douban_apikey"],
+            CONF["douban_baseurl"],
+            copy_image=False,
+            manual_select=False,
+            maxCount=CONF["douban_max_count"],
+        )
+
+        books = []
+        if clean_title:
+            try:
+                books = douban_api.search_books(clean_title) or []
+            except Exception as e:
+                logging.error(_(u"豆瓣接口查询 %s 失败: %s" % (clean_title, str(e))))
+        # 如果有ISBN号但没搜索到合适的书，则精准查询一次ISBN
+        if isbn and not BookSearch.has_proper_book(books, title, isbn, publisher):
+            try:
+                book = douban_api.get_book_by_isbn(isbn)
+                if book:
+                    books = list(books)
+                    books.insert(0, book)  # 总是把最佳书籍放在第一位
+            except Exception as e:
+                logging.error(_(u"豆瓣ISBN查询失败: %s" % str(e)))
+
+        # 转换为元数据格式
+        books = [douban_api._metadata(b) for b in books]
+
+        # 百度百科搜索
+        baike_api = baike.BaiduBaikeApi(copy_image=False)
+        try:
+            book = baike_api.get_book(clean_title)
+            if book:
+                books.append(book)
+        except Exception as e:
+            logging.error(_(u"百度百科查询失败: %s" % str(e)))
+
+        # 优书网搜索
+        youshu_api = youshu.YoushuApi(copy_image=True)
+        try:
+            book = youshu_api.get_book(clean_title)
+            if book:
+                books.append(book)
+        except Exception as e:
+            logging.error(_(u"优书网查询失败: %s" % str(e)))
+
+        return books

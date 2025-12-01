@@ -19,6 +19,7 @@ from tornado import web
 
 from webserver import loader, utils
 from webserver.services.autofill import AutoFillService
+from webserver.services.book_search import BookSearch
 from webserver.services.convert import ConvertService
 from webserver.services.extract import ExtractService
 from webserver.services.mail import MailService
@@ -227,63 +228,6 @@ class BookSetSole(BaseHandler):
 
 
 class BookRefer(BaseHandler):
-    def has_proper_book(self, books, mi):
-        if not books or not mi.isbn or mi.isbn == baike.BAIKE_ISBN:
-            return False
-
-        for b in books:
-            if mi.isbn == b.get("isbn13", "xxx"):
-                return True
-            if mi.title == b.get("title") and mi.publisher == b.get("publisher"):
-                return True
-        return False
-
-    def plugin_search_books(self, mi):
-        title = re.sub(u"[(（].*", "", mi.title)
-        api = douban.DoubanBookApi(
-            CONF["douban_apikey"],
-            CONF["douban_baseurl"],
-            copy_image=False,
-            manual_select=False,
-            maxCount=CONF["douban_max_count"],
-        )
-        # first, search title
-        books = []
-        try:
-            books = api.search_books(title) or []
-        except:
-            logging.error(_(u"豆瓣接口查询 %s 失败" % title))
-
-        if not self.has_proper_book(books, mi):
-            # 若有ISBN号，但是却没搜索出来，则精准查询一次ISBN
-            # 总是把最佳书籍放在第一位
-            book = api.get_book_by_isbn(mi.isbn)
-            if book:
-                books = list(books)
-                books.insert(0, book)
-        books = [api._metadata(b) for b in books]
-
-        # append baidu book
-        api = baike.BaiduBaikeApi(copy_image=False)
-        try:
-            book = api.get_book(title)
-        except:
-            logging.error(_(u"百度百科查询失败"))
-            book = None
-        if book:
-            books.append(book)
-
-        api = youshu.YoushuApi(copy_image=True)
-        try:
-            book = api.get_book(title)
-        except:
-            logging.error(_(u"优书网查询失败"))
-            book = None
-        if book:
-            books.append(book)
-
-        return books
-
     def plugin_get_book_meta(self, provider_key, provider_value, mi):
         if provider_key == baike.KEY:
             title = re.sub(u"[(（].*", "", mi.title)
@@ -361,7 +305,11 @@ class BookRefer(BaseHandler):
     def get(self, id):
         book_id = int(id)
         mi = self.calibre_db.get_metadata(book_id, index_is_id=True)
-        books = self.plugin_search_books(mi)
+        books = BookSearch.plugin_search_books(
+            title=mi.title,
+            isbn=mi.isbn,
+            publisher=mi.publisher
+        )
         keys = [
             "cover_url",
             "source",
