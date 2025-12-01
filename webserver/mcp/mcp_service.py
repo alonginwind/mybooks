@@ -17,7 +17,7 @@ from typing import Any, Sequence, Dict, Optional
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 from webserver.handlers.base import BaseHandler
-from webserver.utils import SimpleBookFormatter
+from webserver.utils import MCPBookFormatter
 from webserver import loader
 
 CONF = loader.get_settings()
@@ -263,7 +263,7 @@ class MCPService:
             page_ids = all_ids[start:end]
             if page_ids:
                 cdn_url = self.base_handler.cdn_url
-                books = [SimpleBookFormatter(b, cdn_url).format(cmts) for b in self.base_handler.get_books(ids=page_ids)]
+                books = [MCPBookFormatter(b, cdn_url).format(cmts) for b in self.base_handler.get_books(ids=page_ids)]
 
             if not books:
                 return [TextContent(type="text", text=json.dumps({"status": "success", "message": _(u"没有找到书籍"), "books": []}))]
@@ -337,7 +337,7 @@ class MCPService:
 
             if not ids:
                 return [TextContent(type="text", text=json.dumps({"status": "success",
-                                                                  "message": _(u"没有找到相关书籍"), "books": []}))]
+                                                                  "message": "No books found", "books": []}))]
 
             total_books_count = len(ids)
             if len(ids) > self.MAX_BOOKS_COUNT_IN_RESULT:
@@ -351,7 +351,7 @@ class MCPService:
         except Exception as e:
             logging.error(f"Error processing book: {e}")
             logging.error(traceback.format_exc())
-            return [TextContent(type="text", text=json.dumps({"status": "error", "message": _(u"搜索书籍时发生错误: %s") % str(e)}))]
+            return [TextContent(type="text", text=json.dumps({"status": "error", "message": "Search books failed: %s" % str(e)}))]
 
     async def update_book_info(self, arguments: dict[str, Any]) -> Sequence[TextContent]:
         """更新书籍详细信息"""
@@ -533,7 +533,7 @@ class MCPService:
             Tool(
                 name="search_books",
                 description="Search for books in the collection." + self.need_login_prompt + "\n\n"
-                            "Returns a list of books with the following structure:\n"
+                            "Returns a list of books with below key fields:\n"
                             "- id: Book ID\n"
                             "- title: Book title\n"
                             "- author: Author name\n"

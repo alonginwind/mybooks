@@ -61,6 +61,38 @@ class SimpleBookFormatter:
         }
 
 
+class MCPBookFormatter:
+    """格式化calibre book的字段"""
+
+    def __init__(self, calibre_book_item, cdn_url):
+        self.cdn_url = cdn_url
+        self.book = calibre_book_item
+
+    def val(self, k, default_value=_("Unknown")):
+        v = self.book.get(k, None)
+        if not v:
+            v = default_value
+        if isinstance(v, datetime.datetime):
+            return f'{v.year:04}-{v.month:02}-{v.day:02}'
+        return v
+
+    def format(self, include_comments=True):
+        b = self.book
+        b["ts"] = b["timestamp"].strftime("%s")
+        return {
+            "id": b["id"],
+            "title": b["title"],
+            "rating": b["rating"],
+            "pubdate": self.val("pubdate"),
+            "author": ", ".join(b["authors"]),
+            "tag": " / ".join(b["tags"]),
+            "publisher": self.val("publisher"),
+            "comments": self.val("comments", _(u"暂无简介")) if include_comments else "",
+            "languages": self.val("languages", None),
+            "isbn": self.val("isbn", None),
+        }
+
+
 class BookFormatter:
     def __init__(self, tornado_handler, calibre_book_item):
         self.db = tornado_handler.calibre_db
