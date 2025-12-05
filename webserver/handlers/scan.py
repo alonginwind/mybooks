@@ -23,6 +23,7 @@ class Scanner:
         self.db = calibre_db
         self.user_id = user_id
         self.session = ScopedSession()
+        self.cached_status = None
 
     def __del__(self):
         # 确保在对象销毁时关闭数据库会话
@@ -52,11 +53,17 @@ class Scanner:
 
     def summary(self):
         done_status = [ScanFile.EXIST, ScanFile.IMPORTED]
-        query = self.session.query(ScanFile)
-        total = query.count()
-        done = query.filter(ScanFile.status.in_(done_status)).count()
-        todo = total - done
-        return {"total": total, "done": done, "todo": todo}
+        try:
+            query = self.session.query(ScanFile)
+            total = query.count()
+            done = query.filter(ScanFile.status.in_(done_status)).count()
+            todo = total - done
+        except Exception as e:
+            logging.error(f"Error in summary: {e}")
+            if self.cached_status:
+                return self.cached_status
+        self.cached_status = {"total": total, "done": done, "todo": todo}
+        return self.cached_status
 
     def run_scan(self, path_dir):
         ScanService().do_scan(path_dir)

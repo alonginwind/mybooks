@@ -12,7 +12,7 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.log
 from social_tornado.models import init_social
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import scoped_session, sessionmaker
 from tornado import web
 from tornado.options import define, options
@@ -146,6 +146,15 @@ def make_app():
 
     # build sql session factory
     engine = create_engine(auth_db_path, **CONF["db_engine_args"])
+
+    if auth_db_path.startswith("sqlite"):
+        @event.listens_for(engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.close()
+
     ScopedSession = scoped_session(sessionmaker(bind=engine, autoflush=True, autocommit=False))
     try:
         models.bind_session(ScopedSession)
