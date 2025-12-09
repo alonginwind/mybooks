@@ -11,12 +11,14 @@
             <v-btn :disabled="loading" color="primary" @click="scan_books"><v-icon>mdi-file-find</v-icon>{{ $t('imports.scan_books') }}</v-btn>
             <template v-if="selected.length > 0">
                 <v-btn :disabled="loading" color="secondary" @click="import_books"><v-icon>mdi-import</v-icon>{{ $t('imports.import_selected') }}</v-btn>
-                <v-btn :disabled="loading" outlined color="primary" @click="delete_record"><v-icon>mdi-delete</v-icon>{{ $t('imports.delete') }}</v-btn>
             </template>
             <template v-else>
                 <v-btn :disabled="loading" color="secondary" @click="import_books"><v-icon>mdi-import</v-icon>{{ $t('imports.import_all') }}</v-btn>
             </template>
             <v-btn :disabled="loading" color="secondary" @click="show_batch_add_dialog"><v-icon>mdi-book-plus-multiple</v-icon>{{ $t('imports.batch_add_books') }}</v-btn>
+            <template v-if="selected.length > 0">
+                <v-btn :disabled="loading" outlined color="primary" @click="delete_record"><v-icon>mdi-delete</v-icon>{{ $t('imports.delete') }}</v-btn>
+            </template>
         </v-card-actions>
         <v-progress-linear
             v-if="((scanning || importing || batchAdding) && count_total > 0)"
