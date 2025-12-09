@@ -4,7 +4,7 @@ from vllm import LLM, SamplingParams
 # 配置模型路径
 # 用户指定模型目录: /Volumes/data/models/Qwen3-0.6B
 # vLLM 将尝试从该目录加载模型 (需包含 config.json, tokenizer.json, model.safetensors 等文件)
-MODEL_PATH = "/Volumes/data/models/qwen/Qwen2.5-0.5B-Instruct"
+MODEL_PATH = "/Volumes/data/models/Qwen3-0.6B"
 
 def main():
     # 1. 准备提示词 (Prompts)
