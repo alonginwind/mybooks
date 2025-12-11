@@ -1054,7 +1054,8 @@ export default {
             { text: '多看阅读器', value: 'duokan' },
             { text: '掌阅', value: 'ireader' },
             { text: '汉王', value: 'hanwang' },
-            { text: '文石Boox', value: 'boox' }
+            { text: '文石Boox', value: 'boox' },
+            { text: '当当阅读器', value: 'dangdang' },
         ],
         adding_book: false,
         isbn: "",
@@ -1224,7 +1225,8 @@ export default {
                 duokan: '12121',
                 boox: '8085',
                 hanwang: '9310',
-                ireader: '10123'
+                ireader: '10123',
+                dangdang: '11111'
             };
             if (portMap[newType]) {
                 this.tempDevice.port = portMap[newType];
@@ -2033,7 +2035,8 @@ export default {
                 'duokan': '多看阅读器',
                 'ireader': '掌阅',
                 'hanwang': '汉王',
-                'boox': '文石Boox'
+                'boox': '文石Boox',
+                'dangdang': '当当阅读器'
             };
             return typeMap[type] || type;
         },

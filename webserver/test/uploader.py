@@ -156,3 +156,25 @@ class IReaderUploader(BaseUploader):
                     return {'success': True, 'data': response.text}
         except Exception as e:
             return self.handle_exception(e, server_url)
+
+
+class DangdangUploader(BaseUploader):
+    def get_upload_url(self, base_url):
+        """构建当当设备的上传URL"""
+        return base_url
+
+    def upload(self, server_url):
+        try:
+            upload_url = self.get_upload_url(server_url)            
+            with open(self.file_path, 'rb') as file:
+                files = {
+                    'file': (self.filename, file, self.content_type)
+                }
+                response = requests.post(upload_url, files=files, timeout=self.timeout)
+                response.raise_for_status()
+                try:
+                    return {'success': True, 'data': response.json()}
+                except Exception:
+                    return {'success': True, 'data': response.text}
+        except Exception as e:
+            return self.handle_exception(e, server_url)

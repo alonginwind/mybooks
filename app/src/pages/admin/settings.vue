@@ -204,8 +204,9 @@ export default {
     this.deviceTypes = [
       { text: this.$t('settings.device_type_duokan'), value: "duokan" },
       { text: this.$t('settings.device_type_ireader'), value: "ireader" },
-      { text: this.$t('settings.device_type_hanwang'), value: "hanwang" }
-      , { text: this.$t('settings.device_type_boox'), value: "boox" }
+      { text: this.$t('settings.device_type_hanwang'), value: "hanwang" },
+      { text: this.$t('settings.device_type_boox'), value: "boox" },
+      { text: this.$t('settings.device_type_dangdang'), value: "dangdang" }
     ];
 
     this.cards = [
