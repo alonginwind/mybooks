@@ -33,6 +33,30 @@ define("with-library", default=CONF["with_library"], type=str, help=_("Path to t
 define("syncdb", default=False, type=bool, help=_("Create all tables"))
 define("update-config", default=False, type=bool, help=_("update config when system upgrade"))
 
+CATEGORY_KEY = "category"
+
+
+def add_category_meta_in_calibre(calibre_db):
+    found = False
+    for key, meta in calibre_db.field_metadata.items():
+        if key.startswith('#') and key.lstrip('#') == CATEGORY_KEY:
+            found = True
+            break
+    if found:
+        logging.info("No need to create category key")
+        return False
+    try:
+        calibre_db.create_custom_column(
+            label=CATEGORY_KEY,
+            name='Book Category',
+            datatype='text',
+            is_multiple=False
+        )
+    except Exception as e:
+        logging.error(f"Error creating custom field: {e}")
+        return False
+    return True
+
 
 def init_calibre():
     path = options.path_calibre
@@ -45,9 +69,9 @@ def init_calibre():
         import calibre  # noqa: F401
     except Exception as e:
         import traceback
-
         logging.error(traceback.format_exc())
         raise ImportError(_("Can not import calibre. Please set the corrent options.\n%s" % e))
+
     if not options.with_library:
         sys.stderr.write(
             _(
@@ -182,6 +206,9 @@ def make_app():
         logging.info("Initializing library database...")
         book_db = LibraryDatabase(os.path.expanduser(options.with_library))
         cache = book_db.new_api
+        if add_category_meta_in_calibre(cache):
+            book_db = LibraryDatabase(os.path.expanduser(options.with_library))
+            cache = book_db.new_api
     except Exception as e:
         logging.error(f"Error initializing library database: {e}")
         logging.error(traceback.format_exc())

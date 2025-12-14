@@ -313,7 +313,7 @@ export default {
         title: "settings.book_tags",
         subtitle: 'settings.book_tags_description',
         fields: [
-          { icon: "person", key: "BOOK_NAV", type: 'textarea', label: "book_nav" },
+          { icon: "person", key: "BOOK_NAV", type: 'textarea', label: "settings.book_nav" },
         ],
       },
       {

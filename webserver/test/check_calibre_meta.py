@@ -13,7 +13,7 @@ sys.resources_location = os.environ.get('CALIBRE_RESOURCES_PATH', '/usr/share/ca
 sys.extensions_location = os.environ.get('CALIBRE_EXTENSIONS_PATH', '/usr/lib/calibre/calibre/plugins')
 sys.executables_location = os.environ.get('CALIBRE_EXECUTABLES_PATH', '/usr/bin')
 
-READING_STATUS_KEY = 'reading_status'
+CATEGORY_KEY = 'testonly'
 
 try:
     from calibre.db.legacy import LibraryDatabase
@@ -63,7 +63,7 @@ def main():
     print(f"Found book ID: {book_id}")
 
     # Find the custom field key for 'reading_status'
-    target_label = READING_STATUS_KEY
+    target_label = CATEGORY_KEY
     field_key = None
 
     # Check metadata for the custom field
@@ -78,15 +78,18 @@ def main():
             # Ensure label does not have a leading '#' as Calibre adds it automatically
             cache.create_custom_column(
                 label=target_label.lstrip('#'),
-                name='Reading Status',
-                datatype='int',
+                name='Book Category',
+                datatype='text',
                 is_multiple=False
             )
             print(f"Created custom field '{target_label}'.")
 
+            # Re-open the db
+            cache.close()
+            db = LibraryDatabase(os.path.expanduser(library_path))
+            cache = db.new_api
             # Re-scan for the new key
             for key, meta in cache.field_metadata.items():
-
                 if key.startswith('#') and meta.get('label') == target_label.lstrip('#'):
                     field_key = key
                     break
@@ -94,7 +97,6 @@ def main():
             if not field_key:
                 print("Error: Custom field created but key not found in metadata.")
                 return
-
         except Exception as e:
             print(f"Error creating custom field: {e}")
             print("Available custom fields:")
@@ -114,14 +116,8 @@ def main():
             print("Error: 'set' operation requires a value.")
             sys.exit(1)
 
-        try:
-            int_value = int(value)
-        except ValueError:
-            print(f"Error: Value '{value}' must be an integer.")
-            sys.exit(1)
-
-        print(f"Setting '{target_label}' to {int_value} for book ID {book_id}...")
-        cache.set_field(field_key, {book_id: int_value})
+        print(f"Setting '{target_label}' to {value} for book ID {book_id}...")
+        cache.set_field(field_key, {book_id: value})
 
         # Verify the change
         new_val = cache.field_for(field_key, book_id)

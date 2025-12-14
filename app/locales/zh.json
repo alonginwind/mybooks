@@ -423,6 +423,7 @@
         "test_email": "测试邮件",
         "book_tags": "书籍标签分类",
         "book_tags_description": "配置「分类导航」页面里预设的分类。添加书籍时，若书名或者作者名称出现以下分类，则自动添加对应的标签。",
+        "book_nav": "分类导航",
         "friend_links": "友情链接",
         "internet_book_sources": "互联网书籍信息源",
         "auto_fill_meta": "自动从互联网拉取新书的书籍信息",
