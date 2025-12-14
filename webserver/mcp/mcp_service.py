@@ -673,7 +673,8 @@ class MCPService:
 
             result = {
                 "status": "completed",
-                "message": f"Processed {len(book_ids)} book(s): {success_count} succeeded, {failed_count} failed, {skipped_count} skipped",
+                "message": f"Processed {len(book_ids)} book(s): {success_count} succeeded,"
+                           f"{failed_count} failed, {skipped_count} skipped",
                 "summary": {
                     "total": len(book_ids),
                     "success": success_count,
@@ -914,7 +915,8 @@ class MCPService:
                         },
                         "title": {
                             "type": "string",
-                            "description": "Book title to search for. If one book found, auto-update. If multiple found, return list for selection."
+                            "description": "Book title to search for. If one book found, auto-update."
+                                           "If multiple found, return list for selection."
                         }
                     },
                     "anyOf": [

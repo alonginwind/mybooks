@@ -159,7 +159,6 @@ class BookTags(BaseHandler):
             return {"err": "internal", "msg": _(u"更新标签时发生错误，请稍后再试")}
 
 
-
 class BookCategory(BaseHandler):
     @js
     @auth
@@ -191,7 +190,7 @@ class BookCategories(BaseHandler):
         # Find the custom column for category
         category_key = '#category'
         if category_key not in self.calibre_db.field_metadata:
-             return {"err": "ok", "categories": []}
+            return {"err": "ok", "categories": []}
 
         meta = self.calibre_db.field_metadata[category_key]
         table = f"custom_column_{meta['colnum']}"
@@ -1054,7 +1053,7 @@ class BookEdit(BaseHandler):
             return {"err": "ok", "msg": _(u"更新成功"), "books": update_books}
         else:
             self.edit_book(bid, data)
-            updated_books = [bid]
+            update_books = [bid]
         return {"err": "ok", "msg": _(u"更新成功"), "books": update_books}
 
 
