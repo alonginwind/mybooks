@@ -452,12 +452,18 @@
                                     {{ completedReadingText }}
                                 </v-chip>
                             </div>
-                            <br/>
+                            <div class="tag-chips">
+                                <v-chip rounded small color="green">
+                                    <v-icon>category</v-icon>
+                                    {{ book.category }}
+                                    <v-icon color="indigo">edit</v-icon>
+                                </v-chip>
+                            </div>
                             <div class="tag-chips">
                                     <template v-for="author in book.authors" :key="'author-' + author">
                                         <v-chip
                                             rounded
-                                            small
+                                            smallF
                                             dark
                                             color="indigo"
                                             :to="'/author/' + encodeURIComponent(author)"

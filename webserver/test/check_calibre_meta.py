@@ -13,7 +13,7 @@ sys.resources_location = os.environ.get('CALIBRE_RESOURCES_PATH', '/usr/share/ca
 sys.extensions_location = os.environ.get('CALIBRE_EXTENSIONS_PATH', '/usr/lib/calibre/calibre/plugins')
 sys.executables_location = os.environ.get('CALIBRE_EXECUTABLES_PATH', '/usr/bin')
 
-CATEGORY_KEY = 'testonly'
+CATEGORY_KEY = 'category'
 
 try:
     from calibre.db.legacy import LibraryDatabase
@@ -47,7 +47,7 @@ def main():
     print(f"Number of books in library: {len(cache.all_book_ids())}")
     print("Field Metadata:")
     for key, meta in cache.field_metadata.items():
-        print(f"  Key: {key}, Label: {meta.get('label')}, Name: {meta.get('name')}")
+        print(f"  Key: {key}, Label: {meta.get('label')}, Name: {meta.get('name')}, full: {meta}")
     print("")
 
     # Search for the book

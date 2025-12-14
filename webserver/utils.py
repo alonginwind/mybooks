@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-
+import logging
 import datetime
 from gettext import gettext as _
 
@@ -57,7 +57,8 @@ class SimpleBookFormatter:
             "sole": self.val("sole", False),
             "book_type": self.book.get("book_type", 0),
             "book_count": self.book.get("book_count", 1),
-            "state": self.book.get("state", {})
+            "state": self.book.get("state", {}),
+            'category': self.val('#category', '无'),
         }
 
 
@@ -90,6 +91,7 @@ class MCPBookFormatter:
             "comments": self.val("comments", _(u"暂无简介")) if include_comments else "",
             "languages": self.val("languages", None),
             "isbn": self.val("isbn", None),
+            'category': self.val('#category', '无'),
         }
 
 

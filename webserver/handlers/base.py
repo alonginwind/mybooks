@@ -504,9 +504,25 @@ class BaseHandler(web.RequestHandler):
     def get_books(self, *args, **kwargs):
         _ts = time.time()
         books = self.calibre_db.get_data_as_dict(*args, **kwargs)
+
+        # The custom column is returned as int key, e.g. { 1: 'value' }
+        # We need to convert it to { '#field': 'value' }
+        if not hasattr(self, '_custom_column_map'):
+            self._custom_column_map = {}
+            for key, meta in self.calibre_db.field_metadata.items():
+                if meta['is_custom']:
+                    self._custom_column_map[meta['colnum']] = key
+
+        for book in books:
+            for colnum, key in self._custom_column_map.items():
+                if colnum in book:
+                    book[key] = book.pop(colnum)
         logging.debug(
             "[%5d ms] select books from library (count = %d)" % (int(1000 * (time.time() - _ts)), len(books))
         )
+
+        if len(books) > 0:
+            logging.info(books[0])
 
         item = Item()
         empty_item = item.to_dict()

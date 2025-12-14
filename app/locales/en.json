@@ -441,6 +441,7 @@
         "setPublic": "Set as public",
         "author": " wrote",
         "year": " published",
+        "category": "Category",
         "fileFormat": "File format",
         "publisher": "Publisher",
         "series": "Series",
