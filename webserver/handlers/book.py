@@ -1100,20 +1100,31 @@ class RecentBook(ListHandler):
 
 class SearchBook(ListHandler):
     def get(self):
-        name = self.get_argument("name", "")
-        if not name.strip():
+        name = self.get_argument("name", "").strip()
+        book_title = self.get_argument("title", "").strip()
+        exclude_id = int(self.get_argument("exclude", "0").strip())
+        if not name and not book_title:
             return self.write({"err": "params.invalid", "msg": _(u"请输入搜索关键字")})
 
+        title_search = len(book_title) > 0
+        if title_search:
+            name = book_title
+
         title = _(u"搜索：%(name)s") % {"name": name}
-        ids = self.calibre_db_cache.search(name)
+        ids = self.calibre_db_cache.search(f'title:={name}' if title_search else name)
+
         for profile in {'s2t', "t2s"}:
             converted_name = opencc.OpenCC(profile).convert(name)
             if converted_name == name:
                 continue
-            ids2 = self.calibre_db_cache.search(converted_name)
+            ids2 = self.calibre_db_cache.search(f'title:={converted_name}' if title_search else converted_name)
             if len(ids2) > 0:
                 ids = ids.union(ids, ids2)
                 break
+
+        if exclude_id > 0:
+            # remove the exclude id from ids
+            ids.discard(exclude_id)
 
         return self.render_book_list([], ids=ids, title=title)
 

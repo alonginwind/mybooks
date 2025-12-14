@@ -641,6 +641,33 @@
         </v-col>
     </v-row>
 
+    <!-- 同名图书列表 -->
+    <v-row v-if="sameNameBooks.length > 0" class="mt-6">
+        <v-col cols="12">
+            <v-card>
+                <v-card-title class="headline">
+                    <v-icon left>mdi-book-multiple</v-icon>
+                    {{ $t('book.sameNameBooks') }}
+                </v-card-title>
+                <v-card-text>
+                    <v-progress-circular
+                        v-if="sameNameBooksLoading"
+                        indeterminate
+                        color="primary"
+                        class="d-block mx-auto my-4"
+                    ></v-progress-circular>
+                    <book-cards v-else :books="sameNameBooks">
+                        <template #introduce="{ book }">
+                            <div class="text-caption grey--text mt-1">
+                                {{ book.author }}
+                            </div>
+                        </template>
+                    </book-cards>
+                </v-card-text>
+            </v-card>
+        </v-col>
+    </v-row>
+
     <v-dialog v-model="dialog_set_cover" persistent max-width="400">
       <v-card>
         <v-card-title>{{ $t('book.setCover') }}</v-card-title>
@@ -1001,6 +1028,8 @@ export default {
         audios: {count: 0, files: [], status: "ok"},
         suggestionBooks: [],
         suggestionBooksLoading: false,
+        sameNameBooks: [],
+        sameNameBooksLoading: false,
         // Audio status constants
         AUDIO_STATUS: {
             UNAVAILABLE: "unavailable",
@@ -1177,6 +1206,7 @@ export default {
     mounted() {
         // 异步加载推荐图书
         this.loadSuggestionBooks();
+        this.loadSameNameBooks();
     },
     watch: {
         // 监听audios数据变化，当数据加载完成后检查是否需要启动进度轮询
@@ -1550,7 +1580,7 @@ export default {
                 this.$alert("error", this.$t('book.needMultipleFormats'));
                 return;
             }
-            
+
             // 默认选择第一个格式
             this.selectedSeparateFormat = this.book.files[0].format.toLowerCase();
             this.dialog_separate = true;
@@ -1560,7 +1590,7 @@ export default {
                 this.$alert("error", this.$t('book.selectFormat'));
                 return;
             }
-            
+
             this.separating_book = true;
             this.$backend("/book/" + this.book.id + "/separate", {
                 method: "POST",
@@ -1955,6 +1985,20 @@ export default {
                 this.suggestionBooksLoading = false;
             }
         },
+        async loadSameNameBooks() {
+            if (!this.book || !this.book.id) return;
+            this.sameNameBooksLoading = true;
+            try {
+                const response = await this.$backend(`/search?title=${this.book.title.trim()}`);
+                if (response.err === 'ok' && response.books) {
+                    this.sameNameBooks = response.books;
+                }
+            } catch (error) {
+                console.error('加载同名图书失败:', error);
+            } finally {
+                this.sameNameBooksLoading = false;
+            }
+        },
 
         // 加载设备列表
         async loadDevices() {
@@ -2032,10 +2076,10 @@ export default {
         // 获取设备类型文本
         getDeviceTypeText(type) {
             const typeMap = {
-                'duokan': '多看阅读器',
+                'duokan':  '多看阅读器',
                 'ireader': '掌阅',
                 'hanwang': '汉王',
-                'boox': '文石Boox',
+                'boox':    '文石Boox',
                 'dangdang': '当当阅读器'
             };
             return typeMap[type] || type;

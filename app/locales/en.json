@@ -455,6 +455,7 @@
         "chooseVoice": "Choose voice",
         "recommendedBooks": "Others",
         "recommendedBooksDesc": "Recommended based on tags and authors",
+        "sameNameBooks": "Same Name Books",
         "sendToDevice": "Send to device",
         "selectDevice": "Choose device",
         "noDevices": "No devices configured yet",
