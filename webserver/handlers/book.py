@@ -176,11 +176,42 @@ class BookCategory(BaseHandler):
         category = data.get("category", "").strip()
         logging.info(f"Updating category for book {book_id}: {category}")
         try:
+            # Use set_field directly on the cache to avoid Metadata object issues
             self.calibre_db_cache.set_field('#category', {book_id: category})
+
             return {"err": "ok", "msg": _(u"分类更新成功")}
         except Exception as e:
             logging.error(f"Error updating category for book {book_id}: {e}")
             return {"err": "internal", "msg": _(u"更新分类失败")}
+
+
+class BookCategories(BaseHandler):
+    @js
+    def get(self):
+        # Find the custom column for category
+        category_key = '#category'
+        if category_key not in self.calibre_db.field_metadata:
+             return {"err": "ok", "categories": []}
+
+        meta = self.calibre_db.field_metadata[category_key]
+        table = f"custom_column_{meta['colnum']}"
+        link_table = f"books_{table}_link"
+
+        sql = f"""
+            SELECT t.value, count(l.book) as count
+            FROM {table} t
+            JOIN {link_table} l ON t.id = l.value
+            GROUP BY t.id
+            ORDER BY count DESC
+        """
+
+        try:
+            rows = self.calibre_db_cache.backend.conn.get(sql)
+            categories = [{"name": row[0], "count": row[1]} for row in rows]
+            return {"err": "ok", "categories": categories}
+        except Exception as e:
+            logging.error(f"Error fetching categories: {e}")
+            return {"err": "internal", "msg": _(u"获取分类列表失败")}
 
 
 class BookConverter(BaseHandler):
@@ -2063,6 +2094,7 @@ def routes():
         (r"/api/library/stats", LibraryStats),
         (r"/api/book/([0-9]+)/tags", BookTags),
         (r"/api/book/([0-9]+)/category", BookCategory),
+        (r"/api/categories", BookCategories),
         (r"/api/book/([0-9]+)/suggestion", BookSuggestion),
         (r"/api/book/([0-9]+)/separate", BookSperate),
         (r"/api/book/exchange_type", BookExchangeType),

@@ -276,7 +276,7 @@ export default {
             var nav_links = [
                 { heading: "appHeader.categoryBrowse" },
                 { icon: "mdi-headphones", href: "/audiobooks", text: "appHeader.audioBooks", count: this.sys.audiobooks, color: "purple"},
-                { icon: "category", href: "/categories", text: "appHeader.categoryBrowse", count: this.sys.books, color: "primary" },
+                { icon: "category", href: "/categories", text: "appHeader.categoryBrowse", color: "green" },
                 { icon: "widgets", href: "/nav", text: "appHeader.tagCategory", count: this.sys.books, color: "primary" },
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
                 { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors, color: "primary"},
