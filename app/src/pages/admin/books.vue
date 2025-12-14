@@ -201,7 +201,7 @@
                     <span v-if="item.rating != null">{{ item.rating }} 星</span>
                     <span v-else> - </span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改字段</div>
+                        <div class="mt-4 text-h6">修改评分</div>
                         <v-rating label="评分" v-model="item.rating" color="yellow accent-4" length="10" dense></v-rating>
                     </template>
                 </v-edit-dialog>
@@ -212,8 +212,8 @@
                     <span v-if="item.category != null">{{ item.category }}</span>
                     <span v-else> - </span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改字段</div>
-                        <v-select :items="categories" :label="$t('admin.books.category')" v-model="item.category" color="yellow accent-4" dense></v-select>
+                        <div class="mt-4 text-h6">修改分类</div>
+                        <v-select :items="categories" v-model="item.category" color="yellow accent-4" dense></v-select>
                     </template>
                 </v-edit-dialog>
             </template>
@@ -376,7 +376,7 @@ export default {
             { text: "数量", sortable: false, value: "book_count", width: "70px" },
             { text: "书名", sortable: true, value: "title" },
             { text: "作者", sortable: true, value: "author", width: "100px" },
-            { text: "分类", sortable: false, value: "category"},
+            { text: "分类", sortable: false, value: "category", width: "80px"},
             { text: "评分", sortable: false, value: "rating", width: "60px" },
             { text: "出版社", sortable: false, value: "publisher" },
             { text: "标签", sortable: true, value: "tags", width: "100px" },
@@ -582,6 +582,12 @@ export default {
         save(book, field) {
             var edit = {};
             edit[field] = book[field];
+            // If books_selected is more than 1 means batch update
+            if (this.books_selected.length > 1) {
+                edit['ids'] = this.books_selected.map((book) => {
+                    return book.id;
+                });
+            }
             this.saving = true;
             this.$backend("/book/" + book.id + "/edit", {
                 method: "POST",
@@ -591,6 +597,14 @@ export default {
                     this.snack = true;
                     this.snackColor = "success";
                     this.snackText = rsp.msg;
+                    // Update the updated books in the response
+                    if (this.books_selected.length > 1 && rsp.books?.length > 0) {
+                        this.books_selected.forEach((book) => {
+                            if (rsp.books.includes(book.id)) {
+                                book[field] = edit[field];
+                            }
+                        });
+                    }
                 } else {
                     this.$alert("error", rsp.msg);
                 }

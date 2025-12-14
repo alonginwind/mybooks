@@ -945,24 +945,7 @@ class BookReadingState(BaseHandler):
 
 
 class BookEdit(BaseHandler):
-    @js
-    @auth
-    def post(self, bid):
-        book = self.get_book(bid, raise_exception=False)
-        if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
-        bid = book["id"]
-        if isinstance(book["collector"], dict):
-            cid = book["collector"]["id"]
-        else:
-            cid = book["collector"].id
-        if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
-
-        data = tornado.escape.json_decode(self.request.body)
-        # output data
-        logging.info(f"Book edit data: {data}")
-
+    def edit_book(self, bid, data):
         mi = self.calibre_db.get_metadata(bid, index_is_id=True)
         KEYS = [
             "authors",
@@ -1008,11 +991,40 @@ class BookEdit(BaseHandler):
 
         if "category" in data:
             category = data["category"].strip()
-            # Use set_field directly on the cache to avoid Metadata object issues
             self.calibre_db_cache.set_field('#category', {bid: category})
+        else:
+            self.calibre_db.set_metadata(bid, mi)
+        return True
 
-        self.calibre_db.set_metadata(bid, mi)
-        return {"err": "ok", "msg": _(u"更新成功")}
+    @js
+    @auth
+    def post(self, bid):
+        book = self.get_book(bid, raise_exception=False)
+        if not book:
+            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+        bid = book["id"]
+        update_books = []
+        if isinstance(book["collector"], dict):
+            cid = book["collector"]["id"]
+        else:
+            cid = book["collector"].id
+        if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
+            return {"err": "permission", "msg": _(u"无权操作")}
+
+        data = tornado.escape.json_decode(self.request.body)
+        # output data
+        logging.info(f"Book edit data: {data}")
+        id_list = data.get("ids", None)
+        if id_list and bid in id_list:
+            # 仅当有列表，且当前书籍在列表中时，才进行批量更新
+            for bid in id_list:
+                self.edit_book(bid, data)
+                update_books.append(bid)
+            return {"err": "ok", "msg": _(u"更新成功"), "books": update_books}
+        else:
+            self.edit_book(bid, data)
+            updated_books = [bid]
+        return {"err": "ok", "msg": _(u"更新成功"), "books": update_books}
 
 
 class BookDelete(BaseHandler):
