@@ -453,22 +453,27 @@ export default {
         this.$i18n.locale = this.settings['site_language'];
       }
 
-      if (process.client && this.settings['MAX_UPLOAD_SIZE'] !== '') {
-        localStorage.setItem('max_upload_size', this.settings['MAX_UPLOAD_SIZE']);
-      }
+      if (process.client) {
+        if (this.settings['MAX_UPLOAD_SIZE'] !== '') {
+          localStorage.setItem('max_upload_size', this.settings['MAX_UPLOAD_SIZE']);
+        }
 
-      if (process.client && this.settings['CHUNK_UPLOAD_SIZE'] !== '') {
-        localStorage.setItem('chunk_upload_size', this.settings['CHUNK_UPLOAD_SIZE']);
-      }
+        if (this.settings['CHUNK_UPLOAD_SIZE'] !== '') {
+          localStorage.setItem('chunk_upload_size', this.settings['CHUNK_UPLOAD_SIZE']);
+        }
 
-      if (process.client && this.settings['site_theme'] !== '') {
-        localStorage.setItem('site_theme', this.settings['site_theme']);
-        if (this.settings['site_theme'] === 'dark') {
-          this.$vuetify.theme.dark = true;
-        } else {
-          this.$vuetify.theme.dark = false;
+        localStorage.setItem('indexPage', this.settings['INDEX_PAGE_TYPE']);
+
+        if (this.settings['site_theme'] !== '') {
+          localStorage.setItem('site_theme', this.settings['site_theme']);
+          if (this.settings['site_theme'] === 'dark') {
+            this.$vuetify.theme.dark = true;
+          } else {
+            this.$vuetify.theme.dark = false;
+          }
         }
       }
+
       this.$backend("/admin/settings", {
         method: 'POST',
         body: JSON.stringify(this.settings),
