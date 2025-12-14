@@ -564,7 +564,7 @@
         "series": "Series",
         "rating": "Rating",
         "hotRanking": "Hot Ranking",
-        "recentBooks": "All Books",
+        "allBooks": "All Books",
         "physicalBooks": "Physical Books",
         "audioBooks": "Audio Books",
         "systemVersion": "Revision",

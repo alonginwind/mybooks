@@ -286,7 +286,7 @@ export default {
                     links: [
                         { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},
                         { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "black"},
-                        { icon: "mdi-history", href: "/recent", text: "appHeader.recentBooks", color: "primary"},
+                        { icon: "mdi-history", href: "/all", text: "appHeader.allBooks", color: "primary"},
                         { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", color: "primary"},
                         { icon: "mdi-star-shooting", href: "/rating", text: "appHeader.rating", color: "orange"},
                         { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},

@@ -59,8 +59,8 @@ export default {
         displayTitle = this.$t('listBook.search');
         break;
 
-      case "/recent":
-        displayTitle = this.$t('listBook.recentUpdates');
+      case "/all":
+        displayTitle = this.$t('listBook.allBooks');
         break;
 
       case "/favorites":

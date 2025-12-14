@@ -189,7 +189,7 @@ export default {
         },
         checkRedirect(type) {
             if (type === 'all') {
-                this.$router.replace('/recent');
+                this.$router.replace('/all');
             } else if (type === 'categories') {
                 this.$router.replace('/categories');
             }
@@ -222,7 +222,7 @@ export default {
             { icon: 'mdi-home-group',     href:'/publisher', text: this.$t('index.publishers'),   count: this.$store.state.sys.publishers},
             { icon: 'mdi-tag-heart',      href:'/tag',       text: this.$t('index.tags'),     count: this.$store.state.sys.tags},
             { icon: 'mdi-translate',      href:'/language',       text: this.$t('index.languages'),     count: this.$store.state.sys.languages},
-            { icon: 'mdi-history',        href:'/recent',    text: this.$t('index.allBooks'), },
+            { icon: 'mdi-history',        href:'/all',    text: this.$t('index.allBooks'), },
             ]
     },
     async asyncData({ app, res }) {
