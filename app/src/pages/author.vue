@@ -11,11 +11,10 @@
         <v-col cols="12">
           <v-card outlined class="mb-4">
             <v-card-title class="py-2" @click="showBatch = !showBatch">
-              <span class="text-subtitle-1 font-weight-bold">{{ $t('listBook.batchSetCategory') }}</span>
-              <v-spacer></v-spacer>
-              <v-btn icon @click="showBatch = !showBatch">
+              <v-btn icon>
                 <v-icon>{{ showBatch ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
               </v-btn>
+              <span class="text-subtitle-1 font-weight-bold">{{ $t('listBook.batchSetCategory') }}</span>
             </v-card-title>
 
             <v-expand-transition>
@@ -45,7 +44,7 @@
                       </v-btn>
                     </v-col>
                   </v-row>
-                  <div class="caption text-grey mt-2">
+                  <div class="caption text-grey mt-2" v-if="targetCategory">
                     {{ $t('listBook.setCategoryForAuthorBooks', { category: targetCategory || '...', author: currentAuthor }) }}
                   </div>
                 </v-card-text>
