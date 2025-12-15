@@ -4,9 +4,6 @@
     <div v-if="currentTag">
       <v-row>
         <v-col cols="12">
-          <v-btn text color="primary" @click="clearTag" class="mb-2">
-            <v-icon left>mdi-arrow-left</v-icon> {{ $t('common.back') || 'Back' }}
-          </v-btn>
           <h2>{{ $t('listBook.tagBooks', { name: currentTag }) }}</h2>
         </v-col>
 
@@ -99,13 +96,11 @@
     <v-dialog v-model="dialog" max-width="400">
       <v-card>
         <v-card-title class="headline">{{ $t('listBook.confirmBatchUpdate') }}</v-card-title>
-        <v-card-text>
-          {{ $t('listBook.confirmBatchUpdateContent', { category: targetCategory, tag: currentTag, total: total }) }}
-        </v-card-text>
+        <v-card-text v-html="$t('listBook.confirmBatchUpdateContent', { category: targetCategory, tag: currentTag, total: total })"></v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="grey darken-1" text @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" text @click="doBatchSet">{{ $t('common.confirm') }}</v-btn>
+          <v-btn color="primary" text @click="doBatchSet">{{ $t('common.ok') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -206,13 +201,22 @@ export default {
         this.loadCategories();
     },
     async loadCategories() {
+        if (this.$store.state.user?.is_login !== true) {
+            this.categories = [];
+            return;
+        }
         try {
-            const rsp = await this.$backend("/categories");
-            if (rsp.err === 'ok') {
-                this.categories = rsp.categories;
+            const response = await this.$backend('/admin/settings');
+            if (response.err === 'ok' && response.settings) {
+                if (response.settings.BOOK_NAV) {
+                    this.categories = response.settings.BOOK_NAV.split('\n').map(line => {
+                        const parts = line.split('=');
+                        return parts[0].trim();
+                    }).filter(c => c);
+                }
             }
-        } catch (e) {
-            console.error(e);
+        } catch (error) {
+            console.error('Failed to get settings:', error);
         }
     },
     async expandList() {
@@ -224,7 +228,10 @@ export default {
         this.currentTag = name;
         this.page = 1;
         if (this.$route.query.name !== name) {
+          console.log("Not found the name in query")
             this.$router.push({ query: { ...this.$route.query, name: name } });
+        } else {
+          console.log("Found the name in query")
         }
         this.fetchBooks();
     },

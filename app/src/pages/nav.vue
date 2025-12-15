@@ -1,7 +1,7 @@
 <template>
     <v-row>
         <template v-for="nav in navs">
-        <v-col cols=12 :key="nav.legend">
+        <v-col cols=12>
             <h2>{{nav.legend}}</h2>
             <v-btn rounded small class="ma-1" v-for="item in nav.tags" :to="'/tag/'+encodeURIComponent(item.name)" :key="item.name" outlined :color="item.count != 0 ? 'primary': 'grey'" >
                 {{item.name}}

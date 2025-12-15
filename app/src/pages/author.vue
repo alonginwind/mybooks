@@ -4,14 +4,11 @@
     <div v-if="currentAuthor">
       <v-row>
         <v-col cols="12">
-          <v-btn text color="primary" @click="clearAuthor" class="mb-2">
-            <v-icon left>mdi-arrow-left</v-icon> {{ $t('common.back') || 'Back' }}
-          </v-btn>
           <h2>{{ $t('listBook.authorBooks', { name: currentAuthor }) }}</h2>
         </v-col>
 
         <!-- Batch Set Category Card -->
-        <v-col cols="12">
+        <v-col cols="12">ß
           <v-card outlined class="mb-4">
             <v-card-title class="py-2">
               <span class="text-subtitle-1 font-weight-bold">{{ $t('listBook.batchSetCategory') }}</span>
@@ -99,13 +96,11 @@
     <v-dialog v-model="dialog" max-width="400">
       <v-card>
         <v-card-title class="headline">{{ $t('listBook.confirmBatchUpdate') }}</v-card-title>
-        <v-card-text>
-          {{ $t('listBook.confirmBatchUpdateContentAuthor', { category: targetCategory, author: currentAuthor, total: total }) }}
-        </v-card-text>
+        <v-card-text v-html="$t('listBook.confirmBatchUpdateContentAuthor', { category: targetCategory, author: currentAuthor, total: total })"></v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="grey darken-1" text @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" text @click="doBatchSet">{{ $t('common.confirm') }}</v-btn>
+          <v-btn color="primary" text @click="doBatchSet">{{ $t('common.ok') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -188,13 +183,22 @@ export default {
         this.loadCategories();
     },
     async loadCategories() {
+        if (this.$store.state.user?.is_login !== true) {
+            this.categories = [];
+            return;
+        }
         try {
-            const rsp = await this.$backend("/categories");
-            if (rsp.err === 'ok') {
-                this.categories = rsp.categories;
+            const response = await this.$backend('/admin/settings');
+            if (response.err === 'ok' && response.settings) {
+                if (response.settings.BOOK_NAV) {
+                    this.categories = response.settings.BOOK_NAV.split('\n').map(line => {
+                        const parts = line.split('=');
+                        return parts[0].trim();
+                    }).filter(c => c);
+                }
             }
-        } catch (e) {
-            console.error(e);
+        } catch (error) {
+            console.error('Failed to get settings:', error);
         }
     },
     async expandList() {
