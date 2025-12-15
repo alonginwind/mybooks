@@ -184,6 +184,74 @@ class BookCategory(BaseHandler):
             return {"err": "internal", "msg": _(u"更新分类失败")}
 
 
+
+class BookCategoryBatch(BaseHandler):
+    @js
+    @auth
+    def post(self):
+        if not self.is_admin():
+            return {"err": "user.no_permission", "msg": _(u"无权限")}
+
+        data = tornado.escape.json_decode(self.request.body)
+        category = data.get("category", "").strip()
+        author = data.get("author", "").strip()
+        tag = data.get("tag", "").strip()
+
+        if not category:
+            return {"err": "params.category.empty", "msg": _(u"分类不能为空")}
+
+        if not author and not tag:
+            return {"err": "params.invalid", "msg": _(u"必须指定作者或标签")}
+
+        # Find books
+        book_ids = set()
+        if author:
+            # Search by author
+            try:
+                # Use calibre search syntax for author
+                # authors:"=Author Name"
+                query = f'authors:="{author}"'
+                ids = self.calibre_db_cache.search(query)
+                book_ids.update(ids)
+            except Exception as e:
+                logging.error(f"Error searching books by author {author}: {e}")
+                return {"err": "internal", "msg": _(u"搜索作者书籍失败")}
+
+        if tag:
+            # Search by tag
+            try:
+                query = f'tags:="{tag}"'
+                ids = self.calibre_db_cache.search(query)
+                book_ids.update(ids)
+            except Exception as e:
+                logging.error(f"Error searching books by tag {tag}: {e}")
+                return {"err": "internal", "msg": _(u"搜索标签书籍失败")}
+
+        if not book_ids:
+            return {"err": "ok", "msg": _(u"未找到符合条件的书籍"), "count": 0}
+
+        logging.info(f"Batch updating category to '{category}' for {len(book_ids)} books (Author: {author}, Tag: {tag})")
+
+        count = 0
+        try:
+            # Update category for each book
+            # We use the cache's set_field which expects {book_id: value}
+            # To optimize, we can construct a dict for all books if set_field supports it,
+            # but usually it's one call per update or specific batch APIs.
+            # Looking at existing BookCategory.post, it uses:
+            # self.calibre_db_cache.set_field('#category', {book_id: category})
+
+            # set_field can handle a dict of {id: value}
+            updates = {bid: category for bid in book_ids}
+            self.calibre_db_cache.set_field('#category', updates)
+            count = len(book_ids)
+
+            return {"err": "ok", "msg": _(u"成功更新 %d 本书籍分类") % count, "count": count}
+        except Exception as e:
+            logging.error(f"Error batch updating category: {e}")
+            return {"err": "internal", "msg": _(u"批量更新分类失败")}
+
+
 class BookCategories(BaseHandler):
     @js
     def get(self):
@@ -2095,6 +2163,7 @@ def routes():
         (r"/api/reading/stats", BookReadingStats),
         (r"/api/library/stats", LibraryStats),
         (r"/api/book/([0-9]+)/tags", BookTags),
+        (r"/api/book/category", BookCategoryBatch),
         (r"/api/book/([0-9]+)/category", BookCategory),
         (r"/api/categories", BookCategories),
         (r"/api/book/([0-9]+)/suggestion", BookSuggestion),

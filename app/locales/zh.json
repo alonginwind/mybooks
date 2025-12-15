@@ -63,7 +63,13 @@
         "wants": "待读",
         "reading": "在读",
         "readDone": "已读",
-        "soledBooks": "个人私藏书籍"
+        "soledBooks": "个人私藏书籍",
+        "batchSetCategory": "批量设置分类",
+        "selectCategory": "选择分类",
+        "batchSet": "批量设置",
+        "confirmBatchUpdate": "确认批量更新",
+        "confirmBatchUpdateContent": "确定要为所有带有标签 <b>{tag}</b> 的书籍设置分类 <b>{category}</b> 吗？这将更新大约 {total} 本书籍。",
+        "confirmBatchUpdateContentAuthor": "确定要为作者 <b>{author}</b> 的所有书籍设置分类 <b>{category}</b> 吗？这将更新大约 {total} 本书籍。"
     },
     "listMeta": {
         "ratingSuffix": "星",

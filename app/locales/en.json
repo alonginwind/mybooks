@@ -63,7 +63,13 @@
         "wants": "Want to Read",
         "reading": "Reading",
         "readDone": "Read",
-        "soledBooks": "Private Books"
+        "soledBooks": "Private Books",
+        "batchSetCategory": "Batch Set Category",
+        "selectCategory": "Select Category",
+        "batchSet": "Batch Set",
+        "confirmBatchUpdate": "Confirm Batch Update",
+        "confirmBatchUpdateContent": "Are you sure you want to set category <b>{category}</b> for all books with tag <b>{tag}</b>? This will update approx. {total} books.",
+        "confirmBatchUpdateContentAuthor": "Are you sure you want to set category <b>{category}</b> for all books by <b>{author}</b>? This will update approx. {total} books."
     },
     "listMeta": {
         "ratingSuffix": " stars",
