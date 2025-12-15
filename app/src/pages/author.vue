@@ -8,7 +8,7 @@
         </v-col>
 
         <!-- Batch Set Category Card -->
-        <v-col cols="12">ß
+        <v-col cols="12">
           <v-card outlined class="mb-4">
             <v-card-title class="py-2">
               <span class="text-subtitle-1 font-weight-bold">{{ $t('listBook.batchSetCategory') }}</span>

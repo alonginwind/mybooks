@@ -152,6 +152,9 @@ export default {
     }
     // Pre-load tag list if no specific tag selected
     let name = route.query.name || route.params.name;
+    if (name) {
+        name = decodeURIComponent(name);
+    }
     if (!name) {
         let rsp = await app.$backend("/tag");
         return { items: rsp.items || [], total: rsp.total };
@@ -162,16 +165,19 @@ export default {
     this.init();
     let name = this.$route.query.name || this.$route.params.name;
     if (name) {
+        name = decodeURIComponent(name);
         this.selectTag(name);
     }
   },
   watch: {
     '$route.query.name'(newName) {
        if (newName) {
+         newName = decodeURIComponent(newName);
          this.selectTag(newName);
        } else {
          let paramsName = this.$route.params.name;
          if (paramsName) {
+           paramsName = decodeURIComponent(paramsName);
            this.selectTag(paramsName);
          } else {
            this.clearTag();
@@ -180,10 +186,12 @@ export default {
     },
     '$route.params.name'(newName) {
        if (newName) {
+         newName = decodeURIComponent(newName);
          this.selectTag(newName);
        } else {
          let queryName = this.$route.query.name;
          if (queryName) {
+           queryName = decodeURIComponent(queryName);
            this.selectTag(queryName);
          } else {
            this.clearTag();
@@ -227,11 +235,11 @@ export default {
     selectTag(name) {
         this.currentTag = name;
         this.page = 1;
-        if (this.$route.query.name !== name) {
-          console.log("Not found the name in query")
-            this.$router.push({ query: { ...this.$route.query, name: name } });
-        } else {
-          console.log("Found the name in query")
+        // 如果当前路由有params.name，说明是通过/tag/:name访问的，需要转换为query参数并清除params
+        if (this.$route.params.name || this.$route.query.name !== name) {
+            // 只使用query参数，不保留params，这样URL会更简洁
+            // 对name参数进行encodeURIComponent处理，确保中文标签在URL中正确显示
+            this.$router.push({ path: '/tag', query: { ...this.$route.query, name: encodeURIComponent(name) } });
         }
         this.fetchBooks();
     },

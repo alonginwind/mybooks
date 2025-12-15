@@ -508,7 +508,7 @@
                                             dark
                                             color="grey"
                                             v-if="tag"
-                                            :to="'/tag/' + encodeURIComponent(tag)"
+                                            :to="{ path: '/tag', query: { name: encodeURIComponent(tag) } }"
                                         >
                                         <v-icon>loyalty</v-icon>
                                         {{ tag }}
