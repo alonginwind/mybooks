@@ -46,17 +46,18 @@ class Index(BaseHandler):
         cnt_random = min(int(self.get_argument("random", setting_random_count)), 60)
         cnt_recent = min(int(self.get_argument("recent", setting_recent_count)), 200)
 
-        # nav = "index"
-        # title = _(u"全部书籍")
-        ids = list(self.calibre_db_cache.search(""))
+        ids = list(self.calibre_db_cache.all_book_ids())
         if not ids:
             raise web.HTTPError(404, reason=_(u"本书库暂无藏书"))
+
+        cnt_recent = min(cnt_recent, len(ids))
+        cnt_random = min(cnt_random, len(ids))
         random_ids = random.sample(ids, min(cnt_random, len(ids)))
         random_books = [b for b in self.get_books(ids=random_ids)]
         random_books.sort(key=lambda x: x["id"], reverse=True)
 
         ids.sort(reverse=True)
-        new_ids = random.sample(ids[0:100], min(cnt_recent, len(ids)))
+        new_ids = random.sample(ids[0:200], min(cnt_recent, len(ids)))
         new_books = [b for b in self.get_books(ids=new_ids)]
         new_books.sort(key=lambda x: x["id"], reverse=True)
 
@@ -423,6 +424,8 @@ class BookRefer(BaseHandler):
             org_mi.set("comments", _(u"无详细介绍"))
         org_mi.timestamp = nowf()
         self.calibre_db.set_metadata(book_id, org_mi, force_changes=True)
+        # 修改分类为空
+        self.calibre_db_cache.set_field('#category', {book_id: ''})
         logging.info("[RESET]reset meta data for %d" % book_id)
         return {"err": "ok", "book_id": book_id}
 

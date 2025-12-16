@@ -433,7 +433,7 @@
         "smtp_encryption": "SMTP安全性",
         "test_email": "测试邮件",
         "book_tags": "书籍分类",
-        "book_tags_description": "配置自定义书籍分类。每行一个分类。或以\"分类=标签\"的形式配置分类对应的标签。例如：\n分类=标签1/标签2，对应分类的标签会在标签分类中分组显示。",
+        "book_tags_description": "配置自定义书籍分类，每行一个分类。或以\"分类=标签\"的形式配置分类对应的标签。例如：\n分类=标签1/标签2，对应分类的标签会在标签分类中分组显示。",
         "book_nav": "分类导航",
         "friend_links": "友情链接",
         "internet_book_sources": "互联网书籍信息源",
@@ -506,7 +506,7 @@
         "main_page_recent_count": "首页 - 最近图书显示数量",
         "main_page_random_count": "首页 - 随机推荐图书数量 (为0时隐藏)",
         "index_page_type": "首页类型",
-        "index_page_type_index": "首页",
+        "index_page_type_index": "默认首页",
         "index_page_type_all": "所有图书",
         "index_page_type_categories": "分类浏览"
     },

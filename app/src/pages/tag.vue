@@ -21,7 +21,7 @@
               <div v-show="showBatch">
                 <v-card-text>
                   <v-row align="center">
-                    <v-col cols="12" sm="6">
+                    <v-col cols="12" sm="4">
                       <v-select
                         v-model="targetCategory"
                         :items="categories"
