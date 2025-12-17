@@ -1195,17 +1195,12 @@ export default {
         this.init(this.$route);
         this.mail_to = this.$store.state.user.kindle_email;
         this.get_txt_parse_status();
-        // 先加载设备列表，等待完成后再加载设备偏好
-        await this.getSettings();
 
         if (process.client) {
             this.mail_to = this.$cookies.get("last_mailto");
             // 从localStorage获取上次使用的语音名称
             const lastUsedVoice = localStorage.getItem("last_used_voice_name");
             this.voice_name = lastUsedVoice || "zh-CN-XiaoxiaoNeural"; // 如果没有保存的语音，使用默认的晓晓
-
-            // 从localStorage加载上次使用的设备选项（在devices加载完成后）
-            this.loadDevicePreferences();
 
             // 检查URL参数，如果有continue_adding=true则自动弹出添加对话框
             if (this.$route.query.continue_adding === 'true' && this.$store.state.sys.allow.physical_books) {
@@ -1219,10 +1214,14 @@ export default {
             this.voice_name = "zh-CN-XiaoxiaoNeural";
         }
     },
-    mounted() {
+    async mounted() {
         // 异步加载推荐图书
         this.loadSuggestionBooks();
         this.loadSameNameBooks();
+        // 先加载设备列表，等待完成后再加载设备偏好
+        await this.getSettings();
+        // 从localStorage加载上次使用的设备选项（在devices加载完成后）
+        this.loadDevicePreferences();
     },
     watch: {
         // 监听audios数据变化，当数据加载完成后检查是否需要启动进度轮询
