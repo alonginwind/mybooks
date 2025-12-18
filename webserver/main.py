@@ -250,8 +250,52 @@ def make_app():
 
     logging.info("Now, Running...")
     need_sync_item_time = AsyncService().setup(book_db, ScopedSession)
-    app = web.Application(social_routes.SOCIAL_AUTH_ROUTES + handlers.routes(), **app_settings)
+
+    # Initialize WebDAV service
+    from webserver.webdav.server import create_webdav_app
+    from tornado.web import FallbackHandler
+    from tornado.wsgi import WSGIContainer
+
+    try:
+        logging.info("Initializing WebDAV service on /books path...")
+        webdav_app = create_webdav_app(cache, ScopedSession)
+        webdav_container = WSGIContainer(webdav_app)
+
+        # Create routes with WebDAV at /books/*
+        webdav_routes = [
+            (r"/books/?(.*)", FallbackHandler, dict(fallback=webdav_container)),
+        ]
+        logging.info("WebDAV service initialized successfully")
+    except Exception as e:
+        logging.error(f"Failed to initialize WebDAV service: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
+        webdav_routes = []
+
+    # Assemble routes carefully:
+    # WebDAV must come before files.routes() because files has a catch-all (r"/(.*)")
+    # We need to get routes from handlers module without files, add webdav, then add files
+    from webserver.handlers import mcp, admin, barcode, scan, opds, book, user, meta, audio, files
+
+    app_routes = []
+    app_routes += social_routes.SOCIAL_AUTH_ROUTES
+    app_routes += mcp.routes()
+    app_routes += admin.routes()
+    app_routes += barcode.routes()
+    app_routes += scan.routes()
+    app_routes += opds.routes()
+    app_routes += book.routes()
+    app_routes += user.routes()
+    app_routes += meta.routes()
+    app_routes += audio.routes()
+    # Insert WebDAV routes BEFORE files.routes()
+    app_routes += webdav_routes
+    # files.routes() contains catch-all r"/(.*)" so must be last
+    app_routes += files.routes()
+
+    app = web.Application(app_routes, **app_settings)
     app._engine = engine
+
 
     # Start background service
     BookBarnService().get_daily_books()
