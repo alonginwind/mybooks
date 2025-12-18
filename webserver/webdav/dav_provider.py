@@ -63,6 +63,32 @@ class TalebookResource(DAVNonCollection):
             return open(self.file_path, "rb")
         return b""
 
+    def support_etag(self):
+        """Return True if this resource supports ETags"""
+        return True
+
+    def get_etag(self):
+        """Return an ETag for this resource"""
+        # Generate ETag based on file path and modification time
+        if self.file_path and os.path.exists(self.file_path):
+            try:
+                stat = os.stat(self.file_path)
+                # Use file size and modification time for ETag
+                return f'"{self.id}-{stat.st_size}-{int(stat.st_mtime)}"'
+            except:
+                pass
+        # Fallback: use book ID
+        return f'"{self.id}"'
+
+    def get_last_modified(self):
+        """Return last modified time"""
+        if self.file_path and os.path.exists(self.file_path):
+            try:
+                return os.path.getmtime(self.file_path)
+            except:
+                pass
+        return None
+
 class VirtualCollection(DAVCollection):
     def __init__(self, path, environ, title, provider, children=None):
         super(VirtualCollection, self).__init__(path, environ)
@@ -103,30 +129,52 @@ class BooksCollection(VirtualCollection):
 
     def get_dynamic_members(self):
         books = []
-        # Fetch book metadata in batch might be better, but Calibre cache is efficient
-        # self.provider.cache.get_metadata(ids)
-        # However, data access is via cache (new_api)
-        # attributes in cache usually: cache.field_metadata
-        # We need cache.get_proxy_metadata or similar?
-        # Actually in handlers/book.py: self.get_book(id) uses cache.
-        # We can implement a helper in Provider.
+        # Use cache.get_metadata() to fetch each book's metadata
+        # Note: this is less efficient than batch fetch but cache API doesn't have batch method
+        # The cache should have internal optimization
 
-        # NOTE: getting all metadata for thousands of books is slow.
-        # Ideally we paginate or just fetch basic info.
-        # But WebDAV PROPFIND usually asks for children.
-
-        # cache.get_data_as_dict is useful
         try:
-            items = self.provider.cache.get_data_as_dict(ids=list(self.book_ids))
-            for item in items:
-                base = self.path if self.path.endswith('/') else self.path + '/'
-                book_name = f"{item['id']}.{safe_filename(item['title'])}"
-                books.append(TalebookResource(
-                    base + book_name,
-                    self.environ,
-                    item,
-                    self.provider.cache
-                ))
+            for book_id in self.book_ids:
+                try:
+                    # Get metadata for this book
+                    mi = self.provider.cache.get_metadata(book_id, get_cover=False)
+                    if not mi:
+                        continue
+
+                    # Convert Metadata object to dict-like structure
+                    item = {
+                        'id': book_id,
+                        'title': mi.title or 'Unknown',
+                        'authors': mi.authors or [],
+                        'fmt_epub': None,
+                        'fmt_azw3': None,
+                        'fmt_mobi': None,
+                        'fmt_pdf': None,
+                    }
+
+                    # Get format information
+                    formats = self.provider.cache.formats(book_id, verify_formats=False)
+                    if formats:
+                        for fmt in formats:
+                            fmt_lower = fmt.lower()
+                            if fmt_lower in ['epub', 'azw3', 'mobi', 'pdf']:
+                                # Get the absolute path to the format file
+                                fmt_path = self.provider.cache.format_abspath(book_id, fmt)
+                                if fmt_path:
+                                    item[f'fmt_{fmt_lower}'] = fmt_path
+
+                    base = self.path if self.path.endswith('/') else self.path + '/'
+                    book_name = f"{item['id']}.{safe_filename(item['title'])}"
+                    books.append(TalebookResource(
+                        base + book_name,
+                        self.environ,
+                        item,
+                        self.provider.cache
+                    ))
+                except Exception as e:
+                    logging.error(f"Error fetching book {book_id}: {e}")
+                    continue
+
         except Exception as e:
             logging.error(f"Error fetching books for {self.path}: {e}")
 
