@@ -42,6 +42,7 @@ class TalebookResource(DAVNonCollection):
     def get_display_name(self):
         # Format: ID.书名.ext
         name = "%d.%s.%s" % (self.id, self.title, self.ext)
+        logging.info(f"****** Getting display name: {name}")
         return name
 
     def get_content_length(self):
@@ -154,6 +155,7 @@ class BooksCollection(VirtualCollection):
 
                     # Get format information
                     formats = self.provider.cache.formats(book_id, verify_formats=False)
+                    selected_fmt = None
                     if formats:
                         for fmt in formats:
                             fmt_lower = fmt.lower()
@@ -162,9 +164,14 @@ class BooksCollection(VirtualCollection):
                                 fmt_path = self.provider.cache.format_abspath(book_id, fmt)
                                 if fmt_path:
                                     item[f'fmt_{fmt_lower}'] = fmt_path
+                                    # Use first available format in priority order
+                                    if not selected_fmt and fmt_lower in ['epub', 'azw3', 'mobi', 'pdf']:
+                                        selected_fmt = fmt_lower
 
+                    # Build filename with extension
                     base = self.path if self.path.endswith('/') else self.path + '/'
-                    book_name = f"{item['id']}.{safe_filename(item['title'])}"
+                    ext = selected_fmt if selected_fmt else 'txt'
+                    book_name = f"{item['id']}.{safe_filename(item['title'])}.{ext}"
                     books.append(TalebookResource(
                         base + book_name,
                         self.environ,

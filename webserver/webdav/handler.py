@@ -20,7 +20,6 @@ class WebDAVHandler(RequestHandler):
         Args:
             wsgi_app: WsgiDAV application instance
         """
-        logging.info("[!!!!!]Initializing WebDAVHandler with WSGI application")
         self.wsgi_container = WSGIContainer(wsgi_app)
 
     def prepare(self):
