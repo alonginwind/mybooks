@@ -455,7 +455,7 @@
                             <div class="tag-chips">
                                 <v-menu offset-y>
                                     <template v-slot:activator="{ on, attrs }">
-                                        <v-chip rounded smallF color="green" class="white--text" v-bind="attrs" v-on="on">
+                                        <v-chip rounded smallF color="green" class="white--text" v-bind="attrs" v-on="on" :disabled="categories.length === 0">
                                             <v-icon>category</v-icon>
                                             {{ $t('book.category') }} : {{ book.category || '未分类' }}
                                             <v-icon color="white" class="ml-1">edit</v-icon>
@@ -1238,6 +1238,14 @@ export default {
             },
             immediate: true, // 立即执行一次，用于初始数据检查
             deep: true // 深度监听对象变化
+        },
+        // 监听用户登录状态变化，当用户登录后重新加载设置
+        '$store.state.user.is_login': {
+            handler(newValue) {
+                if (newValue === true) {
+                    this.getSettings();
+                }
+            }
         },
         // 监听发送到设备对话框的打开状态，自动选择默认设备
         dialog_send_to_device: {
