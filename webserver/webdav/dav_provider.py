@@ -2,6 +2,7 @@
 import os
 import re
 import logging
+from io import BytesIO
 from urllib.parse import unquote
 from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
 
@@ -66,7 +67,8 @@ class TalebookResource(DAVNonCollection):
     def get_content(self):
         if self.file_path and os.path.exists(self.file_path):
             return open(self.file_path, "rb")
-        return b""
+        # Return an empty BytesIO object instead of raw bytes
+        return BytesIO(b"")
 
     def support_etag(self):
         """Return True if this resource supports ETags"""

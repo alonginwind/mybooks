@@ -6,11 +6,12 @@ from tornado.wsgi import WSGIContainer
 class WebDAVHandler(RequestHandler):
     """
     Tornado request handler to bridge WebDAV WSGI app.
+    只读WebDAV服务，仅支持查询和下载操作。
     """
 
-    # Add WebDAV methods to supported methods list
+    # Add WebDAV methods to supported methods list (read-only)
     SUPPORTED_METHODS = RequestHandler.SUPPORTED_METHODS + (
-        'PROPFIND', 'PROPPATCH', 'MKCOL', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'
+        'PROPFIND',  # 查询文件/目录属性
     )
 
     def initialize(self, wsgi_app):
@@ -39,18 +40,9 @@ class WebDAVHandler(RequestHandler):
             self.set_status(500)
             self.finish("Internal Server Error")
 
-    # Support all HTTP methods used by WebDAV
+    # Support all HTTP methods used by WebDAV (read-only)
     def get(self, *args, **kwargs):
         pass  # Handled in prepare()
-
-    def post(self, *args, **kwargs):
-        pass
-
-    def put(self, *args, **kwargs):
-        pass
-
-    def delete(self, *args, **kwargs):
-        pass
 
     def head(self, *args, **kwargs):
         pass
@@ -59,31 +51,7 @@ class WebDAVHandler(RequestHandler):
         pass
 
     def propfind(self, *args, **kwargs):
-        """WebDAV PROPFIND method"""
-        pass
-
-    def proppatch(self, *args, **kwargs):
-        """WebDAV PROPPATCH method"""
-        pass
-
-    def mkcol(self, *args, **kwargs):
-        """WebDAV MKCOL method"""
-        pass
-
-    def copy(self, *args, **kwargs):
-        """WebDAV COPY method"""
-        pass
-
-    def move(self, *args, **kwargs):
-        """WebDAV MOVE method"""
-        pass
-
-    def lock(self, *args, **kwargs):
-        """WebDAV LOCK method"""
-        pass
-
-    def unlock(self, *args, **kwargs):
-        """WebDAV UNLOCK method"""
+        """WebDAV PROPFIND method - 查询文件/目录属性"""
         pass
 
 
