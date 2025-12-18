@@ -15,6 +15,7 @@ An enhanced personal books management webserver built on Calibre + Vue, beautifu
 
 ### 项目介绍
 poxenstudio/talebook增加的特性包括:
+* 支持以WebDAV连接
 * 支持推送到支持Wifi传书的设备上
 * 支持添加实体书
 * 支持阅读管理
@@ -60,41 +61,6 @@ poxenstudio/talebook增加的特性包括:
     1. 支持信息共享及AI协助的功能。是一个大的修改，会分成几步完成。
     2. 增加文件的加密处理。可以帮助解决私有化部署场景下平台扫描导致的文件无法使用的问题。
     3. 带水印导出epub (待定)
-    4. 增加统计信息显示
-* v3.20.0
-    1. 建图书标签库, 优化标签展示和关联推荐
-* v3.19.0
-    1. 优化有声书播放功能
-* v3.18.0
-    1. 增加实体书管理功能
-    2. 增加阅读管理功能
-* v3.17.0 (完成)
-    1. 优化文件扫描导入
-    2. 增加版本更新通知
-* v3.16.* (完成)
-    1. 支持封面设置
-    2. 解决飞牛移动端无法登录的问题
-* v3.15.* (完成)
-    1. 提供MCP Server，可以集成到AI工具中使用
-    2. 侧边栏增加图书语言分类，图书信息中支持修改语言类别
-    3. 修复之前热度榜单无显示的问题
-* v3.14.0 (完成)
-    1. EPUB转语音
-* v3.13.* (完成)
-    1. 阅读器支持颜色样式切换，字体切换(提供4个内置字体)，精简语言
-* v3.12.* (完成)
-    1. 支持书栈推书的功能 (增加书栈后台服务)
-    2. 修复反馈的几个问题，支持切换不同图标，支持设置用户头像 （v3.12.1 & v3.12.2）
-* v3.11.* (完成)
-    1. UI风格美化 - 增加暗黑模式 (v3.11.0)
-    2. 支持将图书指定为私藏模式，仅有上传者可见 (v3.11.0)
-* v3.10.0 (完成)
-    1. 增加图书导出功能 (epub与azw3互转， 方便kindle使用。 增加了内嵌字体，避免在kindle无法调整字体)
-    2. 支持中文搜索时，使用简繁体同时搜索
-    3. 支持UI切换语言, 解决初次使用的语言问题（后台返回的文本没有处理）
-* v3.9.0 (完成)
-    1. 更新Calibre 7.6，系统使用Ubuntu 24.04
-
 ## Docker ![Docker Pulls](https://img.shields.io/docker/pulls/poxenstudio/talebook.svg)
 
 部署比较简单，建议采用docker，镜像地址：[dockerhub](https://hub.docker.com/r/poxenstudio/talebook)
@@ -118,6 +84,21 @@ docker-compose -f docker-compose.yml  up -d
 
 `docker run -d --name talebook -p 8080:80 -v /tmp/demo:/data poxenstudio/talebook`
 
+## 使用WebDAV连接
+WebDAV URL地址: `http://<ip or domain>:<port>/books`
+* macOS下
+在`连接到服务器`输入对应的URL进行连接:
+![WebDAV_macOS](document/webdav_macOS.png)
+
+* Windows下
+如果未配置https, 需要先将WebClient修改为支持HTTP协议：
+```
+1. 打开注册表, (运行->输入regedit)
+2. 找到 HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WebClient\Parameters, 将BasicAuthLevel改为2
+3. 以超级管理员身份运行PowerShell, 先入输入net stop webclient 和 net start webclient.
+```
+然后通过`映射网络驱动器`连接到指定URL：
+![WebDav_Windows](document/webdav_Windows.png)
 
 ## 使用MCP Service
 从v3.15.0开始，支持MCP服务，可以集成到AI工具中使用。现在使用流程会提示提供账号信息进行登录，然后才能正常使用。
