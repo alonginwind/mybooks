@@ -2,6 +2,7 @@
 import os
 import re
 import logging
+from urllib.parse import unquote
 from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
 from wsgidav.dav_error import DAVError, HTTP_NOT_FOUND, HTTP_FORBIDDEN
 
@@ -80,7 +81,17 @@ class VirtualCollection(DAVCollection):
     def get_member_names(self):
         """Return list of (direct) collection member names (utf-8 byte strings)."""
         members = self.get_member_list()
-        return [m.name for m in members]
+        names = []
+        for m in members:
+            # Extract the name from the path (last component)
+            if hasattr(m, 'path') and m.path:
+                name = m.path.rstrip('/').split('/')[-1]
+                names.append(name)
+            elif hasattr(m, 'name'):
+                names.append(m.name)
+            elif hasattr(m, 'get_display_name'):
+                names.append(m.get_display_name())
+        return names
 
     def get_dynamic_members(self):
         return []
@@ -108,8 +119,10 @@ class BooksCollection(VirtualCollection):
         try:
             items = self.provider.cache.get_data_as_dict(ids=list(self.book_ids))
             for item in items:
+                base = self.path if self.path.endswith('/') else self.path + '/'
+                book_name = f"{item['id']}.{safe_filename(item['title'])}"
                 books.append(TalebookResource(
-                    os.path.join(self.path, f"{item['id']}. {item['title']}"),
+                    base + book_name,
                     self.environ,
                     item,
                     self.provider.cache
@@ -186,16 +199,32 @@ class TalebookProvider(DAVProvider):
     def __init__(self, cache):
         super(TalebookProvider, self).__init__()
         self.cache = cache
-        self.sections = ["Custom Categories", "Tags", "Authors", "All Books"]
+        self.sections = {
+            "Custom Categories": "Custom Categories",
+            "Tags": "Tags",
+            "Authors": "Authors",
+            "All Books": "All Books"
+        }
 
     def get_resource_inst(self, path, environ):
-        path = path.strip("/")
+        # Ensure path starts with /
+        if not path.startswith("/"):
+            path = "/" + path
+
+        # Decode URL encoding
+        path = unquote(path)
+
+        # Strip trailing slashes but keep leading /
+        path = path.rstrip("/")
         if not path:
+            path = "/"
+
+        if path == "/":
             return VirtualCollection("/", environ, "root", self, [
-                VirtualCollection("/" + s, environ, s, self) for s in self.sections
+                VirtualCollection("/" + s, environ, s, self) for s in self.sections.keys()
             ])
 
-        parts = path.split("/")
+        parts = path.lstrip("/").split("/")
         section = parts[0]
 
         if section == "Custom Categories":
@@ -250,9 +279,13 @@ class TalebookProvider(DAVProvider):
                          for cat in all_cats['#category']:
                              # cat is a Tag object usually, with .name
                              name = cat.name if hasattr(cat, 'name') else str(cat)
-                             children.append(VirtualCollection(os.path.join(path, name), environ, name, self))
+                             child_path = path if path.endswith('/') else path + '/'
+                             child_path = child_path + name
+                             children.append(VirtualCollection(child_path, environ, name, self))
             except Exception as e:
                 logging.error(f"Error getting categories: {e}")
+                import traceback
+                logging.error(traceback.format_exc())
 
             return VirtualCollection(path, environ, "Custom Categories", self, children)
 
@@ -286,9 +319,12 @@ class TalebookProvider(DAVProvider):
         if len(parts) == 1:
             children = []
             try:
-                for tag in self.cache.all_tags():
-                    children.append(VirtualCollection(os.path.join(path, tag), environ, tag, self))
-            except:
+                for tag in self.cache.all_field_names('tags'):
+                    child_path = path if path.endswith('/') else path + '/'
+                    child_path = child_path + str(tag)
+                    children.append(VirtualCollection(child_path, environ, str(tag), self))
+            except Exception as e:
+                logging.error(f"Error getting tags: {e}")
                 pass
             return VirtualCollection(path, environ, "Tags", self, children)
         elif len(parts) == 2:
@@ -311,10 +347,13 @@ class TalebookProvider(DAVProvider):
         if len(parts) == 1:
             children = []
             try:
-                for author in self.cache.all_authors():
-                     # Author might be tuple or string? cache.all_authors() returns list of strings usually
-                     children.append(VirtualCollection(os.path.join(path, author), environ, author, self))
-            except:
+                for author in self.cache.all_field_names('authors'):
+                     # Author should be string
+                     child_path = path if path.endswith('/') else path + '/'
+                     child_path = child_path + str(author)
+                     children.append(VirtualCollection(child_path, environ, str(author), self))
+            except Exception as e:
+                logging.error(f"Error getting authors: {e}")
                 pass
             return VirtualCollection(path, environ, "Authors", self, children)
         elif len(parts) == 2:
@@ -338,7 +377,8 @@ class TalebookProvider(DAVProvider):
             # A-Z
             import string
             letters = string.ascii_uppercase
-            children = [VirtualCollection(os.path.join(path, l), environ, l, self) for l in letters]
+            base = path if path.endswith('/') else path + '/'
+            children = [VirtualCollection(base + l, environ, l, self) for l in letters]
             return VirtualCollection(path, environ, "All Books", self, children)
         elif len(parts) == 2:
             letter = parts[1]
