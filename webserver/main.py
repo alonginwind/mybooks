@@ -17,7 +17,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from tornado import web
 from tornado.options import define, options
 
-from webserver import loader, models, social_routes, handlers
+from webserver import loader, models, social_routes
 from webserver.services import AsyncService
 from webserver.services.book_barn import BookBarnService
 from webserver.services.item_sync import ItemSyncService
@@ -293,7 +293,6 @@ def make_app():
 
     app = web.Application(app_routes, **app_settings)
     app._engine = engine
-
 
     # Start background service
     BookBarnService().get_daily_books()

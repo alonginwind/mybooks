@@ -3,6 +3,7 @@ import logging
 from tornado.web import RequestHandler
 from tornado.wsgi import WSGIContainer
 
+
 class WebDAVHandler(RequestHandler):
     """
     Tornado request handler to bridge WebDAV WSGI app.

@@ -21,6 +21,7 @@ def safe_filename(filename):
         filename = filename[:200]
     return filename.strip()
 
+
 class TalebookResource(DAVNonCollection):
     def __init__(self, path, environ, book, cache):
         super(TalebookResource, self).__init__(path, environ)
@@ -96,6 +97,7 @@ class TalebookResource(DAVNonCollection):
                 pass
         return None
 
+
 class VirtualCollection(DAVCollection):
     def __init__(self, path, environ, title, provider, children=None):
         super(VirtualCollection, self).__init__(path, environ)
@@ -128,6 +130,7 @@ class VirtualCollection(DAVCollection):
 
     def get_dynamic_members(self):
         return []
+
 
 class BooksCollection(VirtualCollection):
     def __init__(self, path, environ, title, provider, book_ids):
@@ -273,13 +276,8 @@ class TalebookProvider(DAVProvider):
             # Metadata for #category
             try:
                 # We need to find if #category exists and list values.
-                # In book.py: self.calibre_db.field_metadata['#category']
-                cats = self.cache.get_categories()
-                # cats is dict {field: values} or similar
-                # actually cache.get_categories() returns keys of categories?
-                # No, look at opds.py: categories = self.calibre_db.get_categories() -> dict of category items
-                # But we want specific values for the '#category' field.
-                # If '#category' is not in standard categories, we might need other way.
+                # cache.get_categories() returns a dict of categories.
+                # Custom columns are usually keys like '#category'
                 # In helper: self.calibre_db_cache.get_field_unique_values('#category')? Wait, check methods.
                 pass
             except:
@@ -295,19 +293,19 @@ class TalebookProvider(DAVProvider):
 
             children = []
             try:
-                 # Check if #category exists
+                # Check if #category exists
                 if '#category' in self.cache.field_metadata:
                     # Retrieve values.
                     # cache.get_categories() returns a dict of categories.
                     # Custom columns are usually keys like '#category'
                     all_cats = self.cache.get_categories()
                     if '#category' in all_cats:
-                         for cat in all_cats['#category']:
-                             # cat is a Tag object usually, with .name
-                             name = cat.name if hasattr(cat, 'name') else str(cat)
-                             child_path = path if path.endswith('/') else path + '/'
-                             child_path = child_path + name
-                             children.append(VirtualCollection(child_path, environ, name, self))
+                        for cat in all_cats['#category']:
+                            # cat is a Tag object usually, with .name
+                            name = cat.name if hasattr(cat, 'name') else str(cat)
+                            child_path = path if path.endswith('/') else path + '/'
+                            child_path = child_path + name
+                            children.append(VirtualCollection(child_path, environ, name, self))
             except Exception as e:
                 logging.error(f"Error getting categories: {e}")
                 import traceback
@@ -388,10 +386,10 @@ class TalebookProvider(DAVProvider):
             children = []
             try:
                 for author in self.cache.all_field_names('authors'):
-                     # Author should be string
-                     child_path = path if path.endswith('/') else path + '/'
-                     child_path = child_path + str(author)
-                     children.append(VirtualCollection(child_path, environ, str(author), self))
+                    # Author should be string
+                    child_path = path if path.endswith('/') else path + '/'
+                    child_path = child_path + str(author)
+                    children.append(VirtualCollection(child_path, environ, str(author), self))
             except Exception as e:
                 logging.error(f"Error getting authors: {e}")
                 pass

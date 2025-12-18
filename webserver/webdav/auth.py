@@ -2,6 +2,7 @@
 import logging
 # from wsgidav.dc.base_dc import BaseDomainController # This import is no longer needed
 
+
 class TalebookDomainController:
     """
     Custom authentication controller for Talebook WebDAV service.
@@ -41,7 +42,7 @@ class TalebookDomainController:
             password = password.strip()
 
             if not username or not password:
-                logging.warning(f"WebDAV auth failed: empty username or password")
+                logging.warning("WebDAV auth failed: empty username or password")
                 return False
 
             # Query user from database
