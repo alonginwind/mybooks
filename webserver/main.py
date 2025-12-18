@@ -253,17 +253,15 @@ def make_app():
 
     # Initialize WebDAV service
     from webserver.webdav.server import create_webdav_app
-    from tornado.web import FallbackHandler
-    from tornado.wsgi import WSGIContainer
+    from webserver.webdav.handler import WebDAVHandler
 
     try:
         logging.info("Initializing WebDAV service on /books path...")
         webdav_app = create_webdav_app(cache, ScopedSession)
-        webdav_container = WSGIContainer(webdav_app)
 
         # Create routes with WebDAV at /books/*
         webdav_routes = [
-            (r"/books/?(.*)", FallbackHandler, dict(fallback=webdav_container)),
+            (r"/books/?(.*)", WebDAVHandler, dict(wsgi_app=webdav_app)),
         ]
         logging.info("WebDAV service initialized successfully")
     except Exception as e:

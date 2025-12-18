@@ -25,7 +25,7 @@ def create_webdav_app(calibre_cache, sqlite_session):
         "host": "0.0.0.0",
         "port": 8080,
         "provider_mapping": {
-            "/": provider,
+            "/books": provider,
         },
         "http_authenticator": {
             # Pass the module path as string so WsgiDAV can import it

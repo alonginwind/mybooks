@@ -8,6 +8,11 @@ class WebDAVHandler(RequestHandler):
     Tornado request handler to bridge WebDAV WSGI app.
     """
 
+    # Add WebDAV methods to supported methods list
+    SUPPORTED_METHODS = RequestHandler.SUPPORTED_METHODS + (
+        'PROPFIND', 'PROPPATCH', 'MKCOL', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'
+    )
+
     def initialize(self, wsgi_app):
         """
         Initialize the handler with a WSGI application.
@@ -15,6 +20,7 @@ class WebDAVHandler(RequestHandler):
         Args:
             wsgi_app: WsgiDAV application instance
         """
+        logging.info("[!!!!!]Initializing WebDAVHandler with WSGI application")
         self.wsgi_container = WSGIContainer(wsgi_app)
 
     def prepare(self):

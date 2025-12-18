@@ -77,6 +77,11 @@ class VirtualCollection(DAVCollection):
             return self.fixed_children
         return self.get_dynamic_members()
 
+    def get_member_names(self):
+        """Return list of (direct) collection member names (utf-8 byte strings)."""
+        members = self.get_member_list()
+        return [m.name for m in members]
+
     def get_dynamic_members(self):
         return []
 
