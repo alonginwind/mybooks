@@ -448,6 +448,12 @@ export default {
       v => !v || (v.length >= 16 && v.length <= 32) || 'Length must be between 16 and 32 characters'
     ],
   }),
+  beforeDestroy() {
+    // 页面销毁时移除settings-page类名
+    if (process.client) {
+      document.body.classList.remove('settings-page');
+    }
+  },
   methods: {
     save_settings: function () {
       if (this.settings['site_language'] === '') {

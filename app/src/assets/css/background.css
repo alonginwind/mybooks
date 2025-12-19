@@ -32,3 +32,11 @@ body.settings-page .v-application > .v-application--wrap {
   position: relative;
   z-index: 1;
 }
+
+/* 修复导航抽屉被overlay遮挡的问题 */
+/* Vuetify的v-navigation-drawer在移动端打开时会创建overlay遮罩层(z-index: 6) */
+/* 需要确保导航抽屉的z-index更高，才能正常点击导航项 */
+.v-navigation-drawer {
+  z-index: 7 !important;
+}
+

@@ -116,6 +116,12 @@ export default {
             }
         });
     },
+    beforeDestroy() {
+        // 页面销毁时移除login-page类名
+        if (process.client) {
+            document.body.classList.remove('login-page');
+        }
+    },
     computed: {
         socials: function () {
             if (!this.$store.state.sys || !this.$store.state.sys.socials) {
