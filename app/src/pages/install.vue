@@ -65,7 +65,16 @@ export default {
             return re.test(email) || this.$t('install.invalidEmail');
         };
         this.$store.commit("navbar", false);
+        // 为body添加install-page类名，应用背景图样式
+        if (process.client) {
+            document.body.classList.add('install-page');
+        }
     },
+    beforeDestroy() {
+        // 页面销毁时移除install-page类名
+        if (process.client) {
+            document.body.classList.remove('install-page');
+        }    },
     methods: {
         check_install: function () {
             fetch("/api/index").then(rsp => {

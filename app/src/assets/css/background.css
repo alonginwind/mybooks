@@ -1,8 +1,8 @@
-/* 全局背景图样式 - 仅应用于login和settings页面 */
+/* 全局背景图样式 - 仅应用于login和install页面 */
 body.login-page,
-body.settings-page,
+body.install-page,
 body.login-page .v-application,
-body.settings-page .v-application {
+body.install-page .v-application {
   background-image: url('/static/images/background.jpg');
   background-size: cover;
   background-position: center;
@@ -13,30 +13,33 @@ body.settings-page .v-application {
 
 /* 背景图透明度叠加层 */
 body.login-page::before,
-body.settings-page::before,
+body.install-page::before,
 body.login-page .v-application::before,
-body.settings-page .v-application::before {
+body.install-page .v-application::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* 70%透明度的白色叠加层 */
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 0;
 }
 
 /* 确保内容在背景图之上 */
 body.login-page .v-application > .v-application--wrap,
-body.settings-page .v-application > .v-application--wrap {
+body.install-page .v-application > .v-application--wrap {
   position: relative;
   z-index: 1;
 }
 
-/* 修复导航抽屉被overlay遮挡的问题 */
-/* Vuetify的v-navigation-drawer在移动端打开时会创建overlay遮罩层(z-index: 6) */
-/* 需要确保导航抽屉的z-index更高，才能正常点击导航项 */
-.v-navigation-drawer {
-  z-index: 7 !important;
+/* 仅在login和install页面隐藏导航栏，避免z-index冲突 */
+body.login-page .v-navigation-drawer,
+body.install-page .v-navigation-drawer {
+  display: none !important;
 }
+
+
+
+
 

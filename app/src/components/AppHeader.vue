@@ -1,6 +1,12 @@
 <template>
     <div>
-        <v-navigation-drawer v-model="sidebar" app fixed width="240" :clipped="$vuetify.breakpoint.lgAndUp">
+        <v-navigation-drawer
+            v-model="sidebar"
+            app
+            fixed
+            width="240"
+            :clipped="$vuetify.breakpoint.lgAndUp"
+        >
             <v-list dense v-if="items.length > 0">
                 <template v-for="(item, idx) in items">
                     <v-subheader v-if="item.heading" :key="idx">{{ $t(item.heading) }}</v-subheader>
