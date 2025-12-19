@@ -1,0 +1,34 @@
+/* 全局背景图样式 - 仅应用于login和settings页面 */
+body.login-page,
+body.settings-page,
+body.login-page .v-application,
+body.settings-page .v-application {
+  background-image: url('/static/images/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* 背景图透明度叠加层 */
+body.login-page::before,
+body.settings-page::before,
+body.login-page .v-application::before,
+body.settings-page .v-application::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 70%透明度的白色叠加层 */
+  z-index: 0;
+}
+
+/* 确保内容在背景图之上 */
+body.login-page .v-application > .v-application--wrap,
+body.settings-page .v-application > .v-application--wrap {
+  position: relative;
+  z-index: 1;
+}

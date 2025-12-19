@@ -1,6 +1,4 @@
 <template>
-  <!-- 添加背景图容器 -->
-  <div class="background-container">
   <div>
     <v-card class="my-2 elevation-4" v-for="card in cards" :key="card.title">
       <v-card-title @click="card.show = !card.show">
@@ -193,7 +191,6 @@
       <v-btn color="primary" @click="save_settings">{{ $t('settings.save') }}</v-btn>
     </div>
   </div>
-  </div>
 </template>
 
 <script>
@@ -203,6 +200,11 @@ export default {
     "ssl-manager": SSLManager,
   },
   created() {
+    // 为body添加settings-page类名，应用背景图样式
+    if (process.client) {
+      document.body.classList.add('settings-page');
+    }
+
     // 初始化设备类型选项
     this.deviceTypes = [
       { text: this.$t('settings.device_type_duokan'), value: "duokan" },
@@ -557,18 +559,17 @@ export default {
 }
 
 /* 全屏背景图样式 */
-.background-container {
-  position: relative;
-  min-height: 100vh;
+.v-application {
   background-image: url('/static/images/background.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
-  padding: 20px;
+  position: relative;
+  min-height: 100vh;
 }
 
 /* 背景图透明度叠加层 */
-.background-container::before {
+.v-application::before {
   content: '';
   position: absolute;
   top: 0;
@@ -580,7 +581,7 @@ export default {
 }
 
 /* 确保内容在背景图之上 */
-.background-container > div {
+.v-application > .v-application--wrap {
   position: relative;
   z-index: 1;
 }

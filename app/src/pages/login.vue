@@ -88,6 +88,9 @@ export default {
 
         // 只在客户端执行DOM和localStorage操作
         if (process.client) {
+            // 为body添加login-page类名，应用背景图样式
+            document.body.classList.add('login-page');
+
             // set the theme according to the local storage value
             const saved_theme = localStorage.getItem('site_theme');
             if (saved_theme === 'dark') {
@@ -166,22 +169,17 @@ export default {
 }
 
 /* 全屏背景图样式 */
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-body {
+.v-application {
     background-image: url('/static/images/background.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     position: relative;
+    min-height: 100vh;
 }
 
 /* 背景图透明度叠加层 */
-body::before {
+.v-application::before {
     content: '';
     position: absolute;
     top: 0;
@@ -193,9 +191,8 @@ body::before {
 }
 
 /* 确保内容在背景图之上 */
-.v-application {
+.v-application > .v-application--wrap {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
 }
 </style>
