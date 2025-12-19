@@ -28,7 +28,7 @@ settings = {
     "user_database" : 'sqlite:////data/books/calibre-webserver.db',
     "site_title"    : u"书屋",
     "site_language" : "zh",
-    "site_theme"    : "light",
+    "site_theme"    : "dark",
     "ssl_crt_file"  : "/data/books/ssl/ssl.crt",
     "ssl_key_file": "/data/books/ssl/ssl.key",
 
