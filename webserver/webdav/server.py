@@ -28,6 +28,7 @@ def create_webdav_app(calibre_cache, sqlite_session):
     config = {
         "host": "0.0.0.0",
         "port": 8080,
+        "app_title": "PoxenStudio/Talebook",
         "provider_mapping": {
             "/books": provider,
         },
@@ -44,6 +45,12 @@ def create_webdav_app(calibre_cache, sqlite_session):
         },
         "property_manager": True,
         "lock_storage": True,
+        # Customize directory browser appearance
+        "dir_browser": {
+            "app_title": "PoxenStudio/Talebook",
+            "davmount": False,  # Disable MS Office mount helper
+            "ms_sharepoint_support": False,
+        },
         # Store sqlite_session in config for domain controller to access
         "talebook_session": sqlite_session,
     }
