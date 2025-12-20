@@ -2,6 +2,7 @@
 import os
 import re
 import logging
+import time
 from io import BytesIO
 from urllib.parse import unquote
 from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
@@ -131,6 +132,14 @@ class VirtualCollection(DAVCollection):
     def get_dynamic_members(self):
         return []
 
+    def get_creation_date(self):
+        """Return creation date as Unix timestamp (current time for virtual collections)"""
+        return time.time()
+
+    def get_last_modified(self):
+        """Return last modified time as Unix timestamp (current time for virtual collections)"""
+        return time.time()
+
 
 class BooksCollection(VirtualCollection):
     def __init__(self, path, environ, title, provider, book_ids):
@@ -178,6 +187,10 @@ class BooksCollection(VirtualCollection):
                                     if not selected_fmt and fmt_lower in SUPPORTED_FORMATS:
                                         selected_fmt = fmt_lower
 
+                    if not selected_fmt:
+                        # No supported format found, skip this book
+                        logging.info(f"No supported format found for book ID {book_id}, skipping")
+                        continue
                     # Build filename with extension
                     base = self.path if self.path.endswith('/') else self.path + '/'
                     ext = selected_fmt if selected_fmt else 'txt'
@@ -230,17 +243,27 @@ class TalebookProvider(DAVProvider):
             return None
 
     def get_resource_inst(self, path, environ):
+        # Log the original path for debugging
+        original_path = path
+
         # Ensure path starts with /
         if not path.startswith("/"):
             path = "/" + path
 
-        # Decode URL encoding
+        # Decode URL encoding (some clients may double-encode)
         path = unquote(path)
+        # Handle potential double encoding
+        if '%' in path:
+            path = unquote(path)
 
         # Strip trailing slashes but keep leading /
         path = path.rstrip("/")
         if not path:
             path = "/"
+
+        # Log the decoded path for debugging
+        if original_path != path:
+            logging.info(f"Path decoded: '{original_path}' -> '{path}'")
 
         if path == "/":
             return VirtualCollection("/", environ, "root", self, [
@@ -249,6 +272,7 @@ class TalebookProvider(DAVProvider):
 
         parts = path.lstrip("/").split("/")
         section = parts[0]
+        logging.debug(f"Processing path: {path}, section: {section}, parts: {parts}")
 
         if section == "分类":
             return self.handle_custom(path, environ, parts)
@@ -315,7 +339,7 @@ class TalebookProvider(DAVProvider):
 
         elif len(parts) == 2:
             # List books in category
-            cat_name = parts[1]
+            cat_name = unquote(parts[1])  # Ensure decoded
             try:
                 # ids = cache.get_books_for_category('#category', cat_name)
                 # But 'get_books_for_category' might expect query name?
@@ -331,7 +355,8 @@ class TalebookProvider(DAVProvider):
             # parts[2] is "ID.Title.ext"
             # We need to extract ID
             try:
-                book_id = self._parse_book_id_from_filename(parts[2])
+                filename = unquote(parts[2])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
@@ -359,7 +384,7 @@ class TalebookProvider(DAVProvider):
                 pass
             return VirtualCollection(path, environ, "标签", self, children)
         elif len(parts) == 2:
-            tag_name = parts[1]
+            tag_name = unquote(parts[1])  # Ensure decoded
             try:
                 ids = self.cache.search(f'tags:"={tag_name}"')
                 return BooksCollection(path, environ, tag_name, self, ids)
@@ -367,7 +392,8 @@ class TalebookProvider(DAVProvider):
                 return None
         elif len(parts) == 3:
             try:
-                book_id = self._parse_book_id_from_filename(parts[2])
+                filename = unquote(parts[2])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
@@ -395,7 +421,7 @@ class TalebookProvider(DAVProvider):
                 pass
             return VirtualCollection(path, environ, "作者", self, children)
         elif len(parts) == 2:
-            author_name = parts[1]
+            author_name = unquote(parts[1])  # Ensure decoded
             try:
                 ids = self.cache.search(f'authors:"={author_name}"')
                 return BooksCollection(path, environ, author_name, self, ids)
@@ -403,7 +429,8 @@ class TalebookProvider(DAVProvider):
                 pass
         elif len(parts) == 3:
             try:
-                book_id = self._parse_book_id_from_filename(parts[2])
+                filename = unquote(parts[2])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
@@ -471,7 +498,8 @@ class TalebookProvider(DAVProvider):
         elif len(parts) == 2:
             # 直接是书籍文件
             try:
-                book_id = self._parse_book_id_from_filename(parts[1])
+                filename = unquote(parts[1])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
@@ -496,7 +524,8 @@ class TalebookProvider(DAVProvider):
             return BooksCollection(path, environ, "我的待读", self, book_ids)
         elif len(parts) == 2:
             try:
-                book_id = self._parse_book_id_from_filename(parts[1])
+                filename = unquote(parts[1])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
@@ -522,7 +551,8 @@ class TalebookProvider(DAVProvider):
             return BooksCollection(path, environ, "我的在读", self, book_ids)
         elif len(parts) == 2:
             try:
-                book_id = self._parse_book_id_from_filename(parts[1])
+                filename = unquote(parts[1])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
@@ -547,7 +577,8 @@ class TalebookProvider(DAVProvider):
             return BooksCollection(path, environ, "我的已读", self, book_ids)
         elif len(parts) == 2:
             try:
-                book_id = self._parse_book_id_from_filename(parts[1])
+                filename = unquote(parts[1])  # Ensure decoded
+                book_id = self._parse_book_id_from_filename(filename)
                 if book_id is None:
                     return None
                 mi = self.cache.get_metadata(book_id, get_cover=False)
