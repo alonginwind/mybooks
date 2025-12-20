@@ -9,7 +9,8 @@ from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
 
 
 SUPPORTED_FORMATS = ["epub", "azw3", "mobi", "pdf", "txt"]
-
+INVALID_TAG_CHARS = ("#", "!", "@", "&", "$", "%", "^", "=", "+", "?", ";",
+                     ",", "*", "~", ":", "\"", "'", "-", "_", "）", "；")
 
 def safe_filename(filename):
     """Make filename safe for filesystem by removing/replacing special characters"""
@@ -21,6 +22,14 @@ def safe_filename(filename):
     if len(filename) > 200:
         filename = filename[:200]
     return filename.strip()
+
+
+def safe_xml(text):
+    """Ensure text is safe for XML (remove control characters)"""
+    if not text:
+        return ""
+    # Remove control characters (0-31)
+    return ''.join(c for c in str(text) if ord(c) >= 32)
 
 
 class TalebookResource(DAVNonCollection):
@@ -42,6 +51,8 @@ class TalebookResource(DAVNonCollection):
         # If no format found, but book exists, maybe just list it?
         # But for download, we need a file.
         self.title = safe_filename(self.book.get('title', 'Unknown'))
+        # Ensure title is also XML safe (safe_filename should handle it but consistent usage is good)
+        self.title = safe_xml(self.title)
         self.id = self.book['id']
         self.ext = self.fmt or "txt"
 
@@ -49,7 +60,7 @@ class TalebookResource(DAVNonCollection):
         # Format: ID.书名.ext
         name = "%d.%s.%s" % (self.id, self.title, self.ext)
         logging.info(f"****** Getting display name: {name}")
-        return name
+        return safe_xml(name)
 
     def get_content_length(self):
         if self.file_path and os.path.exists(self.file_path):
@@ -104,7 +115,7 @@ class TalebookResource(DAVNonCollection):
 class VirtualCollection(DAVCollection):
     def __init__(self, path, environ, title, provider, children=None):
         super(VirtualCollection, self).__init__(path, environ)
-        self.title = title
+        self.title = safe_xml(title)
         self.provider = provider
         self.fixed_children = children  # List of DAVResource objects
 
@@ -129,7 +140,7 @@ class VirtualCollection(DAVCollection):
                 names.append(m.name)
             elif hasattr(m, 'get_display_name'):
                 names.append(m.get_display_name())
-        return names
+        return [safe_xml(n) for n in names]
 
     def get_dynamic_members(self):
         return []
@@ -200,6 +211,8 @@ class BooksCollection(VirtualCollection):
                     base = self.path if self.path.endswith('/') else self.path + '/'
                     ext = selected_fmt if selected_fmt else 'txt'
                     book_name = f"{item['id']}.{safe_filename(item['title'])}.{ext}"
+                    # Ensure book name is XML safe
+                    book_name = safe_xml(book_name)
                     logging.info(f"Adding book resource: {book_name}")
                     books.append(TalebookResource(
                         base + book_name,
@@ -332,6 +345,7 @@ class TalebookProvider(DAVProvider):
                         for cat in all_cats['#category']:
                             # cat is a Tag object usually, with .name
                             name = cat.name if hasattr(cat, 'name') else str(cat)
+                            name = safe_xml(name)
                             child_path = path if path.endswith('/') else path + '/'
                             child_path = child_path + name
                             children.append(VirtualCollection(child_path, environ, name, self))
@@ -350,7 +364,7 @@ class TalebookProvider(DAVProvider):
                 # But 'get_books_for_category' might expect query name?
                 # Alternative: search(f'#category:"={cat_name}"')
                 ids = self.cache.search(f'#category:"={cat_name}"')
-                return BooksCollection(path, environ, cat_name, self, ids)
+                return BooksCollection(path, environ, safe_xml(cat_name), self, ids)
             except Exception as e:
                 logging.error(f"Error searching category {cat_name}: {e}")
                 return None
@@ -381,9 +395,12 @@ class TalebookProvider(DAVProvider):
             children = []
             try:
                 for tag in self.cache.all_field_names('tags'):
+                    if tag is None or len(tag) < 2 or tag[0] in INVALID_TAG_CHARS:
+                        continue
+                    tag_str = safe_xml(str(tag))
                     child_path = path if path.endswith('/') else path + '/'
-                    child_path = child_path + str(tag)
-                    children.append(VirtualCollection(child_path, environ, str(tag), self))
+                    child_path = child_path + tag_str
+                    children.append(VirtualCollection(child_path, environ, tag_str, self))
             except Exception as e:
                 logging.error(f"Error getting tags: {e}")
                 pass
@@ -392,7 +409,7 @@ class TalebookProvider(DAVProvider):
             tag_name = unquote(parts[1])  # Ensure decoded
             try:
                 ids = self.cache.search(f'tags:"={tag_name}"')
-                return BooksCollection(path, environ, tag_name, self, ids)
+                return BooksCollection(path, environ, safe_xml(tag_name), self, ids)
             except:
                 return None
         elif len(parts) == 3:
@@ -418,9 +435,10 @@ class TalebookProvider(DAVProvider):
             try:
                 for author in self.cache.all_field_names('authors'):
                     # Author should be string
+                    author_str = safe_xml(str(author))
                     child_path = path if path.endswith('/') else path + '/'
-                    child_path = child_path + str(author)
-                    children.append(VirtualCollection(child_path, environ, str(author), self))
+                    child_path = child_path + author_str
+                    children.append(VirtualCollection(child_path, environ, author_str, self))
             except Exception as e:
                 logging.error(f"Error getting authors: {e}")
                 pass
@@ -429,7 +447,7 @@ class TalebookProvider(DAVProvider):
             author_name = unquote(parts[1])  # Ensure decoded
             try:
                 ids = self.cache.search(f'authors:"={author_name}"')
-                return BooksCollection(path, environ, author_name, self, ids)
+                return BooksCollection(path, environ, safe_xml(author_name), self, ids)
             except:
                 pass
         elif len(parts) == 3:
