@@ -105,12 +105,17 @@
                     hide-details
                     prepend-inner-icon="search"
                     @keyup.enter="do_search"
+                    @focus="isFocused = true"
+                    @blur="isFocused = false"
                     ref="search"
                     v-model="search"
                     name="name"
                     :label="$t('appHeader.search')"
                     class="d-none d-sm-flex ml-8"
                 >
+                    <template #append>
+                        <v-btn :color="isFocused ? (ai_enabled ? 'orange' : 'grey') : 'transparent'" class="black--text" rounded @click="ai_enabled = !ai_enabled">AI</v-btn>
+                    </template>
                 </v-text-field>
                 <v-spacer></v-spacer>
             </template>
@@ -220,6 +225,8 @@ export default {
         right: null,
         btn_search: false,
         search: "",
+        isFocused: false,
+        ai_enabled: false,
         user: {},
         sys: {
             books: 0,
