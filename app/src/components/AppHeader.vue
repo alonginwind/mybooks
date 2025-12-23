@@ -81,10 +81,12 @@
                                     solo-inverted
                                     v-model="search"
                                     ref="mobile_search"
+                                    :loading="ai_thinking"
+                                    :disabled="ai_thinking"
                                 ></v-text-field>
                             </v-col>
                             <v-col cols="3">
-                                <v-btn dark rounded @click="do_mobile_search" color="primary">{{ $t('appHeader.search') }}</v-btn>
+                                <v-btn dark rounded @click="do_mobile_search" color="primary" :disabled="ai_thinking">{{ $t('appHeader.search') }}</v-btn>
                             </v-col>
                         </v-row>
                     </v-form>
@@ -112,9 +114,11 @@
                     name="name"
                     :label="$t('appHeader.search')"
                     class="d-none d-sm-flex ml-8"
+                    :loading="ai_thinking"
+                    :disabled="ai_thinking"
                 >
                     <template #append>
-                        <v-btn :color="isFocused ? (ai_enabled ? 'orange' : 'grey') : 'transparent'" class="black--text" rounded @click="ai_enabled = !ai_enabled">AI</v-btn>
+                        <v-btn :color="isFocused ? (ai_enabled ? 'orange' : 'grey') : 'transparent'" class="black--text" rounded @click="toggle_ai">AI</v-btn>
                     </template>
                 </v-text-field>
                 <v-spacer></v-spacer>
@@ -213,6 +217,29 @@
                 </v-btn>
             </template>
         </v-app-bar>
+
+        <!-- AI Response Panel -->
+        <v-expand-transition>
+            <div v-if="ai_enabled && ai_messages.length > 0" class="ai-overlay">
+                <v-card class="ai-card mx-auto" width="600" max-height="400">
+                    <v-card-title class="headline py-2">
+                        <v-icon left color="orange">mdi-robot</v-icon> AI Assistant
+                        <v-spacer></v-spacer>
+                        <v-btn icon small @click="ai_messages = []"><v-icon small>mdi-delete-sweep</v-icon></v-btn>
+                    </v-card-title>
+                    <v-divider></v-divider>
+                    <v-card-text id="ai-messages-container" class="overflow-y-auto" style="height: 300px;">
+                        <div v-for="(msg, index) in ai_messages" :key="index" :class="['mb-2', msg.role === 'user' ? 'text-right' : 'text-left']">
+                            <v-chip v-if="msg.role === 'user'" color="primary" label small dark>{{ msg.content }}</v-chip>
+                            <div v-else class="ai-bubble pa-2 rounded-lg elevation-1" :style="{ backgroundColor: 'rgba(255, 165, 0, 0.1)', border: '1px solid rgba(255, 165, 0, 0.3)' }">
+                                <div v-if="msg.status" class="caption grey--text italic mb-1">{{ msg.status }}</div>
+                                <div style="white-space: pre-wrap; word-break: break-word;">{{ msg.content }}<span v-if="msg.streaming" class="ai-typing">|</span></div>
+                            </div>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </div>
+        </v-expand-transition>
     </div>
 </template>
 
@@ -227,6 +254,9 @@ export default {
         search: "",
         isFocused: false,
         ai_enabled: false,
+        ai_thinking: false,
+        ai_messages: [],
+        ai_ws: null,
         user: {},
         sys: {
             books: 0,
@@ -366,7 +396,70 @@ export default {
             }
         });
     },
+    beforeDestroy() {
+        this.close_ai();
+    },
     methods: {
+        toggle_ai() {
+            if (!this.user.is_login) {
+                alert("请先登录以使用AI功能");
+                return;
+            }
+            this.ai_enabled = !this.ai_enabled;
+            if (this.ai_enabled) {
+                this.connect_ai();
+            } else {
+                this.close_ai();
+            }
+        },
+        connect_ai() {
+            if (this.ai_ws) return;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws_url = `${protocol}//${window.location.host}/api/assistant/ws`;
+            this.ai_ws = new WebSocket(ws_url);
+
+            this.ai_ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'start') {
+                    this.ai_thinking = true;
+                    this.ai_messages.push({ role: 'assistant', content: '', status: '正在思考...', streaming: true });
+                } else if (data.type === 'content') {
+                    const lastMsg = this.ai_messages[this.ai_messages.length - 1];
+                    lastMsg.content += data.content;
+                    this.scroll_ai_bottom();
+                } else if (data.type === 'status') {
+                    const lastMsg = this.ai_messages[this.ai_messages.length - 1];
+                    lastMsg.status = data.content;
+                } else if (data.type === 'end') {
+                    this.ai_thinking = false;
+                    const lastMsg = this.ai_messages[this.ai_messages.length - 1];
+                    lastMsg.streaming = false;
+                    lastMsg.status = '';
+                } else if (data.type === 'error') {
+                    this.ai_thinking = false;
+                    this.ai_messages.push({ role: 'assistant', content: '出错了: ' + data.content, status: 'error' });
+                }
+            };
+
+            this.ai_ws.onclose = () => {
+                this.ai_ws = null;
+                this.ai_thinking = false;
+            };
+        },
+        close_ai() {
+            if (this.ai_ws) {
+                this.ai_ws.close();
+                this.ai_ws = null;
+            }
+        },
+        scroll_ai_bottom() {
+            this.$nextTick(() => {
+                const container = document.getElementById('ai-messages-container');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        },
         chunk: function (arr, len) {
             var e = arr.length;
             var r = [];
@@ -378,7 +471,11 @@ export default {
         },
         do_mobile_search: function () {
             if (this.search.trim() != "") {
-                this.$router.push("/search?name=" + this.search.trim());
+                if (this.ai_enabled) {
+                    this.send_ai_query();
+                } else {
+                    this.$router.push("/search?name=" + this.search.trim());
+                }
             } else {
                 if (this.$refs.mobile_search) {
                     this.$refs.mobile_search.focus();
@@ -387,12 +484,24 @@ export default {
         },
         do_search: function () {
             if (this.search.trim() != "") {
-                this.$router.push("/search?name=" + this.search.trim());
+                if (this.ai_enabled) {
+                    this.send_ai_query();
+                } else {
+                    this.$router.push("/search?name=" + this.search.trim());
+                }
             } else {
                 if (this.$refs.search) {
                     this.$refs.search.focus();
                 }
             }
+        },
+        send_ai_query() {
+            if (!this.ai_ws || this.ai_thinking) return;
+            const query = this.search.trim();
+            this.ai_messages.push({ role: 'user', content: query });
+            this.ai_ws.send(JSON.stringify({ type: 'query', content: query }));
+            this.search = "";
+            this.scroll_ai_bottom();
         },
         hidemsg: function (idx, msgid) {
             this.$backend("/user/messages", {
@@ -456,5 +565,35 @@ export default {
   /* 确保元素不会被阅读插件等修改 */
   -webkit-appearance: none !important;
   appearance: none !important;
+}
+
+.ai-overlay {
+    position: fixed;
+    top: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    width: 100%;
+    pointer-events: none;
+}
+
+.ai-card {
+    pointer-events: auto;
+    background-color: rgba(var(--v-theme-surface), 0.9) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 165, 0, 0.2);
+}
+
+.ai-bubble {
+    display: inline-block;
+    max-width: 90%;
+}
+
+.ai-typing {
+    display: inline-block;
+    width: 2px;
+    background-color: orange;
+    margin-left: 2px;
+    animation: blink 1s infinite;
 }
 </style>

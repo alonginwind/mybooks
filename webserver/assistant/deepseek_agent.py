@@ -109,29 +109,34 @@ class DeepSeekMCPAgent:
         cleaned = re.sub(r'\n\s*\n', '\n\n', cleaned)
         return cleaned.strip()
 
-    async def process_user_input(self, user_input: str) -> str:
-        """处理用户输入，可能涉及工具调用"""
-
-        print(f"\n处理: {user_input}")
+    async def process_user_input(self, user_input: str):
+        """处理用户输入，可能涉及工具调用，由WebSocketHandler调用"""
 
         # 格式化对话
         messages = await self.format_conversation_for_deepseek(user_input)
 
         try:
+            # 第一次调用：获取思考过程或工具调用
             response = self.deepseek_client.chat.completions.create(
                 model="deepseek-chat",
                 messages=messages,
                 temperature=0.7,
-                max_tokens=2000
+                max_tokens=2000,
+                stream=True
             )
 
-            response_text = response.choices[0].message.content
+            full_response_text = ""
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_response_text += content
+                    yield {"type": "content", "content": content}
 
             # 检查是否包含工具调用
-            tool_call = self.extract_tool_call(response_text)
+            tool_call = self.extract_tool_call(full_response_text)
 
             if tool_call:
-                print(f"检测到工具调用请求")
+                yield {"type": "status", "content": f"正在调用工具: {tool_call.get('tool')}..."}
 
                 # 执行工具调用
                 tool_name = tool_call.get("tool")
@@ -140,74 +145,55 @@ class DeepSeekMCPAgent:
                 if tool_name:
                     # 调用MCP工具
                     tool_result = await self.mcp_client.call_tool(tool_name, arguments)
-
-                    # 将工具结果添加到对话
                     tool_result_str = json.dumps(tool_result, ensure_ascii=False, indent=2)
 
-                    # 构建新的消息列表（包含工具结果）
+                    # 将工具结果添加到对话
                     new_messages = messages.copy()
-                    new_messages.append({"role": "assistant", "content": response_text})
+                    new_messages.append({"role": "assistant", "content": full_response_text})
                     new_messages.append({
                         "role": "user",
                         "content": f"工具调用结果：\n{tool_result_str}\n\n请根据这个结果回答我的问题。"
                     })
 
-                    # 第二次调用DeepSeek（处理工具结果）
+                    # 第二次调用DeepSeek（获得针对工具结果的最终回答）
                     final_response = self.deepseek_client.chat.completions.create(
                         model="deepseek-chat",
                         messages=new_messages,
                         temperature=0.7,
-                        max_tokens=2000
+                        max_tokens=2000,
+                        stream=True
                     )
 
-                    final_text = final_response.choices[0].message.content
+                    final_text = ""
+                    for chunk in final_response:
+                        if chunk.choices[0].delta.content:
+                            content = chunk.choices[0].delta.content
+                            final_text += content
+                            yield {"type": "content", "content": content}
 
                     # 保存到对话历史
                     self.conversation_history.extend([
                         {"role": "user", "content": user_input},
                         {"role": "assistant", "content": final_text}
                     ])
-
-                    return final_text
                 else:
                     # 工具名称无效
-                    cleaned_response = self.clean_response_text(response_text)
+                    cleaned_result = self.clean_response_text(full_response_text)
                     self.conversation_history.extend([
                         {"role": "user", "content": user_input},
-                        {"role": "assistant", "content": cleaned_response}
+                        {"role": "assistant", "content": cleaned_result}
                     ])
-                    return cleaned_response
             else:
-                # 没有工具调用，直接返回
-                cleaned_response = self.clean_response_text(response_text)
+                # 没有工具调用
+                cleaned_result = self.clean_response_text(full_response_text)
                 self.conversation_history.extend([
                     {"role": "user", "content": user_input},
-                    {"role": "assistant", "content": cleaned_response}
+                    {"role": "assistant", "content": cleaned_result}
                 ])
-                return cleaned_response
 
         except Exception as e:
             error_msg = f"处理请求时出错: {str(e)}"
-            print(f"Error: {error_msg}")
-
-            # 降级处理：直接调用相关工具
-            if "书" in user_input and ("多少" in user_input or "数量" in user_input):
-                print("使用降级方案：直接查询书籍数量...")
-                result = await self.mcp_client.call_tool("count_books", {})
-
-                summary = f"根据书库统计，共有{result.get('total_count', '未知')}本书。"
-                if 'by_category' in result:
-                    summary += "\n分类统计："
-                    for category, count in result['by_category'].items():
-                        summary += f"\n  - {category}: {count}本"
-
-                self.conversation_history.extend([
-                    {"role": "user", "content": user_input},
-                    {"role": "assistant", "content": summary}
-                ])
-                return summary
-
-            return error_msg
+            yield {"type": "error", "content": error_msg}
 
     def get_conversation_summary(self) -> str:
         """获取对话摘要"""

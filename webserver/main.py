@@ -273,10 +273,11 @@ def make_app():
     # Assemble routes carefully:
     # WebDAV must come before files.routes() because files has a catch-all (r"/(.*)")
     # We need to get routes from handlers module without files, add webdav, then add files
-    from webserver.handlers import mcp, admin, barcode, scan, opds, book, user, meta, audio, files
+    from webserver.handlers import assistant, mcp, admin, barcode, scan, opds, book, user, meta, audio, files
 
     app_routes = []
     app_routes += social_routes.SOCIAL_AUTH_ROUTES
+    app_routes += assistant.routes()
     app_routes += mcp.routes()
     app_routes += admin.routes()
     app_routes += barcode.routes()
@@ -296,6 +297,22 @@ def make_app():
 
     # Start background service
     BookBarnService().get_daily_books()
+
+    # Automatically start AI Assistant if configured
+    if CONF.get("AI_DEEPSEEK_API_KEY"):
+        logging.info("DeepSeek API Key found. Initializing AI Assistant...")
+        from webserver.handlers.assistant import AssistantWebSocketHandler
+        from webserver.assistant.deepseek_agent import DeepSeekMCPAgent
+        import asyncio
+
+        def init_ai_agent():
+            agent = DeepSeekMCPAgent()
+            AssistantWebSocketHandler._agent = agent
+            # Note: initialization will happen on first connection or we can trigger it here
+            # But deepseek_agent.initialize() is async, so we need to run it in the ioloop
+            tornado.ioloop.IOLoop.current().spawn_callback(agent.initialize)
+
+        init_ai_agent()
 
     # Start item create_time sync service if needed
     if need_sync_item_time:
