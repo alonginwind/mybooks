@@ -23,6 +23,9 @@ CHROME_HEADERS = {
     + "Chrome/66.0.3359.139 Safari/537.36",
 }
 
+DEFAULT_COVER_SUFFIX = "/book-default-"
+UPDATE_IMAGE_SUFFIX = "/update_image"
+
 KEY = "douban"
 REMOVES = [
     re.compile(r"^\([^)]*\)\s*"),
@@ -203,14 +206,21 @@ class DoubanBookApi(object):
         mi.provider_value = book["id"]
 
         cover_url = book["images"]["large"]
+        if cover_url.find(DEFAULT_COVER_SUFFIX) > 0 or cover_url.find(UPDATE_IMAGE_SUFFIX) > 0:
+            cover_url = book["images"]["small"]
+        if cover_url.find(DEFAULT_COVER_SUFFIX) > 0:
+            cover_url = None
+            mi.cover_url = None
+            mi.cover_data = None
         if not self.copy_image:
             mi.cover_url = cover_url
-        else:
+        elif cover_url:
             cover_data = self.get_cover(cover_url)
             # try with small image if large image not available
             if cover_data is None:
                 cover_url = book["images"]["small"]
-                cover_data = self.get_cover(cover_url)
+                if cover_url.find(DEFAULT_COVER_SUFFIX) < 0:
+                    cover_data = self.get_cover(cover_url)
             if cover_data is not None:
                 mi.cover_url = cover_url
                 mi.cover_data = cover_data
