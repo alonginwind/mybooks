@@ -470,11 +470,12 @@ export default {
             this.ai_enabled = !this.ai_enabled;
             if (this.ai_enabled) {
                 this.connect_ai();
-                // 聚焦输入框
+                // 聚焦输入框并滚动到底部
                 this.$nextTick(() => {
                     if (this.$refs.aiInput) {
                         this.$refs.aiInput.focus();
                     }
+                    this.scroll_ai_bottom();
                 });
             } else {
                 this.close_ai();
@@ -503,6 +504,7 @@ export default {
                 if (data.type === 'start') {
                     this.ai_thinking = true;
                     this.ai_messages.push({ role: 'assistant', content: '', status: '正在思考...', streaming: true });
+                    this.scroll_ai_bottom();
                 } else if (data.type === 'content') {
                     const lastMsg = this.ai_messages[this.ai_messages.length - 1];
                     if (lastMsg) {
@@ -525,9 +527,11 @@ export default {
                         lastMsg.streaming = false;
                         lastMsg.status = '';
                     }
+                    this.scroll_ai_bottom();
                 } else if (data.type === 'error') {
                     this.ai_thinking = false;
                     this.ai_messages.push({ role: 'assistant', content: '出错了: ' + data.content, status: 'error' });
+                    this.scroll_ai_bottom();
                 }
             };
 
@@ -563,11 +567,13 @@ export default {
             // 添加用户消息
             this.ai_messages.push({ role: 'user', content: message });
             
+            // 立即滚动到底部显示用户消息
+            this.$nextTick(() => {
+                this.scroll_ai_bottom();
+            });
+            
             // 发送到WebSocket
             this.ai_ws.send(JSON.stringify({ type: 'query', content: message }));
-            
-            // 滚动到底部
-            this.scroll_ai_bottom();
         },
         scroll_ai_bottom() {
             this.$nextTick(() => {
