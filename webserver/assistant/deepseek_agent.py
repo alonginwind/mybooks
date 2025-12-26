@@ -4,6 +4,7 @@ Supports continuous conversation and tool calling
 """
 
 import json
+import logging
 import re
 from typing import Dict, List, Optional
 from openai import OpenAI
@@ -47,12 +48,36 @@ class DeepSeekMCPAgent:
         print("代理初始化完成")
         print("-" * 60)
 
+    def format_tool_schema(self, tool: Dict) -> str:
+        """格式化单个工具的schema为可读描述"""
+        name = tool.get('name', '')
+        description = tool.get('description', '无描述')
+        input_schema = tool.get('inputSchema', {})
+        
+        # 基础描述
+        result = f"- {name}: {description}"
+        
+        # 添加参数说明
+        if input_schema and 'properties' in input_schema:
+            properties = input_schema['properties']
+            required = input_schema.get('required', [])
+            
+            if properties:
+                result += "\n  参数："
+                for param_name, param_info in properties.items():
+                    param_type = param_info.get('type', 'any')
+                    param_desc = param_info.get('description', '')
+                    is_required = '必填' if param_name in required else '可选'
+                    result += f"\n    - {param_name} ({param_type}, {is_required}): {param_desc}"
+        
+        return result
+
     async def format_conversation_for_deepseek(self, user_input: str) -> List[Dict]:
         """格式化对话历史给DeepSeek"""
         # 构建系统提示
         tools = await self.mcp_client.list_tools()
-        tool_descriptions = "\n".join([
-            f"- {tool['name']}: {tool.get('description', '无描述')}"
+        tool_descriptions = "\n\n".join([
+            self.format_tool_schema(tool)
             for tool in tools
         ])
 
@@ -68,12 +93,21 @@ class DeepSeekMCPAgent:
 }}
 </tool_call>
 
-请在需要时使用上述格式调用工具。"""
+工具调用示例：
+用户：查询《三体》这本书
+助手：<tool_call>
+{{
+    "tool": "query_book_metadata",
+    "arguments": {{"query": "三体"}}
+}}
+</tool_call>
+
+请根据工具的参数说明，使用正确的参数名称和类型调用工具。"""
 
         messages = [{"role": "system", "content": system_message}]
 
-        # 添加历史对话（最近5轮）
-        recent_history = self.conversation_history[-10:]  # 保留最近10条消息
+        # 添加历史对话（最近10条消息，只包含用户问题和最终回答）
+        recent_history = self.conversation_history[-10:]
         for msg in recent_history:
             messages.append(msg)
 
@@ -136,6 +170,8 @@ class DeepSeekMCPAgent:
             tool_call = self.extract_tool_call(full_response_text)
 
             if tool_call:
+                logging.info(f"Detected tool call: {tool_call}")
+
                 yield {"type": "status", "content": f"正在调用工具: {tool_call.get('tool')}..."}
 
                 # 执行工具调用
@@ -145,6 +181,7 @@ class DeepSeekMCPAgent:
                 if tool_name:
                     # 调用MCP工具
                     tool_result = await self.mcp_client.call_tool(tool_name, arguments)
+                    logging.info(f"Tool result: {tool_result}")
                     tool_result_str = json.dumps(tool_result, ensure_ascii=False, indent=2)
 
                     # 将工具结果添加到对话
@@ -171,7 +208,8 @@ class DeepSeekMCPAgent:
                             final_text += content
                             yield {"type": "content", "content": content}
 
-                    # 保存到对话历史
+                    # 只保存用户问题和最终回答到对话历史（节省token）
+                    # 工具调用的示例已经在system message中提供
                     self.conversation_history.extend([
                         {"role": "user", "content": user_input},
                         {"role": "assistant", "content": final_text}
@@ -184,6 +222,7 @@ class DeepSeekMCPAgent:
                         {"role": "assistant", "content": cleaned_result}
                     ])
             else:
+                logging.info("No tool call detected in response.")
                 # 没有工具调用
                 cleaned_result = self.clean_response_text(full_response_text)
                 self.conversation_history.extend([
