@@ -130,12 +130,12 @@ class AsyncService(metaclass=SingletonType):
             # 在子进程中重新生成session
             self.session = AsyncService().scoped_session()
             logging.info("create new session_id=%s", self.session.hash_key)
-            logging.info("call: func=%s, args=%s, kwargs=%s", name, args, kwargs)
+            logging.info("call: func=%s", name)
             try:
                 service_func(self, *args, **kwargs)
             except Exception as err:
                 logging.exception("run task error: %s", err)
-            logging.info("end : func=%s, args=%s, kwargs=%s", name, args, kwargs)
+            logging.info("end : func=%s", name)
             self.scoped_session.remove()
 
     # 一些常用的工具库
@@ -179,7 +179,7 @@ class AsyncService(metaclass=SingletonType):
                 logging.error("[FUNC ] service call %s(%s, %s)", name, args, kwargs)
                 return service_func(ins, *args, **kwargs)
 
-            logging.error("[ASYNC] service call %s(%s, %s)", name, args, kwargs)
+            logging.error("[ASYNC] service call %s", name)
             q = ins.start_service(service_func)
             q.put((args, kwargs))
             return None

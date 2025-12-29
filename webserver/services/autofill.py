@@ -12,6 +12,7 @@ from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.services import AsyncService
 
 CONF = loader.get_settings()
+UPDATE_TAGS_ONLY = False
 
 
 class AutoFillService(AsyncService):
@@ -62,7 +63,7 @@ class AutoFillService(AsyncService):
                 self.current_book_id = book_id
                 try:
                     mi = self.db.get_metadata(book_id, index_is_id=True)
-                    if self.should_update(mi):
+                    if self.should_update(mi) or UPDATE_TAGS_ONLY:
                         books_to_update.append((book_id, mi))
                     else:
                         logging.info(_("忽略更新书籍 id=%d : 无需更新"), book_id)
@@ -76,7 +77,10 @@ class AutoFillService(AsyncService):
             for book_id, mi in books_to_update:
                 time.sleep(sleep_seconds)
                 try:
-                    refer_mi = self.plugin_search_best_book_info(mi)
+                    if UPDATE_TAGS_ONLY:
+                        refer_mi = mi
+                    else:
+                        refer_mi = self.plugin_search_best_book_info(mi)
                     if refer_mi and refer_mi.cover_data is not None:
                         # 准备更新数据
                         self.do_fill_tags(book_id, refer_mi, need_commit=False)
@@ -94,7 +98,7 @@ class AutoFillService(AsyncService):
                             logging.info(_("忽略更新书籍 id=%d : 无法获取封面"), book_id)
                 except Exception as err:
                     self.count_fail += 1
-                    logging.error(_("获取书籍信息失败 id=%d: %s"), book_id, err)
+                    logging.error(_("获取书籍信息失败 id=%d: %s"), book_id, err if err else "Not found!")
 
             # 第三阶段：批量写入更新（减少数据库锁持有次数）
             for book_id, mi in updates:
