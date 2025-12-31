@@ -28,10 +28,10 @@ class WebDAVHandler(RequestHandler):
         """Called before any HTTP method handler."""
         # Handle collection URL without trailing slash - redirect to add slash
         request_path = self.request.path
-        if (request_path == "/books" or
-            (request_path.startswith("/books/") and
-             not request_path.endswith("/") and
-             self.request.method == "GET")):
+        if (request_path == "/books"
+            or (request_path.startswith("/books/")
+                and not request_path.endswith("/")
+                and self.request.method == "GET")):
             # Check if this might be a collection (directory)
             # For /books specifically, always redirect
             if request_path == "/books":
