@@ -47,9 +47,11 @@ def create_webdav_app(calibre_cache, sqlite_session):
         "lock_storage": True,
         # Customize directory browser appearance
         "dir_browser": {
-            "app_title": "PoxenStudio/Talebook",
+            "icon": False,  # Hide default logo.png
             "davmount": False,  # Disable MS Office mount helper
             "ms_sharepoint_support": False,
+            "ignore": [".DS_Store", "Thumbs.db", "._*"],
+            "show_user": True,
         },
         # Store sqlite_session in config for domain controller to access
         "talebook_session": sqlite_session,
