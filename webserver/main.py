@@ -237,6 +237,13 @@ def make_app():
     path = CONF["resource_path"] + "/calibre/default_cover.jpg"
     with open(path, "rb") as cover_file:
         default_cover = cover_file.read()
+
+    # Initialize database lock for thread-safe calibre database access
+    import threading
+    from webserver.handlers.base import BaseHandler
+    BaseHandler.db_lock = threading.RLock()
+    logging.info("Database lock initialized")
+
     app_settings = dict(CONF)
     app_settings.update(
         {

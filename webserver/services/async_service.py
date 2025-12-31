@@ -127,9 +127,9 @@ class AsyncService(metaclass=SingletonType):
         name = service_func.__name__
         while True:
             args, kwargs = q.get()
-            # 在子进程中重新生成session
+            # 在子线程中重新生成session
             self.session = AsyncService().scoped_session()
-            logging.info("create new session_id=%s", self.session.hash_key)
+            logging.info("create new session_id=%s for thread %s", self.session.hash_key, threading.current_thread().name)
             logging.info("call: func=%s", name)
             try:
                 service_func(self, *args, **kwargs)

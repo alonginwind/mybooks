@@ -327,7 +327,8 @@ class BookCategories(BaseHandler):
         """
 
         try:
-            rows = self.calibre_db_cache.backend.conn.get(sql)
+            with self.db_lock:
+                rows = self.calibre_db_cache.backend.conn.get(sql)
             categories = [{"name": row[0], "count": row[1]} for row in rows]
             return {"err": "ok", "categories": categories}
         except Exception as e:
