@@ -130,14 +130,6 @@
               <p>{{ $t('settings.ai_capabilities_description') }}</p>
               <v-checkbox small hide-details v-model="settings['AI_ENABLED']" :key="'AI_ENABLED'" :label="$t('settings.ai_enabled')"></v-checkbox>
               <v-text-field :disabled="!settings['AI_ENABLED']"
-                :prepend-icon="'mdi-robot'"
-                v-model="settings['AI_MODEL']"
-                :label="$t('settings.ai_model')"
-                type="text"
-                placeholder="qwen3:0.6b"
-                :maxlength="64"
-              ></v-text-field>
-              <v-text-field :disabled="!settings['AI_ENABLED']"
                 :prepend-icon="'mdi-key'"
                 v-model="settings['AI_DEEPSEEK_API_KEY']"
                 :label="$t('settings.ai_deepseek_api_key')"
