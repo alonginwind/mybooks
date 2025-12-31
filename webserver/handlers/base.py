@@ -329,7 +329,11 @@ class BaseHandler(web.RequestHandler):
         user = self.sqlite_session.merge(user)
         user.access_time = datetime.datetime.now()
         user.extra["login_ip"] = self.request.remote_ip
-        user.save()
+        try:
+            user.save()
+        except Exception as e:
+            logging.error("Failed to save user login info: %s" % str(e))
+        pass
 
     def add_msg(self, status, msg):
         Message.cleanup_messages(self.user_id(), msg)
@@ -366,7 +370,11 @@ class BaseHandler(web.RequestHandler):
         extra[action] = history[:ITEM_COUNT_LIMIT]
         user = self.current_user
         user.extra.update(extra)
-        user.save()
+        try:
+            user.save()
+        except Exception as e:
+            logging.error("Failed to save user history: %s" % str(e))
+        pass
 
     def increase_history_count(self, key):
         if not self.user_id():
@@ -378,7 +386,11 @@ class BaseHandler(web.RequestHandler):
         extra[key] = count
         user = self.current_user
         user.extra.update(extra)
-        user.save()
+        try:
+            user.save()
+        except Exception as e:
+            logging.error("Failed to save user history count: %s" % str(e))
+        pass
 
     def last_modified(self, updated):
         """
