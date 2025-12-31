@@ -284,12 +284,9 @@ class TalebookProvider(DAVProvider):
         if original_path != path:
             logging.info(f"Path decoded: '{original_path}' -> '{path}'")
 
-        # Get the script name (mount point) from environ
-        script_name = environ.get('SCRIPT_NAME', '').rstrip('/')
-
         if path == "/":
             return VirtualCollection("/", environ, "root", self, [
-                VirtualCollection(script_name + "/" + s, environ, s, self) for s in self.sections.keys()
+                VirtualCollection("/" + s, environ, s, self) for s in self.sections.keys()
             ])
 
         parts = path.lstrip("/").split("/")
