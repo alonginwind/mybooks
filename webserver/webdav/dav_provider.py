@@ -12,6 +12,7 @@ SUPPORTED_FORMATS = ["epub", "azw3", "mobi", "pdf", "txt"]
 INVALID_TAG_CHARS = ("#", "!", "@", "&", "$", "%", "^", "=", "+", "?", ";",
                      ",", "*", "~", ":", "\"", "'", "-", "_", "）", "；")
 
+
 def safe_filename(filename):
     """Make filename safe for filesystem by removing/replacing special characters"""
     # Replace various problematic characters

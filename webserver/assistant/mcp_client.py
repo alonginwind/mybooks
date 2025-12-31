@@ -6,7 +6,6 @@ Supports HTTP Streamable communication (non-SSE)
 import json
 import aiohttp
 from typing import Dict, List, Optional
-from datetime import datetime
 
 
 class MCPStreamClient:
@@ -47,7 +46,7 @@ class MCPStreamClient:
             }
 
             response = await self._send_request(init_request)
-            print(f"MCP会话初始化成功")
+            print("MCP会话初始化成功")
             return response
         except Exception as e:
             print(f"MCP初始化失败: {e}")
@@ -173,7 +172,7 @@ class MCPStreamClient:
 
             if "result" in response:
                 result = response["result"]
-                print(f"工具调用成功")
+                print("工具调用成功")
                 return result
             else:
                 error = response.get("error", {})

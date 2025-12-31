@@ -6,6 +6,7 @@ import logging
 import tornado.websocket
 from webserver.assistant.deepseek_agent import DeepSeekMCPAgent
 
+
 class AssistantWebSocketHandler(tornado.websocket.WebSocketHandler):
     # 保存连接的实例，以便后台服务管理
     clients = set()
@@ -71,6 +72,7 @@ class AssistantWebSocketHandler(tornado.websocket.WebSocketHandler):
     def on_close(self):
         logging.info("WebSocket assistant closed")
         self.clients.remove(self)
+
 
 def routes():
     return [

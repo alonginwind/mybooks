@@ -53,15 +53,15 @@ class DeepSeekMCPAgent:
         name = tool.get('name', '')
         description = tool.get('description', '无描述')
         input_schema = tool.get('inputSchema', {})
-        
+
         # 基础描述
         result = f"- {name}: {description}"
-        
+
         # 添加参数说明
         if input_schema and 'properties' in input_schema:
             properties = input_schema['properties']
             required = input_schema.get('required', [])
-            
+
             if properties:
                 result += "\n  参数："
                 for param_name, param_info in properties.items():
@@ -69,7 +69,7 @@ class DeepSeekMCPAgent:
                     param_desc = param_info.get('description', '')
                     is_required = '必填' if param_name in required else '可选'
                     result += f"\n    - {param_name} ({param_type}, {is_required}): {param_desc}"
-        
+
         return result
 
     async def format_conversation_for_deepseek(self, user_input: str) -> List[Dict]:

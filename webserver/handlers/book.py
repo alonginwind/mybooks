@@ -185,13 +185,13 @@ class BookUpdateTags(BaseHandler):
             # Search books by tag
             query = f'tags:="{tag_name}"'
             book_ids = self.calibre_db_cache.search(query)
-            
+
             if not book_ids:
                 return {"err": "ok", "msg": _(u"未找到包含该标签的书籍"), "count": 0}
 
             # Convert to list to avoid "Set changed size during iteration" error
             book_ids = list(book_ids)
-            
+
             # Limit to 300 books
             total_count = len(book_ids)
             if total_count > 300:
@@ -200,11 +200,11 @@ class BookUpdateTags(BaseHandler):
 
             # Call AutoFillService to update tags in background
             AutoFillService().auto_fill_all(book_ids, onlyTags=True)
-            
+
             msg = _(u"已提交 %d 本书籍的标签更新任务，正在后台处理, 请稍后刷新查看结果") % len(book_ids)
             if total_count > 300:
                 msg += _(u"（共找到 %d 本，仅处理前 300 本）") % total_count
-            
+
             return {"err": "ok", "msg": msg, "count": len(book_ids), "total": total_count}
 
         except Exception as e:

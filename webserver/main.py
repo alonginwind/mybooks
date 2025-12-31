@@ -303,7 +303,6 @@ def make_app():
         logging.info("DeepSeek API Key found. Initializing AI Assistant...")
         from webserver.handlers.assistant import AssistantWebSocketHandler
         from webserver.assistant.deepseek_agent import DeepSeekMCPAgent
-        import asyncio
 
         def init_ai_agent():
             agent = DeepSeekMCPAgent()

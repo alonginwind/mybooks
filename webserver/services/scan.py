@@ -211,7 +211,7 @@ class ScanService(AsyncService):
             except Exception as e:
                 logging.error("Error reading metadata from file %s: %s", fpath, e)
                 continue
-                
+
             if mi.title and mi.title == CALIBRE_ERROR_FLAG:
                 logging.error("Failed to get metadata for %s, reason:%s", fpath, mi.comments)
                 continue
