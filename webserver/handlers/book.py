@@ -2155,6 +2155,55 @@ class BookSperate(BaseHandler):
             return {"err": "internal", "msg": _(u"分离格式时发生错误: %s") % str(e)}
 
 
+class ClearRareTags(ListHandler):
+    @js
+    @auth
+    def post(self):
+        """清理稀少标签：对少于3本书的标签所对应的书籍重新更新标签"""
+        if not self.is_admin():
+            return {"err": "user.not_admin", "msg": _(u"无权限")}
+
+        ids = list(self.calibre_db_cache.all_book_ids())
+        if not ids or len(ids) < 100:
+            return {"err": "ok", "msg": _(u"书籍数量较少，无需清理标签")}
+
+        try:
+            # 获取所有标签及其书籍数量
+            tag_list = self.get_category_with_count("tag")
+
+            # 筛选出少于3本书的标签
+            rare_tags = [tag for tag in tag_list if tag["count"] < 3]
+
+            if not rare_tags:
+                return {"err": "ok", "msg": _(u"没有找到稀少标签")}
+
+            # 收集所有稀少标签对应的书籍ID
+            book_ids = set()
+            for tag in rare_tags:
+                tag_name = tag["name"]
+                books = self.get_item_books("tags", tag_name)
+                for book in books:
+                    book_ids.add(book["id"])
+
+            if not book_ids:
+                return {"err": "ok", "msg": _(u"没有找到需要更新的书籍")}
+
+            # 调用自动填充服务，只更新标签
+            service = AutoFillService()
+            service.auto_fill_all(list(book_ids), only_tags=True)
+
+            return {
+                "err": "ok",
+                "msg": _(u"开始更新 %d 本书的标签，涉及 %d 个稀少标签") % (len(book_ids), len(rare_tags)),
+                "book_count": len(book_ids),
+                "tag_count": len(rare_tags)
+            }
+
+        except Exception as e:
+            logging.error(f"Clear rare tags error: {e}")
+            return {"err": "error", "msg": _(u"处理失败：%s") % str(e)}
+
+
 class BookExchangeType(BaseHandler):
     @js
     @auth
@@ -2293,4 +2342,5 @@ def routes():
         (r"/api/book/([0-9]+)/suggestion", BookSuggestion),
         (r"/api/book/([0-9]+)/separate", BookSperate),
         (r"/api/book/exchange_type", BookExchangeType),
+        (r"/api/clear_rare_tags", ClearRareTags),
     ]

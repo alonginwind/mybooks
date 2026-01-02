@@ -30,6 +30,18 @@
                         <v-icon>mdi-book-refresh-outline</v-icon>
                         <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.autoUpdate') }}</span>
                     </v-btn>
+                    <v-btn
+                        :disabled="loading || scraping"
+                        outlined
+                        color="warning"
+                        @click="show_clear_rare_tags_dialog"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                        :small="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-tag-remove-outline</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.clearRareTags') }}</span>
+                    </v-btn>
                     <!-- 删除选中按钮紧跟在主要按钮后面 -->
                     <v-btn
                         v-if="!loading && books_selected.length > 0"
@@ -348,6 +360,22 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <!-- 清理稀少标签确认对话框 -->
+        <v-dialog v-model="clear_rare_tags_dialog" persistent transition="dialog-bottom-transition" width="500">
+            <v-card>
+                <v-toolbar flat dense dark color="secondary"> {{ $t('admin.books.reminderTitle') }} </v-toolbar>
+                <v-card-title></v-card-title>
+                <v-card-text>
+                    <p> {{ $t('admin.books.clearRareTagsConfirm') }} </p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn @click="clear_rare_tags_dialog = false">{{ $t('admin.books.cancel') }}</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn color="secondary" @click="clearRareTags">{{ $t('admin.books.execute') }}</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
 </v-card>
 </template>
 
@@ -359,6 +387,7 @@ export default {
         snackText: "",
         meta_dialog: false,
         exchange_type_dialog: false,
+        clear_rare_tags_dialog: false,
         adding_book: false,
         books_selected: [],
         tag_input: null,
@@ -513,6 +542,32 @@ export default {
         },
         show_exchange_type_dialog() {
             this.exchange_type_dialog = true;
+        },
+        show_clear_rare_tags_dialog() {
+            this.clear_rare_tags_dialog = true;
+        },
+        clearRareTags() {
+            this.loading = true;
+            this.clear_rare_tags_dialog = false;
+            this.$backend("/clear_rare_tags", {
+                method: "POST",
+                body: JSON.stringify({}),
+            })
+                .then((rsp) => {
+                    if (rsp.err != "ok") {
+                        this.$alert("error", rsp.msg);
+                    } else {
+                        this.snack = false;
+                        this.snackColor = "success";
+                        this.snackText = rsp.msg;
+                        // Start checking status
+                        this.checkCurrentState();
+                    }
+                    this.getDataFromApi();
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
         },
         exchangeBookType() {
             if (this.books_selected.length == 0) {

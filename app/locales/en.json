@@ -165,6 +165,8 @@
             "description": "This table only displays partial fields of books. Click to quickly modify. For complete book information, please click the link to view the book details page.",
             "refresh": "Refresh",
             "autoUpdate": "Auto-update book information...",
+            "clearRareTags": "Update Rare Tags",
+            "clearRareTagsConfirm": "This will update tags for books with tags that have less than 3 books. This operation may take some time. Continue?",
             "deleteSelected": "Delete Selected Books",
             "exchangeType": "Exchange Book Type",
             "exchangeTypeConfirm": "This will exchange the book type of selected books. eBooks will be converted to physical books, and physical books will be converted to eBooks. Books without valid ISBN or with existing eBook formats will be ignored. Please confirm.",
