@@ -10,6 +10,7 @@ from webserver import loader
 from webserver.plugins.meta import baike, douban
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.services import AsyncService
+from webserver.constants import ZLIBRARY_SUFFIX
 
 CONF = loader.get_settings()
 
@@ -87,6 +88,8 @@ class AutoFillService(AsyncService):
                             refer_mi.tags = self.guess_tags(refer_mi)
                         # 保留书名不修改
                         refer_mi.title = mi.title
+                        if refer_mi.title.endswith(ZLIBRARY_SUFFIX):
+                            refer_mi.title = refer_mi.title[:-len(ZLIBRARY_SUFFIX)]
                         mi.smart_update(refer_mi, replace_metadata=True)
                         updates.append((book_id, mi))
                     else:
@@ -143,7 +146,10 @@ class AutoFillService(AsyncService):
             mi.tags = self.guess_tags(refer_mi)
 
         # 保留书名不修改（万一出BUG，还能抢救一下）
-        refer_mi.title = mi.title
+        title = mi.title
+        if title.endswith(ZLIBRARY_SUFFIX):
+            title = title[:-len(ZLIBRARY_SUFFIX)]
+        refer_mi.title = title
 
         mi.smart_update(refer_mi, replace_metadata=True)
         self.db.set_metadata(book_id, mi, ignore_errors=True)
