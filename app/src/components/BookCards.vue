@@ -75,7 +75,7 @@ export default {
 .book-title {
     display: block;
     /*height: 1em;*/
-    overflow-y: hidden;
+    overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     line-clamp: 1;
