@@ -427,6 +427,7 @@ class ScanFile(Base, SQLAlchemyMixin):
     IMPORTED = "imported"
     INVALID_ISBN = "invalid"
     MISSED = "missed"
+    PERMISSION = "permission"
 
     def __init__(self, path, hash_value, scan_id):
         super(ScanFile, self).__init__()

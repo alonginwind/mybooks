@@ -160,7 +160,7 @@ class ScanService(AsyncService):
                     logging.error("Failed to save row status: %s", fpath)
                 continue
             except PermissionError:
-                row.status = ScanFile.DROP
+                row.status = ScanFile.PERMISSION
                 logging.error("Permission denied when reading file: %s", fpath)
                 if not self.save_or_rollback(row):
                     logging.error("Failed to save row status: %s", fpath)

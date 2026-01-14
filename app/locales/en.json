@@ -183,7 +183,8 @@
                 "new": "Pending",
                 "drop": "Dropped",
                 "invalid": "Invalid",
-                "missed": "No File"
+                "missed": "No File",
+                "permission": "Forbidden"
             },
             "close": "Close",
             "reminderTitle": "Reminder",
@@ -265,7 +266,9 @@
             "imported": "Imported",
             "new": "To Scan",
             "drop": "Duplicated",
-            "invalid": "Invalid"
+            "invalid": "Invalid",
+            "missed": "No File",
+            "permission": "Forbidden"
         },
         "book_title": "Title:",
         "book_author": "Author:",
