@@ -1,7 +1,7 @@
 <template>
     <v-row>
-        <v-col cols=12 xs=12 sm=6 md=4 lg=3 v-for="(book,idx) in render_books" :key="idx+'-books-'+book.id" class="book-list-card">
-            <v-card :to="book.href" >
+        <v-col cols=12 xs=12 sm=6 md=4 lg=3 v-for="(book,idx) in render_books" :key="idx+'-books-'+book.id" class="book-list-card d-flex">
+            <v-card :to="book.href" class="flex-grow-1" >
                 <v-row>
                     <v-col cols=3 class='col-book-img'>
                         <div class="book-img-container">
@@ -17,13 +17,13 @@
                         </div>
                     </v-col>
                     <v-col cols=9 class='col-book-info'>
-                        <v-card-text class="pb-0" align-left>
+                        <v-card-text class="pb-0 d-flex flex-column" align-left>
                             <div class="book-title">{{book.title}}</div>
                             <v-chip rounded x-small color="green" class="white--text" v-if="book.category">
                                 {{ book.category }}
                             </v-chip>
                             <slot name="introduce" :book="book"></slot>
-                            <div class="book-comments">
+                            <div class="book-comments flex-grow-1">
                                 <p v-if="book.comments" v-html="book.comments"></p>
                                 <p v-else>{{ $t('bookCards.browseDetails') }}</p>
                             </div>
@@ -84,6 +84,21 @@ export default {
     text-align: left;
     font-weight: bold;
 }
+.book-list-card .v-card {
+    min-height: 6em;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+.book-list-card .v-card > .row {
+    flex: 1;
+    margin: 0;
+}
+.book-list-card .v-card-text {
+    height: 100%;
+}
 .book-comments {
     overflow: hidden;
     display: -webkit-box;
@@ -111,11 +126,18 @@ export default {
 }
 .col-book-img {
     padding: 0 0 0 12px;
+    display: flex;
+    flex-direction: column;
 }
 .book-img-container {
     position: relative;
-    display: inline-block;
+    display: flex;
+    flex: 1;
     width: 100%;
+}
+.book-img-container .v-image {
+    width: 100%;
+    height: 100%;
 }
 .physical-book-badge {
     position: absolute;
