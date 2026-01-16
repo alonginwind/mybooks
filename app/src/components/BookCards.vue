@@ -125,15 +125,15 @@ export default {
     margin-bottom: 20px;
 }
 .col-book-img {
-    padding: 0 0 0 12px;
+    padding: 6px 0 0 3px;
     display: flex;
     flex-direction: column;
 }
 .book-img-container {
     position: relative;
     display: flex;
-    flex: 1;
     width: 100%;
+    aspect-ratio: 3/4;
 }
 .book-img-container .v-image {
     width: 100%;
