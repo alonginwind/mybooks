@@ -7,7 +7,7 @@ ARG BUILD_COUNTRY=""
 WORKDIR /build
 RUN if [ "x${BUILD_COUNTRY}" = "xCN" ]; then \
     echo "using repo mirrors for ${BUILD_COUNTRY}"; \
-    npm config set registry http://mirrors.tencent.com/npm/; \
+    npm config set registry https://registry.npmmirror.com; \
     fi
 
 COPY app/package.json app/package-lock.json* ./
