@@ -26,6 +26,13 @@ push:
 	docker push $(IMAGE)
 	docker push $(REPO1)
 
+# 初始化多架构构建环境（Linux必须要运行一次），不要使用snap安装的docker
+setup-multiarch:
+	docker run --privileged --rm tonistiigi/binfmt --install all
+	docker buildx create --use --name mybuilder || docker buildx use mybuilder
+	docker buildx inspect --bootstrap
+
+
 # 构建并推送多架构镜像（同时支持 amd64 和 arm64）
 build-multiarch: test
 	docker buildx build --platform=linux/amd64,linux/arm64 \
