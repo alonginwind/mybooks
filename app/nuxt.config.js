@@ -86,6 +86,7 @@ export default {
         id: process.env.GOOGLE_ANALYTICS_ID,
         disabled: false
       } : {
+        id: 'G-NONE',
         disabled: true
       }),
     }

@@ -7,6 +7,8 @@ import os
 import sys
 import traceback
 
+DEFAULT_GOOGLE_ANALYTICS_ID = "G-LLF01B5ZZ8"
+
 
 class SettingsLoader(dict):
     def __init__(self, *args, **kwargs):
@@ -83,6 +85,9 @@ settings = {
 
 
 _settings = SettingsLoader()
+CONF = _settings
+if CONF.get("google_analytics_id", "").strip() == DEFAULT_GOOGLE_ANALYTICS_ID:
+    CONF["google_analytics_id"] = ""  # disable it by default
 
 
 def get_settings():
