@@ -601,6 +601,7 @@
         "systemVersion": "Revision",
         "userCount": "User Count",
         "opdsIntroduction": "About OPDS",
+        "webdavIntroduction": "About WebDAV",
         "search": "Search",
         "sys.title": "System Title",
         "ok": "OK",

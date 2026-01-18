@@ -131,6 +131,11 @@
         "disablePrivateLibrary": "关闭「私人图书馆」模式。",
         "enableGuestAccess": "打开「允许任意下载」（访客无需注册或登录）"
     },
+    "webdav": {
+        "introduction": "通过WebDAV访问书库",
+        "link": "WebDAV地址",
+        "linkDescription": "您的 WebDAV 链接为："
+    },
     "signup": {
         "title": "填写注册信息",
         "username": "用户名",
@@ -601,6 +606,7 @@
         "systemVersion": "系统版本",
         "userCount": "用户数",
         "opdsIntroduction": "OPDS介绍",
+        "webdavIntroduction": "WebDAV访问",
         "search": "搜索",
         "sys.title": "系统标题",
         "ok": "好的",
