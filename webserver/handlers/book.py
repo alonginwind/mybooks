@@ -37,7 +37,7 @@ from webserver.plugins.meta import baike, douban, youshu
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.plugins.parser.txt import get_content_encoding
 from webserver.handlers.audio import AudioUtils
-from webserver.constants import ZLIBRARY_SUFFIX, CALIBRE_ERROR_FLAG
+from webserver.constants import ZLIBRARY_SUFFIX, CALIBRE_ERROR_FLAG, SUPPORTED_EBOOK_FORMATS
 
 CONF = loader.get_settings()
 
@@ -1557,8 +1557,10 @@ class BookUpload(BaseHandler):
         fmt = os.path.splitext(name)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _(u"文件名不合法, 没有扩展名")}
         fmt = fmt.lower()
+        if fmt not in SUPPORTED_EBOOK_FORMATS:
+            return {"err": "params.format.unsupported", "msg": _(u"不支持的书籍格式: %s" % fmt)}
 
         # save file
         fpath = os.path.join(CONF["upload_path"], name)
@@ -1656,6 +1658,15 @@ class BookUploadChunk(BaseHandler):
 
         if not filename:
             return {"err": "params.filename", "msg": _(u"文件名不能为空")}
+        filename = re.sub(r"[\x80-\xFF]+", BookUpload.convert, filename)
+        logging.error("upload book name = " + repr(filename))
+        fmt = os.path.splitext(filename)[1]
+        fmt = fmt[1:] if fmt else None
+        if not fmt:
+            return {"err": "params.filename", "msg": _(u"文件名不合法，没有包含扩展名")}
+        fmt = fmt.lower()
+        if fmt not in SUPPORTED_EBOOK_FORMATS:
+            return {"err": "params.format.unsupported", "msg": _(u"不支持的书籍格式: %s" % fmt)}
 
         if not file_hash:
             return {"err": "params.hash", "msg": _(u"文件hash不能为空")}

@@ -11,3 +11,4 @@ CHROME_HEADERS = {
 
 ZLIBRARY_SUFFIX = "(Z-Library)"
 CALIBRE_ERROR_FLAG = "<*ERROR*>"
+SUPPORTED_EBOOK_FORMATS = ["azw3", "epub", "mobi", "pdf", "txt"]
