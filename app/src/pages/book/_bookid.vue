@@ -297,6 +297,10 @@
                                     <v-icon>mdi-content-copy</v-icon>
                                     {{ $t('book.seperate') }}
                                 </v-list-item>
+                                <v-list-item @click="save_meta_to_file" :disabled="!hasEpubOrAzw3">
+                                    <v-icon>mdi-file-sync</v-icon>
+                                    {{ $t('book.saveMetaToFile') }}
+                                </v-list-item>
                                 <v-list-item @click="set_sole">
                                     <v-icon>{{ book.sole ? 'public_off' : 'public' }}</v-icon>
                                     {{ book.sole ? $t('book.setPublic') : $t('book.setSole') }}
@@ -1049,6 +1053,15 @@ export default {
                 // 选择了已保存的设备
                 return true;
             }
+        },
+
+        // 检查是否有 epub 或 azw3 格式
+        hasEpubOrAzw3() {
+            if (!this.book || !this.book.files) return false;
+            return this.book.files.some(file => {
+                const format = file.format.toLowerCase();
+                return format === 'epub' || format === 'azw3';
+            });
         }
     },
     data: () => ({
@@ -1622,6 +1635,25 @@ export default {
             // 默认选择第一个格式
             this.selectedSeparateFormat = this.book.files[0].format.toLowerCase();
             this.dialog_separate = true;
+        },
+        save_meta_to_file() {
+            // 保存元数据到书籍文件
+            if (!this.hasEpubOrAzw3) {
+                this.$alert("error", this.$t('book.needEpubOrAzw3'));
+                return;
+            }
+
+            this.$backend("/book/" + this.book.id + "/savemeta", {
+                method: "POST",
+            }).then((rsp) => {
+                if (rsp.err === "ok") {
+                    this.$alert("success", rsp.msg || this.$t('book.saveMetaSuccess'));
+                } else {
+                    this.$alert("error", rsp.msg || this.$t('book.saveMetaFailed'));
+                }
+            }).catch((err) => {
+                this.$alert("error", this.$t('book.saveMetaFailed'));
+            });
         },
         confirmSeparate() {
             if (!this.selectedSeparateFormat) {
