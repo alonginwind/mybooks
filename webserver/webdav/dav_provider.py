@@ -7,7 +7,7 @@ import pwd
 from io import BytesIO
 from urllib.parse import unquote
 from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
-from wsgidav.fs_dav_provider import FilesystemProvider
+from wsgidav.fs_dav_provider import FilesystemProvider, FolderResource, FileResource
 from wsgidav.dav_error import DAVError
 
 
@@ -200,6 +200,25 @@ class VirtualCollection(DAVCollection):
     def get_last_modified(self):
         """Return last modified time as Unix timestamp (current time for virtual collections)"""
         return time.time()
+
+
+class SyncFolderResourceWrapper:
+    """包装FilesystemProvider的资源，确保路径正确映射到WebDAV路径空间"""
+    def __init__(self, fs_resource, webdav_path, sync_folder_name):
+        self._fs_resource = fs_resource
+        self._webdav_path = webdav_path
+        self._sync_folder_name = sync_folder_name
+        # 修正wrapped resource的path
+        if fs_resource:
+            fs_resource.path = webdav_path
+
+    def __getattr__(self, name):
+        """代理所有未定义的属性到底层资源"""
+        return getattr(self._fs_resource, name)
+
+    def __bool__(self):
+        """确保布尔值检查正确"""
+        return self._fs_resource is not None
 
 
 class BooksCollection(VirtualCollection):
@@ -402,7 +421,12 @@ class TalebookProvider(DAVProvider):
             if not fs_path:
                 fs_path = "/"
             logging.debug(f"Mapping WebDAV path {path} to filesystem path: {fs_path}")
-            return self.fs_provider.get_resource_inst(fs_path, environ)
+            resource = self.fs_provider.get_resource_inst(fs_path, environ)
+            if resource:
+                # 包装资源以确保路径正确映射
+                wrapped = SyncFolderResourceWrapper(resource, path, self.sync_folder_name)
+                return wrapped._fs_resource if wrapped else None
+            return None
 
         if section == "分类":
             return self.handle_custom(path, environ, parts)
