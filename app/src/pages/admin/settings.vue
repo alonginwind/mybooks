@@ -392,6 +392,7 @@ export default {
           { icon: "info", key: "convert_timeout", label: "settings.convert_timeout" },
           { icon: "", key: "autoreload", label: "settings.autoreload", type: 'checkbox' },
           { icon: "", key: "ENABLE_PHYSICAL_BOOKS", label: "settings.enable_physical_books", type: 'checkbox' },
+          { icon: "", key: "WEBDAV_SYNC_FOLDER", label: "settings.enable_webdav_sync", type: 'checkbox' },
         ]
       },
 

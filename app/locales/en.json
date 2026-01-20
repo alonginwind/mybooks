@@ -395,7 +395,8 @@
         "index_page_type_index": "Default Home Page",
         "index_page_type_all": "All Books",
         "index_page_type_categories": "Category Browse",
-        "default_page_size": "Page size in book list (default is 60)"
+        "default_page_size": "Page size in book list (default is 60)",
+        "enable_webdav_sync": "Enable writable directory in WebDAV for readers (used for reader sync, files are saved under the reader directory)"
     },
     "book": {
         "edit": {

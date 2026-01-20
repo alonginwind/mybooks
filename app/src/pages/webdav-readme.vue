@@ -13,6 +13,7 @@
         不支持匿名访问，需要输入书库中的用户名和密码。
       </p>
       <br/>
+      <p>如果启用了WebDAV同步功能，支持WebDAV同步数据的阅读器，如Koodo Reader, 可以在reader目录下进行读写操作，实现同步功能。</p>
     </section>
   </div>
 </template>
