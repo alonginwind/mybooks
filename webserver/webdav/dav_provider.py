@@ -7,7 +7,7 @@ import pwd
 from io import BytesIO
 from urllib.parse import unquote
 from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
-from wsgidav.fs_dav_provider import FilesystemProvider, FolderResource, FileResource
+from wsgidav.fs_dav_provider import FilesystemProvider
 from wsgidav.dav_error import DAVError
 from webserver import loader
 
