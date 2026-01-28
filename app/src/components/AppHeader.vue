@@ -242,9 +242,9 @@
                                 <v-avatar v-if="message.role === 'assistant'" size="32" color="primary" class="mr-2">
                                     <v-icon dark small>mdi-robot</v-icon>
                                 </v-avatar>
-                                <div :class="['message-bubble', 'pa-3', message.role === 'user' ? 'primary white--text' : 'grey lighten-4']"
+                                <div :class="['message-bubble', 'pa-3', message.role === 'user' ? 'primary white--text' : ($vuetify.theme.dark ? 'grey darken-3 white--text' : 'grey lighten-4 black--text')]"
                                      style="max-width: 70%; border-radius: 12px; word-break: break-word; white-space: pre-wrap;">
-                                    <div v-if="message.status" class="caption grey--text italic mb-1">{{ message.status }}</div>
+                                    <div v-if="message.status" :class="['caption', 'italic', 'mb-1', $vuetify.theme.dark ? 'grey--text text--lighten-1' : 'grey--text text--darken-1']">{{ message.status }}</div>
                                     <div>{{ message.content }}<span v-if="message.streaming" class="ai-typing">|</span></div>
                                 </div>
                                 <v-avatar v-if="message.role === 'user'" size="32" color="secondary" class="ml-2">
