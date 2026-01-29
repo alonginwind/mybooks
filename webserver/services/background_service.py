@@ -8,7 +8,7 @@ from typing import Optional, List, Dict
 
 
 class BackgroundTask:
-    """后台任务记录模型（内存存储）"""
+    """后台任务记录模型"""
     # 服务类型
     SERVICE_TYPE_AUTOFILL = "autofill"  # 图书信息刮削
     SERVICE_TYPE_SCAN = "scan"  # 批量图书导入
@@ -38,7 +38,6 @@ class BackgroundTask:
         self.error_message = None
 
     def to_dict(self):
-        """转换为字典格式"""
         return {
             "id": self.id,
             "service_type": self.service_type,
@@ -53,7 +52,7 @@ class BackgroundTask:
 
 
 class BackgroundService:
-    """后台任务管理服务（内存存储）"""
+    """后台任务管理服务"""
     _instance = None
     _lock = threading.Lock()
 
