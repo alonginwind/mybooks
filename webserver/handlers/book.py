@@ -37,7 +37,8 @@ from webserver.plugins.meta import baike, douban, youshu
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.plugins.parser.txt import get_content_encoding
 from webserver.handlers.audio import AudioUtils
-from webserver.constants import ZLIBRARY_SUFFIX, CALIBRE_ERROR_FLAG, SUPPORTED_EBOOK_FORMATS
+from webserver.constants import COLUMN_CATEGORY, CALIBRE_COLUMN_CATEGORY, ZLIBRARY_SUFFIX
+from webserver.constants import CALIBRE_ERROR_FLAG, SUPPORTED_EBOOK_FORMATS
 
 CONF = loader.get_settings()
 
@@ -231,13 +232,13 @@ class BookCategory(BaseHandler):
             return {"err": "user.no_permission", "msg": _(u"无权限")}
 
         data = tornado.escape.json_decode(self.request.body)
-        category = data.get("category", "").strip()
+        category = data.get(COLUMN_CATEGORY, "").strip()
         if category == '清除' or category.lower() == 'clear':
             category = ''
         logging.info(f"Updating category for book {book_id}: {category}")
         try:
             # Use set_field directly on the cache to avoid Metadata object issues
-            self.calibre_db_cache.set_field('#category', {book_id: category})
+            self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: category})
 
             return {"err": "ok", "msg": _(u"分类更新成功")}
         except Exception as e:
@@ -253,7 +254,7 @@ class BookCategoryBatch(BaseHandler):
             return {"err": "user.no_permission", "msg": _(u"无权限")}
 
         data = tornado.escape.json_decode(self.request.body)
-        category = data.get("category", "").strip()
+        category = data.get(COLUMN_CATEGORY, "").strip()
         author = data.get("author", "").strip()
         tag = data.get("tag", "").strip()
 
@@ -303,7 +304,7 @@ class BookCategoryBatch(BaseHandler):
 
             # set_field can handle a dict of {id: value}
             updates = {bid: category for bid in book_ids}
-            self.calibre_db_cache.set_field('#category', updates)
+            self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, updates)
             count = len(book_ids)
 
             return {"err": "ok", "msg": _(u"成功更新 %d 本书籍分类") % count, "count": count}
@@ -316,7 +317,7 @@ class BookCategories(BaseHandler):
     @js
     def get(self):
         # Find the custom column for category
-        category_key = '#category'
+        category_key = CALIBRE_COLUMN_CATEGORY
         if category_key not in self.calibre_db.field_metadata:
             return {"err": "ok", "categories": []}
 
@@ -486,7 +487,7 @@ class BookRefer(BaseHandler):
         org_mi.timestamp = nowf()
         self.calibre_db.set_metadata(book_id, org_mi, force_changes=True)
         # 修改分类为空
-        self.calibre_db_cache.set_field('#category', {book_id: ''})
+        self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: ''})
         logging.info("[RESET]reset meta data for %d" % book_id)
         return {"err": "ok", "book_id": book_id}
 
@@ -1184,12 +1185,12 @@ class BookEdit(BaseHandler):
         if "tags" in data and not data["tags"]:
             self.calibre_db.set_tags(bid, [])
 
-        if "category" in data:
-            category = data["category"].strip()
+        if COLUMN_CATEGORY in data:
+            category = data[COLUMN_CATEGORY].strip()
             if len(category) < 80:
                 if category == '清除' or category.lower() == 'clear':
                     category = ''
-                self.calibre_db_cache.set_field('#category', {bid: category})
+                self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {bid: category})
             else:
                 logging.error("Too many characters in the category, ignore it!")
         self.calibre_db.set_metadata(bid, mi)

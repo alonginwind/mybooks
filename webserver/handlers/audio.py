@@ -22,19 +22,112 @@ from webserver import loader, utils
 from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import BizKey, ReaderPaidBook, ReaderLog
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
+from webserver.constants import ENABLE_VIP_QUOTA_KEY
+
 
 CONF = loader.get_settings()
-ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
-
 # map of conversion workers, key is book id, value is instance of the worker
-ConversionWorkerMap = {}
-
+ConversionWorkerMap: dict = {}
 # 每日下载记录，格式: {(user_id, book_id): datetime}
-DailyDownloadMap = {}
+DailyDownloadMap: dict = {}
+
 ALLOW_MAX_RUNNING_WORKERS = CONF.get("BOOK2AUDIO_MAX_WORKERS", 2)
 AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
-SKIP_FILE_PREFIX = "图书在版编目CIP数据"
+SKIP_AUDIO_FILE_PREFIX = "图书在版编目CIP数据"
 MAX_FREE_AUDIO_FILES = 6
+AUDIO_CACHE_EXPIRE_SECONDS = 300  # 5 minutes
+
+
+class AudioBooksCache:
+    """音频书籍目录缓存工具类"""
+    _book_ids = set()
+    _last_update_time = 0
+    _update_lock = threading.Lock()
+    _need_update = True
+
+    @classmethod
+    def _scan_audio_directory(cls):
+        """扫描音频目录并返回book_ids集合"""
+        start_time = time.time()
+        book_ids = set()
+
+        if not os.path.exists(AUDIO_OUTPUT_FOLDER):
+            logging.warning(f"Audio output folder does not exist: {AUDIO_OUTPUT_FOLDER}")
+            return book_ids
+
+        try:
+            for item in os.listdir(AUDIO_OUTPUT_FOLDER):
+                item_path = os.path.join(AUDIO_OUTPUT_FOLDER, item)
+                if os.path.isdir(item_path) and item.isdigit():
+                    book_ids.add(int(item))
+        except Exception as e:
+            logging.error(f"Error scanning audio directory: {e}")
+
+        elapsed_time = time.time() - start_time
+        logging.info(f"Audio directory scan completed in {elapsed_time:.3f} seconds, found {len(book_ids)} audio books")
+
+        return book_ids
+
+    @classmethod
+    def _should_update(cls):
+        """判断是否需要更新缓存"""
+        current_time = time.time()
+        return cls._need_update or (current_time - cls._last_update_time) > AUDIO_CACHE_EXPIRE_SECONDS
+
+    @classmethod
+    def get_audio_book_ids(cls):
+        """获取有音频的书籍ID列表"""
+        if cls._should_update():
+            cls._update_cache()
+        return cls._book_ids.copy()
+
+    @classmethod
+    def _update_cache(cls):
+        """更新缓存（同步方法）"""
+        with cls._update_lock:
+            # 再次检查是否需要更新，避免重复更新
+            if not cls._should_update():
+                return
+
+            book_ids = cls._scan_audio_directory()
+            cls._book_ids = book_ids
+            cls._last_update_time = time.time()
+            cls._need_update = False
+            logging.info(f"Audio cache updated with {len(book_ids)} books")
+
+    @classmethod
+    def mark_need_update(cls):
+        """标记需要更新缓存"""
+        cls._need_update = True
+        logging.info("Audio cache marked for update")
+
+    @classmethod
+    def async_update(cls):
+        """异步更新缓存"""
+        def update_task():
+            try:
+                cls._update_cache()
+            except Exception as e:
+                logging.error(f"Error in async audio cache update: {e}")
+
+        thread = threading.Thread(target=update_task)
+        thread.daemon = True
+        thread.start()
+        logging.info("Async audio cache update started")
+
+    @classmethod
+    def get_audio_book_ids_set(cls):
+        """获取有音频的书籍ID集合（用于批量查询）"""
+        if cls._should_update():
+            cls._update_cache()
+        return cls._book_ids
+
+    @classmethod
+    def has_audio(cls, book_id):
+        """查询指定book_id是否有音频"""
+        if cls._should_update():
+            cls._update_cache()
+        return int(book_id) in cls._book_ids
 
 
 class AudioUtils:
@@ -146,7 +239,7 @@ class AudioDetail(BaseHandler):
                     # Generate download URLs for audio files
                     file_urls = []
                     for file in sorted(audio_files):
-                        if file.find(SKIP_FILE_PREFIX) > 0:
+                        if file.find(SKIP_AUDIO_FILE_PREFIX) > 0:
                             continue
                         file_urls.append({
                             "filename": os.path.splitext(file)[0],
@@ -305,6 +398,8 @@ class AudioConversion(BaseHandler):
             worker = EpubToAudioWorker(main_py_path=epub_to_audio_path)
             ConversionWorkerMap[book_id] = worker
 
+            AudioBooksCache.async_update()
+
             # Start conversion in background thread
             def start_conversion():
                 logging.info(f"Starting conversion for book {book_id} in background thread")
@@ -390,6 +485,8 @@ class AudioConversionCancel(BaseHandler):
                 if os.path.exists(audio_dir):
                     try:
                         shutil.rmtree(audio_dir)
+                        # Async update cache after deletion
+                        AudioBooksCache.async_update()
                         return {"err": "ok", "msg": _(u"转换已取消, 生成的音频文件已删除成功")}
                     except OSError as e:
                         logging.error(f"Error deleting audio directory {audio_dir}: {e}")
@@ -429,6 +526,8 @@ class AudioDelete(BaseHandler):
             if os.path.exists(audio_dir):
                 try:
                     shutil.rmtree(audio_dir)
+                    # Async update cache after deletion
+                    AudioBooksCache.async_update()
                     return {"err": "ok", "msg": _(u"音频文件删除成功")}
                 except OSError as e:
                     logging.error(f"Error deleting audio directory {audio_dir}: {e}")
@@ -633,7 +732,7 @@ class AudioCollection(BaseHandler):
                 try:
                     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                         for audio_file in sorted(audio_files):
-                            if audio_file.find(SKIP_FILE_PREFIX) > 0:
+                            if audio_file.find(SKIP_AUDIO_FILE_PREFIX) > 0:
                                 continue
                             file_path = os.path.join(audio_dir, audio_file)
                             zipf.write(file_path, audio_file)

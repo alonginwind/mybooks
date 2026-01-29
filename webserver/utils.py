@@ -54,6 +54,7 @@ class SimpleBookFormatter:
             "count_visit": self.val("count_visit", 0),
             "count_download": self.val("count_download", 0),
             "sole": self.val("sole", False),
+            "has_audio": self.val("has_audio", 0),
             "book_type": self.book.get("book_type", 0),
             "book_count": self.book.get("book_count", 1),
             "state": self.book.get("state", {}),

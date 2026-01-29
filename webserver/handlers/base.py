@@ -13,7 +13,6 @@ from gettext import gettext as _
 from jinja2 import Environment, FileSystemLoader
 from sqlalchemy import func as sql_func
 from tornado import web
-
 from webserver import loader, utils
 
 # import social_tornado.handlers
@@ -526,10 +525,14 @@ class BaseHandler(web.RequestHandler):
                 if meta['is_custom']:
                     self._custom_column_map[meta['colnum']] = key
 
-        for book in books:
-            for colnum, key in self._custom_column_map.items():
-                if colnum in book:
-                    book[key] = book.pop(colnum)
+        # Get audio book ids set once for better performance
+        audio_book_ids = set()
+        try:
+            from webserver.handlers.audio import AudioBooksCache
+            audio_book_ids = AudioBooksCache.get_audio_book_ids_set()
+        except Exception as e:
+            logging.debug(f"Error getting audio book ids: {e}")
+
         logging.debug(
             "[%5d ms] select books from library (count = %d)" % (int(1000 * (time.time() - _ts)), len(books))
         )
@@ -548,6 +551,12 @@ class BaseHandler(web.RequestHandler):
 
         soled_books = set()
         for book in books:
+            for colnum, key in self._custom_column_map.items():
+                if colnum in book:
+                    book[key] = book.pop(colnum)
+            # Check audio in the same loop to reduce iterations
+            if book["id"] in audio_book_ids:
+                book["has_audio"] = 1
             book_item = maps.get(book["id"], empty_item)
             # logging.info("book %d, sole = %s, collector = %s" % (book["id"], book_item["sole"], book_item["collector_id"]))
             if book_item["sole"] and book_item["collector_id"] != self.user_id():

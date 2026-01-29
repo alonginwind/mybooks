@@ -1,5 +1,5 @@
 [style]
-column_limit=127
+column_limit=180
 based_on_style=google
 
 [flake8]
@@ -31,5 +31,5 @@ exclude =
     .eggs
 
 max-complexity = 10
-max-line-length = 127
+max-line-length = 180
 
