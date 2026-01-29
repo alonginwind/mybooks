@@ -325,20 +325,32 @@ class AudioBooks(BaseHandler):
 
 
 class AudioConversion(BaseHandler):
+    @staticmethod
+    def get_progress(bid):
+        try:
+            book_id = int(bid)
+            worker = ConversionWorkerMap.get(book_id)
+            if worker:
+                return worker.get_progress()
+            else:
+                return None
+        except Exception as e:
+            logging.error(f"Error in AudioConversion.get_progress: {e}")
+            return None
+
     @js
     def get(self, bid):
         # get the conversion status, check it in the worker map,
         # return the status json if found it in the map, otherwise, return not found status.
         try:
             book_id = int(bid)
-            worker = ConversionWorkerMap.get(book_id)
-            if worker:
-                progress = worker.get_progress()
-                if progress and progress["status"] == EpubToAudioWorker.STATUS_CONVERTED:
+            progress = self.get_progress(bid)
+            if progress:
+                if progress["status"] == EpubToAudioWorker.STATUS_CONVERTED:
                     # remove the book id from ConversionWorkerMap
                     ConversionWorkerMap.pop(book_id, None)
                     return {"err": "ok", "msg": _(u"转换完成"), "data": progress}
-                elif progress and progress["status"] == EpubToAudioWorker.STATUS_FAILED:
+                elif progress["status"] == EpubToAudioWorker.STATUS_FAILED:
                     return {"err": "audio.conversion_failed", "msg": _(u"转换失败"), "data": progress}
                 else:
                     return {"err": "ok", "msg": EpubToAudioWorker.STATUS_PROCESSING, "data": progress}
@@ -408,6 +420,7 @@ class AudioConversion(BaseHandler):
                 task = BackgroundService().update_task(
                     service_type=BackgroundTask.SERVICE_TYPE_AUDIO,
                     service_item=service_item,
+                    book_id=book_id,
                     progress=0,
                     progress_data={
                         "book_id": book_id,
@@ -441,7 +454,7 @@ class AudioConversion(BaseHandler):
                         # 更新任务为完成
                         if task_id:
                             try:
-                                background_service.complete_task(task_id=task_id)
+                                BackgroundService().complete_task(task_id=task_id)
                             except Exception as e:
                                 logging.error(f"Failed to complete task: {e}")
                     else:
@@ -451,7 +464,7 @@ class AudioConversion(BaseHandler):
                         # 更新任务为失败
                         if task_id:
                             try:
-                                background_service.complete_task(task_id=task_id, error_message=result.get('error', 'Unknown error'))
+                                BackgroundService().complete_task(task_id=task_id, error_message=result.get('error', 'Unknown error'))
                             except Exception as e:
                                 logging.error(f"Failed to complete task: {e}")
                 except Exception as e:
@@ -462,7 +475,7 @@ class AudioConversion(BaseHandler):
                     # 更新任务为失败
                     if task_id:
                         try:
-                            background_service.complete_task(task_id=task_id, error_message=str(e))
+                            BackgroundService().complete_task(task_id=task_id, error_message=str(e))
                         except Exception as e:
                             logging.error(f"Failed to complete task: {e}")
                 finally:

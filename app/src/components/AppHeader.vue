@@ -129,7 +129,7 @@
             <template v-if="err == 'ok'">
                 <template v-if="user.is_login">
                     <!-- Running Tasks Indicator -->
-                    <v-menu offset-y right :close-on-content-click="false" v-if="runningTasks.length >= 0">
+                    <v-menu offset-y right :close-on-content-click="false" v-if="runningTasks.length > 0">
                         <template v-slot:activator="{ on }">
                             <v-btn v-on="on" icon class="mr-2" width="48px" height="48px">
                                 <v-img src="/icons/running.svg" style="margin:8px 8px;" width="32px" height="32px"></v-img>
@@ -155,7 +155,7 @@
                                                 height="6"
                                                 rounded
                                             ></v-progress-linear>
-                                            <span class="caption mt-1">{{ $t('appHeader.taskProgress') }}: {{ task.count_done || 0 }}/{{ task.count_total || 0 }} ({{ getTaskProgress(task) }}%)</span>
+                                            <span class="caption mt-1">{{ getTaskProgress(task) }}%</span>
                                         </v-list-item-subtitle>
                                     </v-list-item-content>
                                 </v-list-item>
@@ -705,10 +705,7 @@ export default {
             return typeMap[serviceType] || serviceType;
         },
         getTaskProgress(task) {
-            const total = task.count_total || 0;
-            const done = task.count_done || 0;
-            if (total === 0) return 0;
-            return Math.round((done / total) * 100);
+            return Math.round(task.progress);
         },
     },
 };

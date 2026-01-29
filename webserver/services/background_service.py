@@ -23,7 +23,7 @@ class BackgroundTask:
     _id_counter = 0
     _id_lock = threading.Lock()
 
-    def __init__(self, service_type, service_item, progress=0, progress_data=None):
+    def __init__(self, service_type, service_item, book_id=0, progress=0, progress_data=None):
         with BackgroundTask._id_lock:
             BackgroundTask._id_counter += 1
             self.id = BackgroundTask._id_counter
@@ -36,12 +36,14 @@ class BackgroundTask:
         self.create_time = datetime.datetime.now()
         self.update_time = datetime.datetime.now()
         self.error_message = None
+        self.service_book_id = book_id  # 关联的图书ID（有声书转换时）
 
     def to_dict(self):
         return {
             "id": self.id,
             "service_type": self.service_type,
             "service_item": self.service_item,
+            "service_book_id": self.service_book_id,
             "status": self.status,
             "progress": self.progress,
             "progress_data": self.progress_data,
@@ -69,7 +71,7 @@ class BackgroundService:
             self._tasks_lock = threading.Lock()
             self._initialized = True
 
-    def update_task(self, service_type: str, service_item: str,
+    def update_task(self, service_type: str, service_item: str, book_id: int = 0,
                     progress: int = 0, progress_data: Optional[Dict] = None,
                     error_message: Optional[str] = None) -> BackgroundTask:
         """
@@ -100,6 +102,7 @@ class BackgroundService:
             task = BackgroundTask(
                 service_type=service_type,
                 service_item=service_item,
+                book_id=book_id,
                 progress=progress,
                 progress_data=progress_data or {}
             )
@@ -214,13 +217,22 @@ class BackgroundService:
         Returns:
             List[Dict]: 任务列表
         """
+        from webserver.handlers.audio import AudioConversion
         with self._tasks_lock:
             # 获取所有任务并按更新时间排序
             all_tasks = list(self._tasks.values())
-            all_tasks.sort(key=lambda t: t.update_time, reverse=True)
+            running_tasks = [task for task in all_tasks if task.status == BackgroundTask.STATUS_RUNNING]
+            for task in running_tasks:
+                if task.service_type == BackgroundTask.SERVICE_TYPE_AUDIO and task.service_book_id > 0:
+                    progress = AudioConversion.get_progress(task.service_book_id)
+                    if progress and "converted_chapters" in progress and "total_chapters" in progress:
+                        task.progress = int(progress["converted_chapters"]) * 100 / int(progress["total_chapters"])
+                    else:
+                        task.progress = 0
+            running_tasks.sort(key=lambda t: t.update_time, reverse=True)
 
             # 限制返回数量
-            tasks = all_tasks[:limit]
+            tasks = running_tasks[:limit]
 
             return [task.to_dict() for task in tasks]
 
