@@ -625,7 +625,12 @@
         "aiAssistant": "AI Assistant",
         "aiChatWelcome": "Hello! I'm your AI assistant. How can I help you?",
         "aiInputPlaceholder": "Type your message here...",
-        "aiThinking": "Thinking..."
+        "aiThinking": "Thinking...",
+        "backgroundTasks": "Background Tasks",
+        "taskProgress": "Progress",
+        "taskTypeAutofill": "Auto-fill Metadata",
+        "taskTypeScan": "Batch Import Books",
+        "taskTypeAudio": "Audio Conversion"
     },
     "bookCards": {
         "browseDetails": "Click to browse details"

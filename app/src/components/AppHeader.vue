@@ -128,6 +128,42 @@
 
             <template v-if="err == 'ok'">
                 <template v-if="user.is_login">
+                    <!-- Running Tasks Indicator -->
+                    <v-menu offset-y right :close-on-content-click="false" v-if="runningTasks.length > 0">
+                        <template v-slot:activator="{ on }">
+                            <v-btn v-on="on" icon>
+                                <v-img src="/icons/running.svg" width="24" height="24"></v-img>
+                            </v-btn>
+                        </template>
+                        <v-card width="380">
+                            <v-card-title class="py-2">
+                                <span>{{ $t('appHeader.backgroundTasks') }}</span>
+                            </v-card-title>
+                            <v-list three-line dense width="380">
+                                <v-list-item v-for="task in runningTasks" :key="task.id">
+                                    <v-list-item-content>
+                                        <v-list-item-title class="body-2 font-weight-bold">
+                                            {{ getTaskTypeLabel(task.service_type) }}
+                                        </v-list-item-title>
+                                        <v-list-item-subtitle class="caption mt-1">
+                                            {{ task.service_item }}
+                                        </v-list-item-subtitle>
+                                        <v-list-item-subtitle class="mt-2">
+                                            <v-progress-linear
+                                                :value="getTaskProgress(task)"
+                                                color="primary"
+                                                height="6"
+                                                rounded
+                                            ></v-progress-linear>
+                                            <span class="caption mt-1">{{ $t('appHeader.taskProgress') }}: {{ task.count_done || 0 }}/{{ task.count_total || 0 }} ({{ getTaskProgress(task) }}%)</span>
+                                        </v-list-item-subtitle>
+                                    </v-list-item-content>
+                                </v-list-item>
+                            </v-list>
+                        </v-card>
+                    </v-menu>
+
+                    <!-- Messages Notification -->
                     <v-menu offset-y right :close-on-content-click="false" v-if="messages.length > 0">
                         <template v-slot:activator="{ on }">
                             <v-btn v-on="on" icon color="yellow"> <v-icon class="blink">notifications</v-icon> </v-btn>
@@ -335,6 +371,8 @@ export default {
             },
         },
         messages: [],
+        runningTasks: [],
+        taskPollingTimer: null,
     }),
     computed: {
         appBarColor() {
@@ -459,9 +497,16 @@ export default {
                 this.messages = rsp.messages;
             }
         });
+
+        // Load running tasks initially
+        this.loadRunningTasks();
+        // Start polling for running tasks every 10 seconds
+        this.startTaskPolling();
     },
     beforeDestroy() {
         this.close_ai();
+        // Clear task polling timer
+        this.stopTaskPolling();
     },
     methods: {
         toggle_ai() {
@@ -630,6 +675,40 @@ export default {
                     this.messages = [];
                 }
             });
+        },
+        loadRunningTasks() {
+            this.$backend("/api/admin/tasks/running").then((rsp) => {
+                if (rsp.err == "ok") {
+                    this.runningTasks = rsp.tasks || [];
+                }
+            }).catch((err) => {
+                console.error("Failed to load running tasks:", err);
+            });
+        },
+        startTaskPolling() {
+            this.taskPollingTimer = setInterval(() => {
+                this.loadRunningTasks();
+            }, 10000); // Poll every 10 seconds
+        },
+        stopTaskPolling() {
+            if (this.taskPollingTimer) {
+                clearInterval(this.taskPollingTimer);
+                this.taskPollingTimer = null;
+            }
+        },
+        getTaskTypeLabel(serviceType) {
+            const typeMap = {
+                'autofill': this.$t('appHeader.taskTypeAutofill'),
+                'scan': this.$t('appHeader.taskTypeScan'),
+                'audio': this.$t('appHeader.taskTypeAudio'),
+            };
+            return typeMap[serviceType] || serviceType;
+        },
+        getTaskProgress(task) {
+            const total = task.count_total || 0;
+            const done = task.count_done || 0;
+            if (total === 0) return 0;
+            return Math.round((done / total) * 100);
         },
     },
 };

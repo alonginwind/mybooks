@@ -67,41 +67,9 @@ class BackgroundTaskDetailHandler(BaseHandler):
             return {"err": "server.error", "msg": str(e)}
 
 
-class BackgroundTaskCancelHandler(BaseHandler):
-    """后台任务取消接口"""
-
-    @js
-    @is_admin
-    def post(self, task_id):
-        """取消后台任务"""
-        try:
-            # 只有管理员可以取消后台任务
-            if not self.is_admin():
-                return {"err": "permission.denied", "msg": _("需要管理员权限")}
-
-            task_id = int(task_id)
-
-            # 取消任务
-            success = background_service.cancel_task(task_id)
-
-            if not success:
-                return {"err": "task.not_found", "msg": _("任务未找到")}
-
-            return {
-                "err": "ok",
-                "msg": _("任务已取消")
-            }
-        except ValueError:
-            return {"err": "params.invalid", "msg": _("无效的任务ID")}
-        except Exception as e:
-            logging.error(f"Error in BackgroundTaskCancelHandler.post: {e}")
-            return {"err": "server.error", "msg": str(e)}
-
-
 def routes():
     """返回路由配置"""
     return [
         (r"/api/background-tasks", BackgroundTasksHandler),
         (r"/api/background-tasks/([0-9]+)", BackgroundTaskDetailHandler),
-        (r"/api/background-tasks/([0-9]+)/cancel", BackgroundTaskCancelHandler),
     ]
