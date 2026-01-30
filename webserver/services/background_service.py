@@ -121,8 +121,8 @@ class BackgroundService:
             return task
 
     def update_progress(self, task_id: int, progress: int,
-                       progress_data: Optional[Dict] = None,
-                       error_message: Optional[str] = None) -> bool:
+                        progress_data: Optional[Dict] = None,
+                        error_message: Optional[str] = None) -> bool:
         """
         更新任务进度
 
