@@ -205,6 +205,20 @@ class AudioUtils:
                     "count": len(file_urls)
                     }
 
+    @staticmethod
+    def clear_audio(book_id):
+        """Clear audio files for a book."""
+        audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
+        if os.path.exists(audio_dir):
+            try:
+                shutil.rmtree(audio_dir)
+                AudioBooksCache.async_update()
+                return True, _(u"音频文件删除成功")
+            except OSError as e:
+                logging.error(f"Error deleting audio directory {audio_dir}: {e}")
+                return False, f"音频文件删除遇到错误: {e}"
+        return True, _(u"音频文件不存在")
+
 
 class AudioDetail(BaseHandler):
     @js

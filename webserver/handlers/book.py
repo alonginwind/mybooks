@@ -1243,6 +1243,8 @@ class BookDelete(BaseHandler):
         if not self.current_user.can_delete() or not (self.is_admin() or self.is_book_owner(bid, cid)):
             return {"err": "permission", "msg": _(u"无权操作")}
 
+        AudioUtils.clear_audio(bid)
+
         try:
             self.calibre_db.delete_book(bid)
             self.add_msg("success", _(u"删除书籍《%s》") % book["title"])

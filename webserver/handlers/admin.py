@@ -25,6 +25,7 @@ from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import Reader
 from webserver.utils import SimpleBookFormatter
 from webserver.version import VERSION
+from webserver.handlers.audio import AudioUtils
 
 CONF = loader.get_settings()
 USER_UPDATE_TS_MAP = {}
@@ -633,6 +634,7 @@ class AdminDeleteBooks(BaseHandler):
 
         for book_id in idlist:
             try:
+                AudioUtils.clear_audio(book_id)
                 book = self.get_book(book_id)
                 book_id = book["id"]
                 self.calibre_db.delete_book(book_id)
