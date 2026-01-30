@@ -226,7 +226,11 @@ class BackgroundService:
                 if task.service_type == BackgroundTask.SERVICE_TYPE_AUDIO and task.service_book_id > 0:
                     progress = AudioConversion.get_progress(task.service_book_id)
                     if progress and "converted_chapters" in progress and "total_chapters" in progress:
-                        task.progress = int(progress["converted_chapters"]) * 100 / int(progress["total_chapters"])
+                        total_chapters = int(progress["total_chapters"])
+                        if total_chapters == 0:
+                            task.progress = 0
+                        else:
+                            task.progress = int(progress["converted_chapters"]) * 100 / total_chapters
                     else:
                         task.progress = 0
             running_tasks.sort(key=lambda t: t.update_time, reverse=True)
