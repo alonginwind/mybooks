@@ -73,7 +73,7 @@
             <v-card outlined style="border-radius: 12px;">
                 <v-list>
                     <v-list-item :to="nav.href" >
-                        <v-list-item-avatar large color='primary' >
+                        <v-list-item-avatar large color='#003153' >
                             <v-icon dark >{{nav.icon}}</v-icon>
                         </v-list-item-avatar>
                         <v-list-item-content>
@@ -253,12 +253,11 @@ export default {
 <style>
 /* 书库统计标题栏样式 */
 .library-stats-bar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #01847f 0%, #003153 100%);
     color: white;
-    margin: -16px -16px 24px -16px;
-    padding: 16px;
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 2px;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 8px 12px rgba(0,0,0,0.15);
 }
 
 .stats-container {

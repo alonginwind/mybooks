@@ -376,7 +376,7 @@ export default {
     }),
     computed: {
         appBarColor() {
-            return this.$vuetify.theme.dark ? 'dark' : 'blue';
+            return this.$vuetify.theme.dark ? 'dark' : '#003153';
         },
         isAiFeatureEnabled() {
             if (process.client) {
