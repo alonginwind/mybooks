@@ -62,9 +62,6 @@
                         </v-list-item-action>
                     </v-list-item>
                 </template>
-                <v-list-item>
-                    <v-img class="ma-auto" max-width="128" src="/logo/link_gongzhonghao.jpg"></v-img>
-                </v-list-item>
             </v-list>
         </v-navigation-drawer>
 
@@ -441,16 +438,12 @@ export default {
                 { heading: "appHeader.friendLinks" },
                 { links: this.sys.friends, target: "_blank" },
             ];
-            var sys_links = [
-                { heading: "appHeader.gongzhonghao" }
-            ];
 
             return home_links
                 .concat(this.user.is_admin ? admin_links : [])
                 .concat(this.user.is_login ? reading_links : [])
                 .concat(nav_links)
                 .concat(this.sys.friends.length > 0 ? friend_links : [])
-                .concat(sys_links);
         },
     },
     mounted() {

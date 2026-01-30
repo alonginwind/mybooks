@@ -253,7 +253,7 @@ export default {
 <style>
 /* 书库统计标题栏样式 */
 .library-stats-bar {
-    background: linear-gradient(135deg, #01847f 0%, #003153 100%);
+    background: #003153;
     color: white;
     padding: 2px;
     border-radius: 0 0 5px 5px;
