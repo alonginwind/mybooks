@@ -111,6 +111,14 @@
                         >
                             {{ $t('common.clear') }}
                         </v-btn>
+                        <v-btn
+                            v-if="audios.status === AUDIO_STATUS.CONVERTED"
+                            color="primary"
+                            text
+                            @click="generate_audio"
+                        >
+                            {{ $t('common.restore') }}
+                        </v-btn>
                         <v-spacer></v-spacer>
                         <v-btn color="" text @click="dialog_audiolist = false">{{ $t('common.close') }}</v-btn>
                     </v-card-actions>

@@ -419,6 +419,7 @@
         "set": "设置",
         "start": "开始",
         "clear": "清除音频",
+        "restore": "恢复生成",
         "ok": "确定"
     },
     "settings": {
