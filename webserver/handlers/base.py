@@ -744,15 +744,21 @@ class ListHandler(BaseHandler):
         if ids:
             ids = list(ids)
             count = len(ids)
-            books = self.get_books(ids=ids[start : start + delta])
+            if count > 3 * size and sort_fields == "title":
+                sort_fields = "id"
+
             if sort_fields == "id":
-                # 按照id从大到小排列（降序）
+                # 按照id从大到小排列（降序），直接对ids排序后再获取当前页
+                books = self.get_books(ids=ids[start : start + delta])
                 self.do_sort(books, "id", False)
             elif sort_fields == "title":
-                # 按照title从小到大排列（升序）
-                self.do_sort(books, "title", True)
+                # 获取所有books，排序后再抽取当前页
+                all_books_data = self.get_books(ids=ids)
+                self.do_sort(all_books_data, "title", True)
+                books = all_books_data[start : start + delta]
             else:
                 # 按照输入的ids顺序排序
+                books = self.get_books(ids=ids[start : start + delta])
                 books = sorted(books, key=lambda x: ids.index(x["id"]) if x["id"] in ids else -1)
         else:
             count = len(all_books)
