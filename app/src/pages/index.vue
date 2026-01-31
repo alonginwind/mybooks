@@ -253,10 +253,11 @@ export default {
 <style>
 /* 书库统计标题栏样式 */
 .library-stats-bar {
-    background: #003153;
+    background: #55655f;
     color: white;
     padding: 2px;
-    border-radius: 0 0 5px 5px;
+    margin: 0;
+    border-radius: 5px;
     box-shadow: 0 8px 12px rgba(0,0,0,0.15);
 }
 
