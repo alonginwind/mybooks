@@ -231,7 +231,7 @@
             "disable": "Disable",
             "enable": "Enable",
             "account_management": "Account Management",
-            "activate_account": "Activate Account Without Email Verification",
+            "activate_account": "Activate Account",
             "remove_admin": "Remove Admin",
             "set_admin": "Set as Admin",
             "delete_user": "Delete User Immediately",

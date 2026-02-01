@@ -234,7 +234,7 @@
             "disable": "关闭",
             "enable": "开启",
             "account_management": "账号管理",
-            "activate_account": "免邮箱认证，直接激活账户",
+            "activate_account": "直接激活账户",
             "remove_admin": "取消管理员",
             "set_admin": "设置为管理员",
             "delete_user": "立即删除该用户",
