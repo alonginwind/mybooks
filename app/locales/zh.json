@@ -335,6 +335,7 @@
         "push": "推送",
         "read": "阅读",
         "manage": "管理",
+        "process": "格式处理",
         "syncBookInfo": "从互联网同步书籍信息",
         "noMatchingInfo": "无匹配的书籍信息",
         "selectMatchingRecord": "请选择最匹配的记录复制为本书的描述信息",
@@ -348,6 +349,7 @@
         "resetInfo": "重置信息",
         "resetSuccessful": "重置信息成功",
         "convert": "EPUB/KINDLE转换",
+        "convert_to_pdf": "转换为PDF格式",
         "seperate": "按格式抽出新书",
         "saveMetaToFile": "同步到书籍文件",
         "saveMetaSuccess": "元数据已成功同步到书籍文件",
@@ -580,7 +582,7 @@
         "booksUnit": "本书"
     },
     "footer": {
-        "base_message": "本站基于Calibre构建，感谢开源界的力量。所有资源搜集于互联网，如有侵权请邮件联系。"
+        "base_message": "系统基于Calibre构建，感谢开源的力量。任何问题或建议请前往<a target=\"_blank\" href=\"https://mybooks.top\">项目主页</a>扫码公众号私信联系。"
     },
     "appHeader": {
         "home": "首页",

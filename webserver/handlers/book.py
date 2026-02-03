@@ -381,6 +381,44 @@ class BookConverter(BaseHandler):
         return {"err": "ok", "content": "%s" % _(u"转换成功，请稍后刷新页面查看")}
 
 
+class BookToPDF(BaseHandler):
+    @js
+    @auth
+    def post(self, id):
+        book_id = int(id)
+        book = self.get_book(book_id, raise_exception=False)
+        if not book:
+            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+
+        if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
+            return {"err": "user.no_permission", "msg": _(u"无权限")}
+
+        fmts = []
+        paths = []
+        has_pdf = False
+        for fmt in ["epub", "azw3", "mobi", "azw", "pdf"]:
+            book_path = book.get("fmt_%s" % fmt, None)
+            if not book_path:
+                continue
+            if fmt == "pdf":
+                has_pdf = True
+                continue
+            fmts.append(fmt)
+            paths.append(book_path)
+
+        if has_pdf:
+            return {"err": "params.book.invalid", "msg": _(u"本书已有PDF版本, 不需要转换")}
+        if len(fmts) == 0:
+            return {"err": "params.book.invalid", "msg": _(u"本书不支持转换，仅支持EPUB及Kindle使用的格式转换为PDF")}
+
+        fpath = paths[0]
+        service = ConvertService()
+        if service.is_book_converting(book):
+            return {"err": "params.book.converting", "msg": _(u"本书正在转换中，请稍后再试")}
+        service.convert_and_save(self.user_id(), book, fpath, "pdf")
+        return {"err": "ok", "content": "%s" % _(u"转换成功，请稍后刷新页面查看")}
+
+
 class BookSetSole(BaseHandler):
     @js
     @auth
@@ -2491,6 +2529,7 @@ def routes():
         (r"/api/read/txt", TxtRead),
         (r"/api/book/txt/init", BookTxtInit),
         (r"/api/book/([0-9]+)/convert", BookConverter),
+        (r"/api/book/([0-9]+)/topdf", BookToPDF),
         (r"/api/book/([0-9]+)/setsole", BookSetSole),
         (r"/api/book/([0-9]+)/cover", BookCover),
         (r"/api/book/([0-9]+)/favorite", BookFavorite),

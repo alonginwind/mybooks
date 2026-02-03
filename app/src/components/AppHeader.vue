@@ -477,7 +477,7 @@ export default {
                 }
             }
             if (rsp.sys.footer === '') {
-                rsp.sys.footer = this.$t('appHeader.defaultFooter');
+                rsp.sys.footer = this.$t('footer.base_message');
                 this.$store.commit("set_footer", rsp.sys.footer);
             }
             if (rsp.sys.header === '') {

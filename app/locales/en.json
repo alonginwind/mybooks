@@ -460,6 +460,7 @@
         "resetInfo": "Reset information",
         "resetSuccessful": "Succeed to reset book information",
         "convert": "EPUB/AZW3 Conversion",
+        "convert_to_pdf": "Convert to PDF(A5)",
         "seperate": "Separate into new book",
         "saveMetaToFile": "Sync metadata to file",
         "saveMetaSuccess": "Metadata successfully synced to book file",
@@ -575,7 +576,7 @@
         "booksUnit": " books"
     },
     "footer": {
-        "base_message": "This site is built on Calibre, thanks to the power of open source. All resources are collected from the internet. If there is any infringement, please contact us via email."
+        "base_message": "This site is built on Calibre, thanks to the power of open source. If you have any questions or suggestions, please visit the <a target=\"_blank\" href=\"https://mybooks.top\">project homepage</a> to scan the WeChat public account QR code for private messages, or send an email to <a href=\"mailto:poxenstudio@gmail.com\">poxenstudio@gmail.com</a>."
     },
     "appHeader": {
         "home": "Home",

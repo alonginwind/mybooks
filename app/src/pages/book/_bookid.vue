@@ -296,9 +296,13 @@
                                     <v-icon>photo</v-icon>
                                     {{ $t('book.setCover') }}
                                 </v-list-item>
-                                <v-list-item @click="convert_book">
+                                <v-list-item @click="convert_book" :enabled="hasEpubOrKindleFormats">
                                     <v-icon>mdi-swap-horizontal</v-icon>
                                     {{ $t('book.convert') }}
+                                </v-list-item>
+                                <v-list-item @click="convert_to_pdf" :enabled="!hasPDF">
+                                    <v-icon>mdi-swap-horizontal</v-icon>
+                                    {{ $t('book.convert_to_pdf') }}
                                 </v-list-item>
                                 <v-divider></v-divider>
                                 <v-list-item @click="seperate_book" :disabled="book.files.length <= 1">
@@ -1052,6 +1056,19 @@ export default {
                 const format = file.format.toLowerCase();
                 return format === 'epub' || format === 'azw3';
             });
+        },
+
+        hasEpubOrKindleFormats() {
+            if (!this.book || !this.book.files) return false;
+            return this.book.files.some(file => {
+                const format = file.format.toLowerCase();
+                return format === 'epub' || format === 'azw3' || format === 'mobi' || format === 'txt';
+            });
+        },
+
+        hasPDF() {
+            if (!this.book || !this.book.files) return false;
+            return this.book.files.some(file => file.format.toLowerCase() === 'pdf');
         }
     },
     data: () => ({
@@ -1596,6 +1613,19 @@ export default {
                 if (rsp.err === "ok") {
                     this.$alert("success", this.$t('book.convertSuccessful'));
                     this.$router.push("/book/" + this.book.id);
+                } else {
+                    this.$alert("error", rsp.msg);
+                }
+            });
+        },
+        convert_to_pdf() {
+            // 转换为PDF
+            this.$backend("/book/" + this.book.id + "/topdf", {
+                method: "POST",
+                body: new URLSearchParams({reset: "yes"}),
+            }).then((rsp) => {
+                if (rsp.err === "ok") {
+                    this.$alert("success", this.$t('book.convertSuccessful'));
                 } else {
                     this.$alert("error", rsp.msg);
                 }
