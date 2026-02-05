@@ -481,7 +481,7 @@ class AudioConversion(BaseHandler):
                             book_title = book.get('title', f'书籍{book_id}')
                             success_msg = _(f"《{book_title}》的音频转换已完成")
                             Message.cleanup_messages(user.id, success_msg)
-                            msg = Message(user.id, "audio.conversion.success", success_msg)
+                            msg = Message(user.id, "success", success_msg)
                             msg.save()
                             logging.info(f"Sent success message to user {user.id} for book {book_id}")
                         except Exception as e:
@@ -501,7 +501,7 @@ class AudioConversion(BaseHandler):
                             book_title = book.get('title', f'书籍{book_id}')
                             error_msg = _(f"《{book_title}》的音频转换失败：{result.get('error', 'Unknown error')}")
                             Message.cleanup_messages(user.id, error_msg)
-                            msg = Message(user.id, "audio.conversion.failed", error_msg)
+                            msg = Message(user.id, "error", error_msg)
                             msg.save()
                             logging.info(f"Sent failure message to user {user.id} for book {book_id}")
                         except Exception as e:
@@ -522,7 +522,7 @@ class AudioConversion(BaseHandler):
                         book_title = book.get('title', f'书籍{book_id}')
                         error_msg = _(f"《{book_title}》的音频转换出现异常：{str(e)}")
                         Message.cleanup_messages(user.id, error_msg)
-                        msg = Message(user.id, "audio.conversion.error", error_msg)
+                        msg = Message(user.id, "error", error_msg)
                         msg.save()
                         logging.info(f"Sent error message to user {user.id} for book {book_id}")
                     except Exception as msg_error:
