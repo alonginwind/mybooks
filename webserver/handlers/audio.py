@@ -579,7 +579,7 @@ class AudioConversionCancel(BaseHandler):
                 ConversionWorkerMap.pop(book_id, None)
 
                 time.sleep(1)  # Give some time for the worker to stop
-                return {"err": "ok", "msg": _(u"转换已取消, 可以使用恢复转换功能继续转换")}
+                return {"err": "ok", "msg": _(u"转换已取消, 可以使用恢复生成功能继续转换")}
             else:
                 return {"err": "audio.no_conversion", "msg": _(u"没有发现转换任务"), "data": None}
         except ValueError:
