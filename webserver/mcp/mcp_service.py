@@ -46,7 +46,7 @@ class MCPService:
         logging.info("[MCP Service]setup up tools")
         if MCP_TOKEN_KEY in CONF and len(CONF[MCP_TOKEN_KEY]) > 0:
             self.authenticated_tokens[CONF[MCP_TOKEN_KEY]] = {
-                "user_id": 0,
+                "user_id": 1,
                 "username": "admin",
                 "created_at": time.time(),
                 "expires_at": time.time() + (self.TOKEN_EXPIRE_HOURS * 3600 * 365 * 5)  # 永不过期
@@ -636,8 +636,7 @@ class MCPService:
                         continue
 
                     # 执行自动填充
-                    success = autofill_service.auto_fill(book_id, only_tags=only_tags)
-
+                    success = autofill_service.auto_fill(book_id, only_tags=only_tags, force_update=True)
                     if success:
                         results.append({
                             "book_id": book_id,
@@ -896,6 +895,7 @@ class MCPService:
             Tool(
                 name="auto_fill_book_info",
                 description="Automatically update book information from online sources (Douban, Baike, etc.). "
+                            "This tool is preferred for updating existing books in the collection."
                             "This tool fetches and fills missing metadata including cover, description, tags, "
                             "publisher, and other details." + self.need_login_prompt + "\n\n"
                             "You can specify either book_ids or title:\n"

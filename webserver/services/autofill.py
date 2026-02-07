@@ -165,19 +165,21 @@ class AutoFillService(AsyncService):
         self.task_id = None
 
     @AsyncService.register_function
-    def auto_fill(self, book_id, only_tags=False):
+    def auto_fill(self, book_id, only_tags=False, force_update=False):
         mi = self.db.get_metadata(book_id, index_is_id=True)
-        if not CONF['auto_fill_meta'] or only_tags:
+        if not force_update and (not CONF['auto_fill_meta'] or only_tags):
             self.do_fill_tags(book_id, mi, need_commit=True)
-            return
+            return True
         return self.do_fill_metadata(book_id, mi)
 
     def do_fill_metadata(self, book_id, mi):
         refer_mi = None
 
+        logging.info(_("开始自动填充书籍 id=%d 的元数据，title=%s"), book_id, mi.title)
         try:
             refer_mi = self.plugin_search_best_book_info(mi)
-        except:
+        except Exception as e:
+            logging.error(_("自动填充元数据时出错 id=%d: %s"), book_id, e)
             return False
 
         if not refer_mi:
