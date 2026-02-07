@@ -10,7 +10,6 @@ from webserver.assistant.deepseek_agent import DeepSeekMCPAgent
 class AssistantWebSocketHandler(tornado.websocket.WebSocketHandler):
     # 保存连接的实例，以便后台服务管理
     clients = set()
-    _agent = None
 
     def get_current_user(self):
         """从secure cookie获取当前用户"""
@@ -36,10 +35,17 @@ class AssistantWebSocketHandler(tornado.websocket.WebSocketHandler):
             logging.info("WebSocket assistant connection accepted")
             self.clients.add(self)
 
-            # 延迟初始化Agent，如果还没创建
-            if AssistantWebSocketHandler._agent is None:
-                AssistantWebSocketHandler._agent = DeepSeekMCPAgent()
-                await AssistantWebSocketHandler._agent.initialize()
+            # 获取当前请求的 cookies
+            cookies = {}
+            for cookie_name in self.request.cookies:
+                cookie = self.request.cookies[cookie_name]
+                cookies[cookie_name] = cookie.value
+
+            logging.info(f"WebSocket cookies: {list(cookies.keys())}")
+
+            # 为每个连接创建独立的 Agent 实例
+            self.agent = DeepSeekMCPAgent(cookies=cookies)
+            await self.agent.initialize()
 
             self.write_message(json.dumps({"type": "status", "content": "AI助手连接成功"}))
         except Exception as e:
@@ -59,7 +65,7 @@ class AssistantWebSocketHandler(tornado.websocket.WebSocketHandler):
             # 开启处理
             self.write_message(json.dumps({"type": "start"}))
 
-            async for chunk in AssistantWebSocketHandler._agent.process_user_input(user_input):
+            async for chunk in self.agent.process_user_input(user_input):
                 self.write_message(json.dumps(chunk))
 
             # 处理完成
@@ -69,9 +75,11 @@ class AssistantWebSocketHandler(tornado.websocket.WebSocketHandler):
             logging.error(f"Error processing AI message: {e}")
             self.write_message(json.dumps({"type": "error", "content": str(e)}))
 
-    def on_close(self):
+    async def on_close(self):
         logging.info("WebSocket assistant closed")
-        self.clients.remove(self)
+        self.clients.discard(self)
+        if hasattr(self, 'agent'):
+            await self.agent.close()
 
 
 def routes():

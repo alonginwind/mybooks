@@ -14,10 +14,11 @@ class MCPStreamClient:
     不使用SSE，而是使用HTTP流式响应
     """
 
-    def __init__(self, base_url: str, token: str):
+    def __init__(self, base_url: str, token: str, cookies: Optional[Dict] = None):
         self.base_url = f'{base_url}?token={token}' if token is not None else base_url
         self.session: Optional[aiohttp.ClientSession] = None
         self.tools_cache = None
+        self.cookies = cookies
         print(f"MCP Tool: {self.base_url}")
 
     async def connect(self):
@@ -55,11 +56,16 @@ class MCPStreamClient:
     async def _send_request(self, request_data: Dict) -> Dict:
         """发送请求到MCP服务器（支持流式和普通响应）"""
         try:
-            async with self.session.post(
-                self.base_url,
-                json=request_data,
-                headers={"Content-Type": "application/json"}
-            ) as response:
+            headers = {"Content-Type": "application/json"}
+            kwargs = {
+                "json": request_data,
+                "headers": headers
+            }
+            # 如果有 cookies，添加到请求中
+            if self.cookies:
+                kwargs["cookies"] = self.cookies
+
+            async with self.session.post(self.base_url, **kwargs) as response:
 
                 # 检查是否流式响应
                 content_type = response.headers.get('Content-Type', '')

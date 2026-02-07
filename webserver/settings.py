@@ -122,7 +122,7 @@ settings = {
 ''',
 
     'INVITE_MODE'   : False,
-    'INVITE_CODE'   : 'love',
+    'INVITE_CODE'   : 'talebook',
     'INVITE_MESSAGE': u'''本站为私人图书馆，需输入密码才可进行访问''',
 
     'ALLOW_GUEST_READ' : True,

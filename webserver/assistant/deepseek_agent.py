@@ -26,7 +26,7 @@ class DeepSeekMCPAgent:
     支持持续对话和工具调用
     """
 
-    def __init__(self):
+    def __init__(self, cookies: Optional[Dict] = None):
         # 初始化DeepSeek客户端
         self.deepseek_client = OpenAI(
             api_key=DEEPSEEK_API_KEY,
@@ -35,7 +35,7 @@ class DeepSeekMCPAgent:
         )
 
         # 初始化MCP客户端
-        self.mcp_client = MCPStreamClient(MCP_SERVER_URL, MCP_TOKEN)
+        self.mcp_client = MCPStreamClient(MCP_SERVER_URL, MCP_TOKEN, cookies)
 
         # 会话状态
         self.session_active = True
