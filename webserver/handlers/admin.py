@@ -336,7 +336,8 @@ class AdminSettings(BaseHandler):
             "MAIN_PAGE_RECENT_COUNT",
             "INDEX_PAGE_TYPE",
             "DEFAULT_PAGE_SIZE",
-            "WEBDAV_SYNC_FOLDER"
+            "WEBDAV_SYNC_FOLDER",
+            "ENABLE_AUDIO_CONVERSION_LOG"
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon

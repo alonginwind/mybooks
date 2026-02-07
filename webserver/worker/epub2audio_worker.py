@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 EPUB to Audio Worker - Convert EPUB books to audiobooks with progress tracking
+
+python3 main.py --tts edge --language zh-CN --worker_count 2 --voice_name zh-CN-YunyangNeural --no_prompt
+ test.epub ./epub_to_audio/
 """
 
 import logging
@@ -13,11 +16,10 @@ import sys
 import json
 import re
 from typing import Optional, Dict, Any
+from webserver import loader, constants
 
-"""
-python3 main.py --tts edge --language zh-CN --worker_count 2 --voice_name zh-CN-YunyangNeural --no_prompt
- test.epub ./epub_to_audio/
-"""
+
+CONF = loader.get_settings()
 
 
 def remove_null_values(obj):
@@ -70,7 +72,8 @@ class EpubToAudioWorker:
         Parse BOOKBARN log messages and update progress
         """
         if "[BOOKBARN]" not in line:
-            # logging.info(f"[LOG] {line}")
+            if constants.ENABLE_AUDIO_CONVERSION_LOG in CONF and CONF[constants.ENABLE_AUDIO_CONVERSION_LOG]:
+                logging.debug(f"[AUDIO]: {line}")
             return
 
         match = re.search(r'\[BOOKBARN\](.+)', line)
@@ -227,6 +230,9 @@ class EpubToAudioWorker:
             "--worker_count", str(worker_count),
             "--voice_name", voice_name,
         ]
+        if constants.ENABLE_AUDIO_CONVERSION_LOG in CONF and CONF[constants.ENABLE_AUDIO_CONVERSION_LOG]:
+            cmd.append("--log")
+            cmd.append("DEBUG")
 
         if no_prompt:
             cmd.append("--no_prompt")
