@@ -13,18 +13,16 @@ from .baiduexception import PageError, DisambiguationError, VerifyError
 
 CLASS_DISAMBIGUATION = ["nslog:519"]
 CLASS_CREATOR = ["nslog:1022"]
-CLASS_REFERENCE = ["nslog:1968"]
-CLASS_TAG = ["nslog:7336", "taglist"]
+CLASS_TAG = []
 CLASS_CONTENT = {
     "lemmaTitleH1": "===== %(text)s ====\n\n",
     "headline-1": "\n== %(text)s ==\n",
     "headline-2": "\n* %(text)s *\n",
     "para": "%(text)s",
 }
-CLASS_SUMMARY = ["lemma-summary"]
-CLASS_INFO = ["basicInfo-item"]
+CLASS_SUMMARY = ["J-summary"]
+CLASS_INFO = ["basicInfo"]
 CLASS_SUMMARY_PIC = ["J-imgPlaceholder"]
-CLASS_LEMMA_ID = ["lemmaWgt-promotion-rightPreciseAd"]
 
 
 class Page(object):
@@ -129,27 +127,6 @@ class Page(object):
             tags.append(tag.get_text(strip=True))
 
         return tags
-
-    def get_references(self):
-        """Get references of the page"""
-
-        references = []
-        for ref in self.soup.find_all(class_=CLASS_REFERENCE):
-            r = {}
-            r["title"] = ref.get_text()
-            r["url"] = ref.get("href")
-            references.append(r)
-
-        return references
-
-    def get_id(self):
-        """Get id of the page"""
-        divs = self.soup.find_all(class_=CLASS_LEMMA_ID)
-        for d in divs:
-            id = d.get("data-lemmaid")
-            if id:
-                return id
-        return "0000"
 
 
 class Search(object):
