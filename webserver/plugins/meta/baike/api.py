@@ -44,14 +44,15 @@ class BaiduBaikeApi:
 
     def _metadata(self, baike):
         from calibre.ebooks.metadata.book.base import Metadata
-        from calibre.utils.date import utcnow, strptime
+        from calibre.utils.date import utcnow
 
         info = baike.get_info()
         logging.debug("\n" + "\n".join("%s:\t%s" % v for v in info.items()))
 
-        mi = Metadata(info["title"])
-        plat = "网络平台"
-        info.get("出版社", info.get("连载平台", plat))
+        # 使用 info.get() 获取字段，如果不存在则使用备选字段或默认值
+        title = info.get(u"中文名", info.get("title", u"未知书名"))
+        mi = Metadata(title)
+        mi.publisher = info.get(u"出版社", "")
         mi.authors = [info.get(u"作者", u"佚名")]
         mi.author_sort = mi.authors[0]
         mi.isbn = info.get("ISBN", BAIKE_ISBN)
@@ -62,19 +63,12 @@ class BaiduBaikeApi:
         mi.pubdate = pd
         mi.timestamp = mi.pubdate
         mi.cover_url = baike.get_image()
-        mi.comments = re.sub(r"\[\d+\]$", "", baike.get_summary())
+        mi.comments = baike.get_summary()
         mi.website = baike.http.url
         mi.source = u"百度百科"
         mi.provider_key = KEY
         mi.provider_value = baike.get_id()
         mi.cover_data = self.get_cover(mi.cover_url)
-
-        if u"完结" in info.get(u"连载状态", ""):
-            day = re.findall(r"\d*-\d*-\d*", info[u"连载状态"])
-            try:
-                mi.pubdate = strptime(day[0], "%Y-%m-%d")
-            except:
-                pass
         return mi
 
     def get_cover(self, cover_url):

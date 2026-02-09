@@ -22,52 +22,77 @@ CLASS_CONTENT = {
 }
 CLASS_SUMMARY = ["J-summary"]
 CLASS_INFO = ["basicInfo"]
-CLASS_SUMMARY_PIC = ["J-imgPlaceholder"]
+CLASS_SUMMARY_PIC = ["summary-img"]
 
 
 class Page(object):
-    def __init__(self, string, encoding="utf-8"):
+    def __init__(self, book_name, encoding="utf-8"):
         url = "https://baike.baidu.com/search/word"
         payload = None
+        self.valid = False  # 标记请求是否成功
 
         # An url or a word to be Paged
         pattern = re.compile(r"^https?:\/\/baike\.baidu\.com\/.*", re.IGNORECASE)
-        if re.match(pattern, string):
-            url = string
+        if re.match(pattern, book_name):
+            url = book_name
         else:
-            payload = {"pic": 1, "enc": encoding, "word": string}
+            payload = {"pic": 1, "enc": encoding, "word": book_name}
 
         self.http = requests.get(url, timeout=10, headers=CHROME_MOBILE_HEADERS, params=payload)
+        logging.debug(f"Fetching URL: {self.http.url}, Status: {self.http.status_code}")
+
+        # 检查HTTP响应状态码
+        if self.http.status_code != 200:
+            logging.warning(f"HTTP request failed with status code: {self.http.status_code}")
+            return
+
+        # 检查响应URL是否包含/item/，如果不包含则尝试直接访问/item/路径
+        if "/item/" not in self.http.url:
+            logging.debug(f"No /item/ in URL, trying direct item URL")
+            direct_url = f"https://baike.baidu.com/item/{book_name}"
+            self.http = requests.get(direct_url, timeout=10, headers=CHROME_MOBILE_HEADERS)
+            logging.debug(f"Fetching direct URL: {self.http.url}, Status: {self.http.status_code}")
+
+            # 再次检查HTTP响应状态码
+            if self.http.status_code != 200:
+                logging.warning(f"Direct HTTP request failed with status code: {self.http.status_code}")
+                return
+
         self.html = self.http.text
         self.soup = BeautifulSoup(self.html, "lxml")
 
         # Exceptions
         if self.soup.find(class_=CLASS_DISAMBIGUATION):
-            raise DisambiguationError(string.decode("utf-8"), self.get_inurls())
+            raise DisambiguationError(book_name, self.get_inurls())
         if u"百度百科尚未收录词条" in self.html:
-            raise PageError(string)
+            raise PageError(book_name)
         if self.soup.find(id="vf"):
-            raise VerifyError(string)
+            raise VerifyError(book_name)
+
+        self.valid = True  # 标记为成功
 
     def parse_basic_info(self):
         """Get basic info of a page"""
+        if not self.valid:
+            return {}
         divs = self.soup.find_all(class_=CLASS_INFO)
         info = {}
-        name = ""
         for div in divs:
-            if "name" in div.get("class"):
-                name = div.get_text(strip=True).replace(u"\xa0", "")
-            if "value" in div.get("class"):
-                value = div.get_text(strip=True)
-                if not name:
-                    logging.error("analyse error, no name for value[%s]" % value)
-                    continue
-                info[name] = value
-                name = None
+            # Find all list items containing info-title and info-content pairs
+            list_items = div.find_all("li")
+            for item in list_items:
+                title_div = item.find(class_="info-title")
+                content_div = item.find(class_="info-content")
+                if title_div and content_div:
+                    name = title_div.get_text(strip=True).replace(u"\xa0", "")
+                    value = content_div.get_text(strip=True).replace(u"\xa0", "")
+                    info[name] = value
         return info
 
     def get_info(self):
         """Get informations of the page"""
+        if not self.valid:
+            return {}
 
         info = self.parse_basic_info()
         title = self.soup.title.get_text()
@@ -75,43 +100,43 @@ class Page(object):
         info["url"] = self.http.url
 
         try:
-            info["page_view"] = self.group.find(id="viewPV").get_text()
+            info["page_view"] = self.soup.find(id="viewPV").get_text()
             info["last_modify_time"] = self.soup.find(id="lastModifyTime").get_text()
             info["creator"] = self.soup.find(class_=CLASS_CREATOR).get_text()
-
         finally:
             return info
 
-    def get_content(self):
-        """Get main content of a page"""
-        content_list = self.soup.find_all(class_=CLASS_CONTENT.keys())
-        content = []
-
-        for div in content_list:
-            klass = div.get("class")
-            text = div.get_text()
-            for k, fmt in CLASS_CONTENT.items():
-                if k in klass:
-                    content.append(fmt % {"text": text})
-
-        return "\n".join(content)
-
     def get_image(self):
+        if not self.valid:
+            return ""
+        url = ""
         divs = self.soup.find_all(class_=CLASS_SUMMARY_PIC)
         for div in divs:
-            img = div.find("img")
-            url = img.attrs["src"]
-            if url:
-                return url
-        return ""
+            url = div.attrs.get("data-src", "")
+            if not url:
+                continue
+            break
+        return url
 
     def get_summary(self):
         """Get summary infomation of a page"""
+        if not self.valid:
+            return ""
         divs = self.soup.find_all(class_=CLASS_SUMMARY)
-        return "\n".join(div.get_text(strip=True) for div in divs)
+        summary_parts = []
+        for div in divs:
+            # Remove citation markers (sup tags) before extracting text
+            for sup in div.find_all("sup"):
+                sup.decompose()
+            text = div.get_text(strip=True)
+            if text:
+                summary_parts.append(text)
+        return "\n".join(summary_parts)
 
     def get_inurls(self):
         """Get links inside a page"""
+        if not self.valid:
+            return OrderedDict()
         inurls = OrderedDict()
         href = self.soup.find_all(href=re.compile(r"\/(sub)?view(\/[0-9]*)+.htm"))
 
@@ -122,11 +147,24 @@ class Page(object):
 
     def get_tags(self):
         """Get tags of the page"""
+        if not self.valid:
+            return []
         tags = []
         for tag in self.soup.find_all(class_=CLASS_TAG):
             tags.append(tag.get_text(strip=True))
 
         return tags
+
+    def get_id(self):
+        """Get unique identifier from URL"""
+        if not self.valid:
+            return ""
+        # Extract item name from URL like https://baike.baidu.com/item/词条名
+        url = self.http.url
+        match = re.search(r'/item/([^/?]+)', url)
+        if match:
+            return match.group(1)
+        return url
 
 
 class Search(object):
