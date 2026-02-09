@@ -38,25 +38,13 @@ class Page(object):
         else:
             payload = {"pic": 1, "enc": encoding, "word": book_name}
 
-        self.http = requests.get(url, timeout=10, headers=CHROME_MOBILE_HEADERS, params=payload)
+        self.http = requests.get(url, timeout=10, headers=CHROME_MOBILE_HEADERS, params=payload, allow_redirects=True)
         logging.debug(f"Fetching URL: {self.http.url}, Status: {self.http.status_code}")
 
         # 检查HTTP响应状态码
         if self.http.status_code != 200:
             logging.warning(f"HTTP request failed with status code: {self.http.status_code}")
             return
-
-        # 检查响应URL是否包含/item/，如果不包含则尝试直接访问/item/路径
-        if "/item/" not in self.http.url:
-            logging.debug(f"No /item/ in URL, trying direct item URL")
-            direct_url = f"https://baike.baidu.com/item/{book_name}"
-            self.http = requests.get(direct_url, timeout=10, headers=CHROME_MOBILE_HEADERS)
-            logging.debug(f"Fetching direct URL: {self.http.url}, Status: {self.http.status_code}")
-
-            # 再次检查HTTP响应状态码
-            if self.http.status_code != 200:
-                logging.warning(f"Direct HTTP request failed with status code: {self.http.status_code}")
-                return
 
         self.html = self.http.text
         self.soup = BeautifulSoup(self.html, "lxml")

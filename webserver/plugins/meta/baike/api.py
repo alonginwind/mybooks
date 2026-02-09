@@ -20,10 +20,12 @@ KEY = "BaiduBaike"
 
 
 class BaiduBaikeApi:
-    def __init__(self, copy_image=True, manual_select=False):
+    def __init__(self, copy_image=True):
         self.copy_image = copy_image
 
     def get_book(self, title):
+        logging.debug(f"BaiduBaikeApi.get_book called with title: {repr(title)}")
+        logging.debug(f"Title type: {type(title)}, length: {len(title)}")
         baike = self._baike(title)
         if not baike:
             return None
@@ -65,14 +67,41 @@ class BaiduBaikeApi:
         mi.source = u"百度百科"
         mi.provider_key = KEY
         mi.provider_value = baike.get_id()
-        mi.cover_data = self.get_cover(mi.cover_url)
+        try:
+            mi.cover_data = self.get_cover(mi.cover_url)
+        except Exception as e:
+            logging.error(f"Failed to get cover data: {e}")
+            mi.cover_data = None
         return mi
 
     def get_cover(self, cover_url):
         if not self.copy_image or not cover_url:
             return None
         img = requests.get(cover_url, timeout=10, headers=CHROME_MOBILE_HEADERS).content
-        img_fmt = 'jpg' if cover_url.lower().endswith('.jpeg') else 'webp'
+        img_fmt = 'jpg' if cover_url.lower().endswith('.jpeg') else 'png'
+        # Convert PNG to JPEG if necessary
+        if img_fmt == 'png':
+            from PIL import Image
+            from io import BytesIO
+            try:
+                image = Image.open(BytesIO(img))
+                if image.mode in ("RGBA", "P"):
+                    image = image.convert("RGB")
+                # crop the image to a square centered on the middle of the image
+                width, height = image.size
+                min_dim = min(width, height)
+                left = (width - min_dim) / 2
+                top = (height - min_dim) / 2
+                right = (width + min_dim) / 2
+                bottom = (height + min_dim) / 2
+                image = image.crop((left, top, right, bottom))
+                output = BytesIO()
+                image.save(output, format='JPEG')
+                img = output.getvalue()
+                img_fmt = 'jpg'
+            except Exception as e:
+                logging.error(f"Failed to convert PNG to JPEG: {e}")
+                return None
         return (img_fmt, img)
 
 
