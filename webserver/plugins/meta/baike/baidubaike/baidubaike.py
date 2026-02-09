@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from collections import OrderedDict
 
-from webserver.constants import CHROME_HEADERS
+from webserver.constants import CHROME_MOBILE_HEADERS
 from .baiduexception import PageError, DisambiguationError, VerifyError
 
 
@@ -23,7 +23,7 @@ CLASS_CONTENT = {
 }
 CLASS_SUMMARY = ["lemma-summary"]
 CLASS_INFO = ["basicInfo-item"]
-CLASS_SUMMARY_PIC = ["summary-pic"]
+CLASS_SUMMARY_PIC = ["J-imgPlaceholder"]
 CLASS_LEMMA_ID = ["lemmaWgt-promotion-rightPreciseAd"]
 
 
@@ -39,7 +39,7 @@ class Page(object):
         else:
             payload = {"pic": 1, "enc": encoding, "word": string}
 
-        self.http = requests.get(url, timeout=10, headers=CHROME_HEADERS, params=payload)
+        self.http = requests.get(url, timeout=10, headers=CHROME_MOBILE_HEADERS, params=payload)
         self.html = self.http.text
         self.soup = BeautifulSoup(self.html, "lxml")
 
