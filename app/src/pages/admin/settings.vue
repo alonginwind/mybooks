@@ -361,6 +361,7 @@ export default {
         fields: [
           { icon: "", key: "auto_fill_meta", label: "settings.auto_fill_meta", type: 'checkbox' },
           { icon: "info", key: "douban_baseurl", label: "settings.douban_baseurl" },
+          { icon: "info", key: "douban_apikey", label: "settings.douban_api_key" },
           { icon: "info", key: "douban_max_count", label: "settings.douban_max_count" },
         ],
         tips: [

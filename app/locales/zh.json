@@ -468,6 +468,7 @@
         "internet_book_sources": "互联网书籍信息源",
         "auto_fill_meta": "自动从互联网拉取新书的书籍信息",
         "douban_baseurl": "豆瓣插件API地址(例如 http://10.0.0.1:8080 )",
+        "douban_api_key": "豆瓣插件API密钥, 可用的key有限, 可以自行查找替换",
         "douban_max_count": "豆瓣插件API查询结果数量",
         "douban_plugin_description": "若需要启用豆瓣插件，请参阅安装文档的说明。若出现失败，可尝试更换镜像，例如 talebook/douban-api-rs",
         "advanced_settings": "高级配置项",

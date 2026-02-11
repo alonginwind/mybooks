@@ -369,6 +369,11 @@ class AdminSettings(BaseHandler):
                     shutil.copy(new_icon_path, static_icon_path)
                 except Exception as e:
                     logging.info("Error: %s", str(e))
+        # Check the douban_apikey if only number, letters, _ or -, and length <=48
+        if "douban_apikey" in args:
+            apikey = args["douban_apikey"]
+            if apikey and not re.match(r"^[a-zA-Z0-9_-]{1,48}$", apikey):
+                return {"err": "params.douban_apikey.invalid", "msg": _(u"豆瓣API密钥无效, 只能包含数字、字母、下划线或短横线，且长度不能超过48个字符")}
 
         logic = SettingsSaverLogic()
         return logic.save_extra_settings(args)
