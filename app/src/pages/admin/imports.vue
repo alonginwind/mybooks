@@ -7,18 +7,82 @@
         {{ $t('imports.calibre') }}
         </v-card-text>
         <v-card-actions>
-            <v-btn :disabled="loading" outlined color="primary" @click="getDataFromApi"><v-icon>mdi-reload</v-icon>{{ $t('imports.refresh') }}</v-btn>
-            <v-btn :disabled="loading" color="primary" @click="scan_books"><v-icon>mdi-file-find</v-icon>{{ $t('imports.scan_books') }}</v-btn>
-            <template v-if="selected.length > 0">
-                <v-btn :disabled="loading" color="secondary" @click="import_books"><v-icon>mdi-import</v-icon>{{ $t('imports.import_selected') }}</v-btn>
-            </template>
-            <template v-else>
-                <v-btn :disabled="loading" color="secondary" @click="import_books"><v-icon>mdi-import</v-icon>{{ $t('imports.import_all') }}</v-btn>
-            </template>
-            <v-btn :disabled="loading" color="secondary" @click="show_batch_add_dialog"><v-icon>mdi-book-plus-multiple</v-icon>{{ $t('imports.batch_add_books') }}</v-btn>
-            <template v-if="selected.length > 0">
-                <v-btn :disabled="loading" outlined color="primary" @click="delete_record"><v-icon>mdi-delete</v-icon>{{ $t('imports.delete') }}</v-btn>
-            </template>
+            <v-row no-gutters>
+                <v-col cols="12" class="d-flex flex-wrap ga-2 mb-2">
+                    <v-btn
+                        :disabled="loading"
+                        outlined
+                        color="primary"
+                        @click="getDataFromApi"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-reload</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.refresh') }}</span>
+                    </v-btn>
+                    <v-btn
+                        :disabled="loading"
+                        :outlined="$vuetify.breakpoint.xs"
+                        color="primary"
+                        @click="scan_books"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-file-find</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.scan_books') }}</span>
+                    </v-btn>
+                    <template v-if="selected.length > 0">
+                        <v-btn
+                            :disabled="loading"
+                            :outlined="$vuetify.breakpoint.xs"
+                            color="secondary"
+                            @click="import_books"
+                            class="flex-shrink-0"
+                            :icon="$vuetify.breakpoint.xs"
+                        >
+                            <v-icon>mdi-import</v-icon>
+                            <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.import_selected') }}</span>
+                        </v-btn>
+                    </template>
+                    <template v-else>
+                        <v-btn
+                            :disabled="loading"
+                            :outlined="$vuetify.breakpoint.xs"
+                            color="secondary"
+                            @click="import_books"
+                            class="flex-shrink-0"
+                            :icon="$vuetify.breakpoint.xs"
+                        >
+                            <v-icon>mdi-import</v-icon>
+                            <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.import_all') }}</span>
+                        </v-btn>
+                    </template>
+                    <v-btn
+                        :disabled="loading"
+                        :outlined="$vuetify.breakpoint.xs"
+                        color="secondary"
+                        @click="show_batch_add_dialog"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-book-plus-multiple</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.batch_add_books') }}</span>
+                    </v-btn>
+                    <template v-if="selected.length > 0">
+                        <v-btn
+                            :disabled="loading"
+                            outlined
+                            color="primary"
+                            @click="delete_record"
+                            class="flex-shrink-0"
+                            :icon="$vuetify.breakpoint.xs"
+                        >
+                            <v-icon>mdi-delete</v-icon>
+                            <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.delete') }}</span>
+                        </v-btn>
+                    </template>
+                </v-col>
+            </v-row>
         </v-card-actions>
         <v-progress-linear
             v-if="((scanning || importing || batchAdding) && count_total > 0)"
@@ -491,3 +555,30 @@ export default {
     },
 };
 </script>
+
+<style>
+/* 确保间距工具类正常工作 */
+.ga-2 > * {
+    margin: 4px !important;
+}
+.ga-2 > *:first-child {
+    margin-left: 0 !important;
+}
+.ga-2 > *:last-child {
+    margin-right: 0 !important;
+}
+
+/* 小屏时调大图标的大小 */
+@media (max-width: 600px) {
+    /* 调大图标按钮的大小 */
+    .v-btn--icon {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    /* 调大图标本身的大小 */
+    .v-btn--icon .v-icon {
+        font-size: 24px !important;
+    }
+}
+</style>
