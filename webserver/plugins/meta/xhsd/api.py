@@ -7,8 +7,7 @@ import requests
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from gettext import gettext as _
-from webserver.constants import CHROME_HEADERS
+
 
 KEY = "XHSD"
 XHSD_ISBN = "0000000000002"

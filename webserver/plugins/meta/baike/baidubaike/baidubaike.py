@@ -168,7 +168,7 @@ class Search(object):
             "word": word,
         }
 
-        self.http = requests.get(url, timeout=10, headers=CHROME_HEADERS, params=payload)
+        self.http = requests.get(url, timeout=10, headers=CHROME_MOBILE_HEADERS, params=payload)
         self.html = self.http.content
         self.soup = BeautifulSoup(self.html)
 
