@@ -1208,6 +1208,7 @@ class BookEdit(BaseHandler):
         if data.get("book_count", None):
             book_cnt = data.get("book_count", 0)
             mi.set(CALIBRE_COLUMN_PHY_COUNT, book_cnt)
+            mi.set(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL)
             # Need to update the item too
             existing_item = self.sqlite_session.query(Item).filter(Item.book_id == bid).first()
             if existing_item:
@@ -1618,11 +1619,15 @@ class BookAddByISBN(BaseHandler):
                 return {"err": "book.notfound", "msg": _(u"未找到该ISBN号对应的图书")}
 
             # 通过上面返回的book metadata, 添加图书到calibre中（不需要文件，仅metadata）
-            book_data.set(CALIBRE_COLUMN_PHY_COUNT, 1)
-            book_data.set(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL)
             book_id = self.calibre_db.create_book_entry(book_data)
             if book_id is None:
                 return {"err": "book.duplicate", "msg": _(u"该图书已存在或创建失败")}
+
+            try:
+                self.calibre_db_cache.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
+                self.calibre_db_cache.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: 1})
+            except Exception as e:
+                logging.error(f"Failed to set custom fields for book ID {book_id}: {e}")
 
             # 创建Item记录
             item = Item()

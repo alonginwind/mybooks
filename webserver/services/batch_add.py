@@ -249,14 +249,18 @@ class BatchAddService(AsyncService):
                 self._record_invalid_isbn(csv_filename, isbn, title, author)
                 return None
 
-            book_data.set(CALIBRE_COLUMN_PHY_COUNT, 1)
-            book_data.set(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL)
             # 创建书籍
             book_id = self.db.create_book_entry(book_data)
             if book_id is None:
                 logging.error("Failed to create book entry for ISBN: %s", isbn)
                 self._record_invalid_isbn(csv_filename, isbn, title, author)
                 return None
+
+            try:
+                self.db.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
+                self.db.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: 1})
+            except Exception as e:
+                logging.error(f"Failed to set custom fields for book ID {book_id}: {e}")
 
             # 创建Item记录
             item = Item()
@@ -299,8 +303,6 @@ class BatchAddService(AsyncService):
             mi = Metadata(title, [author])
             mi.isbn = isbn
             mi.timestamp = nowf()
-            mi.set(CALIBRE_COLUMN_PHY_COUNT, 1)
-            mi.set(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL)
 
             # 如果提供了封面URL，下载封面
             if cover_url:
@@ -324,6 +326,11 @@ class BatchAddService(AsyncService):
                 logging.error("Failed to create book entry for title: %s", title)
                 self._record_invalid_isbn(csv_filename, isbn, title, author)
                 return None
+            try:
+                self.db.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
+                self.db.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: 1})
+            except Exception as e:
+                logging.error(f"Failed to set custom fields for book ID {book_id}: {e}")
 
             # 创建Item记录
             item = Item()

@@ -5,6 +5,7 @@ import hashlib
 import os
 import logging
 import time
+import traceback
 
 from gettext import gettext as _
 from sqlalchemy.exc import IntegrityError
@@ -33,12 +34,11 @@ class ScanService(AsyncService):
         return ScanService.static_is_importing
 
     def save_or_rollback(self, row):
+        bid = "[ book-id=%s ]" % row.book_id if row.book_id else ""
+        logging.info("update: status=%-5s, path=%s %s", row.status, row.path, bid)
         try:
             row.save()
             self.session.commit()
-            bid = "[ book-id=%s ]" % row.book_id
-            logging.info("update: status=%-5s, path=%s %s",
-                         row.status, row.path, bid if row.book_id > 0 else "")
             return True
         except IntegrityError as err:
             logging.error("IntegrityError: Duplicate hash detected: %s, %s", row.hash, err)
@@ -88,13 +88,13 @@ class ScanService(AsyncService):
             if task_id:
                 BackgroundService().complete_task(task_id=task_id, error_message=str(err))
             logging.error(f"Scanning failed: {err}")
+            logging.error(traceback.format_exc())
         ScanService.static_is_scanning = False
 
     def do_scan_internal(self, path_dir, task_id=None):
         from calibre.ebooks.metadata.meta import get_metadata
 
-        logging.info("<%s> we are: db=%s, session=%s",
-                     self, self.db, self.session)
+        logging.info("<%s> we are: db=%s, session=%s", self, self.db, self.session)
         logging.info("start to scan %s", path_dir)
 
         # 生成任务（粗略扫描），前端可以调用API查询进展
@@ -119,14 +119,17 @@ class ScanService(AsyncService):
         inserted_hash = set()
         for fname, fpath, fmt in tasks:
             samefiles = self.session.query(ScanFile).filter(ScanFile.path == fpath)
+            logging.debug("Checking same files for path: %s, return count:%d", fpath, samefiles.count())
             if samefiles.count() > 0:
                 # 如果已经有相同的文件记录，则跳过
                 found_book = False
                 for row in samefiles:
                     if row.status == ScanFile.NEW:
-                        logging.warning("Got same file path: %s, id:%d, path:%s", fpath, row.id, row.path)
+                        logging.warning("Got same file path: %s, scan_id:%d, path:%s", fpath, row.scan_id, row.path)
                         found_book = True
-                        row.status = ScanFile.NEW
+                        # 将已存在记录的hash加入集合，避免后续被误删
+                        if row.hash:
+                            inserted_hash.add(row.hash)
                         rows.append(row)
                         break
                     elif row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[row.book_id]):
@@ -140,20 +143,20 @@ class ScanService(AsyncService):
                     logging.warning("File already exists in Scan & Book DB: %s, status=%s", fpath, row.status)
                     continue
 
+            # New record should be added
+            logging.debug("Processing new file: %s", fpath)
             stat = os.stat(fpath)
             md5 = hashlib.md5(fname.encode("UTF-8")).hexdigest()
             hash = "fstat:%s/%s" % (stat.st_size, md5)
             if hash in inserted_hash:
-                row.status = ScanFile.DROP
                 logging.error("Duplicated processing book, skip: %s", fpath)
                 continue
             if self.session.query(ScanFile).filter(ScanFile.hash == hash).count() > 0:
-                row.status = ScanFile.DROP
                 logging.error("maybe have same book, skip: %s, due to same hash", fpath)
                 continue
 
-            inserted_hash.add(hash)
             row = ScanFile(fpath, hash, scan_id)
+            inserted_hash.add(hash)
             if not self.save_or_rollback(row):
                 continue
             rows.append(row)
@@ -213,12 +216,15 @@ class ScanService(AsyncService):
                 hash_rows = self.session.query(ScanFile).filter(ScanFile.hash == hash)
                 should_drop = False
                 for hash_row in hash_rows:
-                    if hash_row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[row.book_id]):
+                    if hash_row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[hash_row.book_id]):
                         should_drop = True
                         break
                 if hash_rows.count() > 0 and not should_drop:
-                    # 需要继续处理时，删除ScanDB中旧数据
-                    self.session.query(ScanFile).filter(ScanFile.hash == hash).delete()
+                    # 需要继续处理时，删除ScanDB中旧数据（排除当前记录）
+                    self.session.query(ScanFile).filter(
+                        ScanFile.hash == hash,
+                        ScanFile.id != row.id
+                    ).delete(synchronize_session=False)
             if should_drop:
                 # 如果已经有相同的哈希值，则删掉本任务
                 row.status = ScanFile.DROP
@@ -262,11 +268,12 @@ class ScanService(AsyncService):
             if ids:
                 for bid in ids:
                     b = self.db.get_metadata(bid, index_is_id=True)
+                    logging.info(f" book info: {b}")
                     # 如果是实体书，则跳过
                     if b.get(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK) == BOOK_TYPE_PHYSICAL:
                         continue
                     if fmt.upper() in b.formats:
-                        row.book_id = b['id']
+                        row.book_id = b.id
                         row.status = ScanFile.EXIST
                         break
             if not self.save_or_rollback(row):
