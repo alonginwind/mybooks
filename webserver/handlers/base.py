@@ -641,15 +641,10 @@ class BaseHandler(web.RequestHandler):
     def get_user_upload_cnt(self, user_id):
         return self.sqlite_session.query(sql_func.count(Item.collector_id)).filter(Item.collector_id == user_id).scalar()
 
-    def find_books_by_isbn(self, isbn):
+    def find_phy_books_by_isbn(self, isbn):
         """
-        根据ISBN号查找已存在的图书
-
-        Args:
-            isbn (str): ISBN号
-
-        Returns:
-            set: 包含匹配图书ID的集合，如果没有找到则返回空集合
+        根据ISBN号查找已存在的实体书
+        返回包含匹配图书ID的集合，如果没有找到则返回空集合
         """
         if not isbn or not isbn.strip():
             return set()
@@ -657,22 +652,14 @@ class BaseHandler(web.RequestHandler):
         isbn = isbn.strip()
         existing_books = set()
 
-        # 方式1: 使用多种搜索查询策略
-        search_queries = [
-            f"isbn:{isbn}",          # 直接isbn字段搜索
-            f"isbn13:{isbn}",        # 直接isbn13字段搜索
-            isbn                     # 全文搜索作为备选
-        ]
+        query = f"(isbn:={isbn} OR isbn13:={isbn} OR isbn10:={isbn}) AND #book_type:=1"
 
-        for query in search_queries:
-            try:
-                result = self.calibre_db_cache.search(query)
-                if result:
-                    existing_books.update(result)
-                    break  # 找到结果就停止搜索
-            except Exception as e:
-                logging.debug(f"Search query '{query}' failed: {e}")
-                continue
+        try:
+            result = self.calibre_db_cache.search(query)
+            if result:
+                existing_books.update(result)
+        except Exception as e:
+            logging.debug(f"Search query '{query}' failed: {e}")
         return existing_books
 
 

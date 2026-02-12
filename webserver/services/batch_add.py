@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 import requests
+import traceback
 
 from webserver import loader
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT, BOOK_TYPE_PHYSICAL
@@ -85,20 +86,20 @@ class BatchAddService(AsyncService):
         logging.info("Start batch add from CSV: %s", csv_path)
 
         # 检测编码
+        encoding = 'utf-8'  # 默认编码
         try:
             with open(csv_path, 'rb') as f:
                 raw_data = f.read()
-                try:
-                    raw_data.decode('utf-8')
-                    encoding = 'utf-8'
-                except:
+                # 按顺序尝试不同编码
+                for test_encoding in ['utf-8', 'gbk']:
                     try:
-                        raw_data.decode('gbk')
-                        encoding = 'gbk'
+                        raw_data.decode(test_encoding)
+                        encoding = test_encoding
+                        break
                     except:
-                        encoding = 'utf-8'
-        except:
-            encoding = 'utf-8'
+                        continue
+        except Exception as e:
+            logging.error(f"Error detecting file encoding for {csv_path}: {e}")
 
         # 读取CSV文件
         rows = []
@@ -128,7 +129,7 @@ class BatchAddService(AsyncService):
             # 清理ISBN
             isbn = isbn.replace('-', '').replace(' ', '')
 
-            # 检查ISBN是否已存在
+            # 检查ISBN对应的实体书是否已存在
             existing_books = self._find_books_by_isbn(isbn)
 
             if existing_books:
@@ -157,13 +158,13 @@ class BatchAddService(AsyncService):
         return len(rows)
 
     def _find_books_by_isbn(self, isbn):
-        """查找ISBN对应的书籍"""
+        """查找ISBN对应的实体书"""
         try:
             # 使用calibre DB查找
             books = set()
 
             # 搜索ISBN
-            ids = self.db.search(f'isbn:{isbn} AND {CALIBRE_COLUMN_BOOK_TYPE}:={SOURCE_PHYSICAL}', return_matches=True)
+            ids = self.db.search(f'isbn:{isbn} AND {CALIBRE_COLUMN_BOOK_TYPE}:={BOOK_TYPE_PHYSICAL}', return_matches=True)
             if ids:
                 books.update(ids)
 
@@ -173,7 +174,7 @@ class BatchAddService(AsyncService):
             return set()
 
     def _update_book_count(self, book_id, user_id, csv_filename, isbn, title, author):
-        """更新已存在书籍的数量"""
+        """更新已存在实体书的数量"""
         try:
             existing_item = self.session.query(Item).filter(
                 Item.book_id == book_id
@@ -196,9 +197,9 @@ class BatchAddService(AsyncService):
 
             # 更新calibre custom data
             try:
-                self.db.add_custom_book_data(book_id, "real_book_cnt", book_count)
-            except:
-                pass
+                self.db.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: book_count})
+            except Exception as e:
+                logging.error(f"Error update book count for book_id={book_id}: {e}")
 
             # 记录到ScanFile
             self._record_scan_file(csv_filename, isbn, title, author, ScanFile.EXIST, book_id)
@@ -248,18 +249,14 @@ class BatchAddService(AsyncService):
                 self._record_invalid_isbn(csv_filename, isbn, title, author)
                 return None
 
+            book_data.set(CALIBRE_COLUMN_PHY_COUNT, 1)
+            book_data.set(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL)
             # 创建书籍
             book_id = self.db.create_book_entry(book_data)
             if book_id is None:
                 logging.error("Failed to create book entry for ISBN: %s", isbn)
                 self._record_invalid_isbn(csv_filename, isbn, title, author)
                 return None
-
-            # 添加自定义数据
-            try:
-                self.db.add_custom_book_data(book_id, "real_book_cnt", 1)
-            except:
-                pass
 
             # 创建Item记录
             item = Item()
@@ -280,7 +277,6 @@ class BatchAddService(AsyncService):
 
         except Exception as e:
             logging.error("Error adding book by ISBN %s: %s", isbn, e)
-            import traceback
             logging.error(traceback.format_exc())
             self._record_invalid_isbn(csv_filename, isbn, title, author)
             return None
@@ -303,6 +299,8 @@ class BatchAddService(AsyncService):
             mi = Metadata(title, [author])
             mi.isbn = isbn
             mi.timestamp = nowf()
+            mi.set(CALIBRE_COLUMN_PHY_COUNT, 1)
+            mi.set(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL)
 
             # 如果提供了封面URL，下载封面
             if cover_url:
@@ -326,13 +324,6 @@ class BatchAddService(AsyncService):
                 logging.error("Failed to create book entry for title: %s", title)
                 self._record_invalid_isbn(csv_filename, isbn, title, author)
                 return None
-
-            # 添加自定义数据
-            try:
-                self.db.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: 1})
-                self.db.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
-            except:
-                pass
 
             # 创建Item记录
             item = Item()

@@ -1557,8 +1557,8 @@ class BookAddByISBN(BaseHandler):
         if not isbn:
             return {"err": "params.invalid", "msg": _(u"请输入ISBN号")}
 
-        # 使用基类方法查找已存在的ISBN图书
-        existing_books = self.find_books_by_isbn(isbn)
+        # 使用基类方法查找已存在的ISBN实体书
+        existing_books = self.find_phy_books_by_isbn(isbn)
 
         # 如果已存在该ISBN的图书，更新相关计数
         if existing_books:
