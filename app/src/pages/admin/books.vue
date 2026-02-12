@@ -821,7 +821,7 @@ export default {
 
     /* 确保图片单元格也有合适的宽度和右对齐 - 桌面端表格 */
     .v-data-table td:has(.v-image) {
-        width: 40px !important;
+        width: 100% !important;
         min-width: 40px !important;
         padding: 6px !important;
         text-align: right !important;
