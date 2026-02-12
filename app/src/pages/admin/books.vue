@@ -824,7 +824,6 @@ export default {
         width: 100% !important;
         min-width: 40px !important;
         padding: 6px !important;
-        text-align: right !important;
     }
 
     /* 确保图片链接也是右对齐的 - 桌面端表格 */
@@ -886,19 +885,19 @@ export default {
     .v-data-table__mobile-row:nth-child(2) .v-data-table__mobile-row__cell {
         flex: 1 !important;
         display: flex !important;
-        justify-content: flex-start !important;
-        align-items: flex-start !important;
+        justify-content: center !important;
+        align-items: center !important;
         min-height: 100px !important;
     }
 
     /* 封面图片 */
     .v-data-table__mobile-row:nth-child(2) .v-data-table__mobile-row__cell .v-image {
-        min-width: 75px !important;
-        max-width: 75px !important;
-        width: 75px !important;
-        min-height: 100px !important;
-        max-height: 100px !important;
-        height: 100px !important;
+        min-width: 100px !important;
+        max-width: 120px !important;
+        width: 100px !important;
+        min-height: 160px !important;
+        max-height: 160px !important;
+        height: 160px !important;
         margin: 0 !important;
     }
 
