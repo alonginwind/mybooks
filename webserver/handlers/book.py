@@ -511,6 +511,18 @@ class BookRefer(BaseHandler):
             org_mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
             org_mi.title = utils.super_strip(org_mi.title)
             org_mi.authors = [utils.super_strip(org_mi.author_sort)]
+            if org_mi.isbn:
+                org_mi.set("isbn", utils.super_strip(org_mi.isbn))
+            else:
+                org_mi.set("isbn", "")
+            if org_mi.publisher:
+                org_mi.set("publisher", utils.super_strip(org_mi.publisher))
+            else:
+                org_mi.set("publisher", "")
+            if org_mi.tags:
+                org_mi.set("tags", [utils.super_strip(t) for t in org_mi.tags])
+            else:
+                org_mi.set("tags", [])
         if org_mi.title and org_mi.title == CALIBRE_ERROR_FLAG:
             return {"err": "book.invalid", "msg": _(u"此书籍文件无法识别, 或者受DRM保护无法处理")}
 
@@ -526,8 +538,7 @@ class BookRefer(BaseHandler):
             org_mi.set("comments", _(u"无详细介绍"))
         org_mi.timestamp = nowf()
         self.calibre_db.set_metadata(book_id, org_mi, force_changes=True)
-        # 修改分类为空
-        self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: ''})
+        self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: ""})
         logging.info("[RESET]reset meta data for %d" % book_id)
         return {"err": "ok", "book_id": book_id}
 
@@ -1182,6 +1193,7 @@ class BookReadingState(BaseHandler):
 
 class BookEdit(BaseHandler):
     def edit_book(self, bid, data):
+        from calibre.utils.date import now as nowf
         mi = self.calibre_db.get_metadata(bid, index_is_id=True)
         KEYS = [
             "authors",
@@ -1233,8 +1245,10 @@ class BookEdit(BaseHandler):
                 if category == '清除' or category.lower() == 'clear':
                     category = ''
                 mi.set(CALIBRE_COLUMN_CATEGORY, category)
+                self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {bid: category})
             else:
                 logging.error("Too many characters in the category, ignore it!")
+        mi.timestamp = nowf()
         self.calibre_db.set_metadata(bid, mi, force_changes=True)
         return True
 

@@ -41,7 +41,9 @@ class SimpleBookFormatter:
 
     def format(self, include_comments=True):
         b = self.book
-        b["ts"] = b["timestamp"].strftime("%s")
+        ts = int(b["timestamp"].timestamp())
+        ts_10min = ts - (ts % 600)
+        b["ts"] = str(ts_10min)
         category = self.val(CALIBRE_COLUMN_CATEGORY, '').strip()
         book_type = self.val(CALIBRE_COLUMN_BOOK_TYPE, self.book.get("book_type", BOOK_TYPE_EBOOK))
         book_count = self.val(CALIBRE_COLUMN_PHY_COUNT, self.book.get("book_count", 1))
