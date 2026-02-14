@@ -40,7 +40,8 @@ class AsyncService(metaclass=SingletonType):
             try:
                 need_sync_item_time, changed = self.adjust_item_table()
                 reader_changed = self.adjust_reader_table()
-                changed = changed or reader_changed
+                sticky_changed = self.adjust_sticky_item_table()
+                changed = changed or reader_changed or sticky_changed
                 if changed:
                     self.session.commit()
             except Exception as err:
@@ -103,6 +104,32 @@ class AsyncService(metaclass=SingletonType):
             """))
             changed = True
         return changed
+
+    def adjust_sticky_item_table(self):
+        """Ensure sticky_item table exists with all required columns"""
+        # Check if table exists
+        try:
+            result = self.session.execute(text("""
+                SELECT name FROM sqlite_master WHERE type='table' AND name='sticky_item'
+            """)).fetchone()
+            
+            if not result:
+                # Table doesn't exist, it will be created by user_syncdb
+                logging.info("sticky_item table will be created by ORM")
+                return False
+            
+            # Table exists, check columns
+            result = self.session.execute(text("""
+                PRAGMA table_info(sticky_item)
+            """)).fetchall()
+            columns = [row[1] for row in result]
+            
+            # All required columns should exist from the model definition
+            # Just return False as no migration is needed
+            return False
+        except Exception as e:
+            logging.warning("Error checking sticky_item table: %s", e)
+            return False
 
     def get_queue(self, service_name) -> Queue:
         if service_name not in self.running:

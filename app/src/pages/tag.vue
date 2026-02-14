@@ -79,6 +79,34 @@
     <div v-else>
        <v-row>
         <v-col>
+          <!-- Pinned Tags -->
+          <div v-if="pins && pins.length > 0" class="mb-2">
+            <div class="text-caption text--secondary mb-1">{{ $t('listMeta.pinnedItems') || 'Pinned' }}</div>
+            <v-chip
+              small
+              class="ma-1"
+              v-for="pin in pins"
+              :key="'pin-' + pin.name"
+              color="primary"
+              @click="selectTag(pin.name)"
+              style="cursor: pointer"
+            >
+              <v-icon small left>mdi-pin</v-icon>
+              {{ pin.name }}
+              <span v-if="pin.count">&nbsp;({{ pin.count }})</span>
+              <v-icon
+                v-if="isLoggedIn"
+                small
+                right
+                @click.stop="unpinTag(pin.name)"
+                class="ml-1"
+              >
+                mdi-pin-off
+              </v-icon>
+            </v-chip>
+          </div>
+
+          <!-- Regular Tags -->
           <v-chip
             small
             class="ma-1"
@@ -91,6 +119,15 @@
           >
             {{ item.name }}
             <span v-if="item.count">&nbsp;({{ item.count }})</span>
+            <v-icon
+              v-if="isLoggedIn"
+              small
+              right
+              @click.stop="pinTag(item.name)"
+              class="ml-1"
+            >
+              mdi-pin-outline
+            </v-icon>
           </v-chip>
            <v-btn v-if="items.length > 50 && !show_all" @click="expandList()" color="primary" rounded small>
              {{ $t('listMeta.showAll') || 'Show All' }}
@@ -148,6 +185,7 @@ export default {
   data: () => ({
     // Shared / List State
     items: [],
+    pins: [],
     show_all: false,
 
     // Detail State
@@ -172,6 +210,9 @@ export default {
     visibleMetaItems() {
       if (this.show_all) return this.items;
       return this.items.slice(0, 100); // Limit initial view
+    },
+    isLoggedIn() {
+      return this.$store.state.user?.is_login === true;
     }
   },
   head() {
@@ -191,7 +232,7 @@ export default {
     }
     if (!name) {
         let rsp = await app.$backend("/tag");
-        return { items: rsp.items || [], total: rsp.total };
+        return { items: rsp.items || [], pins: rsp.pins || [], total: rsp.total };
     }
     return {};
   },
@@ -241,6 +282,7 @@ export default {
         if (this.items.length === 0 && !this.currentTag) {
             let rsp = await this.$backend("/tag" + (this.show_all ? "?show=all" : ""));
             this.items = rsp.items;
+            this.pins = rsp.pins || [];
         }
         this.loadCategories();
     },
@@ -267,6 +309,7 @@ export default {
         this.show_all = true;
         let rsp = await this.$backend("/tag?show=all");
         this.items = rsp.items;
+        this.pins = rsp.pins || [];
     },
     selectTag(name) {
         // Avoid duplicate calls if already showing this tag and fetching or has data
@@ -370,6 +413,66 @@ export default {
             this.$alert("error", this.$t('listBook.updateTagsFailed'));
         } finally {
             this.updateLoading = false;
+        }
+    },
+    async pinTag(tagName) {
+        if (!this.isLoggedIn) {
+            this.$alert("warning", this.$t('common.loginRequired') || 'Please login first');
+            return;
+        }
+        try {
+            const rsp = await this.$backend("/user/pin", {
+                method: "POST",
+                body: JSON.stringify({
+                    item_type: 1,  // 1: Tag
+                    value: tagName
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (rsp.err === 'ok') {
+                this.$alert("success", rsp.msg);
+                // Refresh the list
+                let listRsp = await this.$backend("/tag" + (this.show_all ? "?show=all" : ""));
+                this.items = listRsp.items;
+                this.pins = listRsp.pins || [];
+            } else {
+                this.$alert("error", rsp.msg);
+            }
+        } catch (e) {
+            console.error('Pin tag failed:', e);
+            this.$alert("error", this.$t('common.operationFailed') || 'Operation failed');
+        }
+    },
+    async unpinTag(tagName) {
+        if (!this.isLoggedIn) {
+            this.$alert("warning", this.$t('common.loginRequired') || 'Please login first');
+            return;
+        }
+        try {
+            const rsp = await this.$backend("/user/unpin", {
+                method: "POST",
+                body: JSON.stringify({
+                    item_type: 1,  // 1: Tag
+                    value: tagName
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (rsp.err === 'ok') {
+                this.$alert("success", rsp.msg);
+                // Refresh the list
+                let listRsp = await this.$backend("/tag" + (this.show_all ? "?show=all" : ""));
+                this.items = listRsp.items;
+                this.pins = listRsp.pins || [];
+            } else {
+                this.$alert("error", rsp.msg);
+            }
+        } catch (e) {
+            console.error('Unpin tag failed:', e);
+            this.$alert("error", this.$t('common.operationFailed') || 'Operation failed');
         }
     }
   }

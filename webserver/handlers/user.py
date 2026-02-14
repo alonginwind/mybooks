@@ -13,7 +13,7 @@ from webserver import loader
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, auth, js
 from webserver.handlers.audio import AudioUtils
-from webserver.models import Message, Reader
+from webserver.models import Message, Reader, StickyItem
 from webserver.version import VERSION
 
 CONF = loader.get_settings()
@@ -536,6 +536,102 @@ class UserAvatar(BaseHandler):
             return {"err": "db.error", "msg": _(u"数据库操作异常，请重试")}
 
 
+class PinItem(BaseHandler):
+    """置顶作者或标签"""
+    @js
+    @auth
+    def post(self):
+        if not self.current_user:
+            return {"err": "permission.not_login", "msg": _(u"请先登录")}
+
+        data = tornado.escape.json_decode(self.request.body)
+        item_type = data.get("item_type")  # 0:作者, 1:Tag
+        value = data.get("value", "").strip()
+
+        if item_type not in [0, 1]:
+            return {"err": "params.invalid", "msg": _(u"类型参数无效")}
+
+        if not value:
+            return {"err": "params.invalid", "msg": _(u"值不能为空")}
+
+        user_id = self.user_id()
+
+        # 检查是否已经置顶
+        existing = self.sqlite_session.query(StickyItem).filter(
+            StickyItem.reader_id == user_id,
+            StickyItem.item_type == item_type,
+            StickyItem.value == value
+        ).first()
+
+        if existing:
+            return {"err": "already_pinned", "msg": _(u"已经置顶过了")}
+
+        # 检查该类型的置顶数量是否超过限制
+        count = self.sqlite_session.query(StickyItem).filter(
+            StickyItem.reader_id == user_id,
+            StickyItem.item_type == item_type
+        ).count()
+
+        if count >= 50:
+            return {"err": "limit_exceeded", "msg": _(u"置顶数量已达上限(50个)")}
+
+        # 创建置顶项
+        sticky_item = StickyItem(
+            reader_id=user_id,
+            item_type=item_type,
+            value=value
+        )
+        self.sqlite_session.add(sticky_item)
+
+        try:
+            self.sqlite_session.commit()
+            return {"err": "ok", "msg": _(u"置顶成功")}
+        except Exception as e:
+            logging.error("Pin item failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _(u"置顶失败")}
+
+
+class UnpinItem(BaseHandler):
+    """取消置顶作者或标签"""
+    @js
+    @auth
+    def post(self):
+        if not self.current_user:
+            return {"err": "permission.not_login", "msg": _(u"请先登录")}
+
+        data = tornado.escape.json_decode(self.request.body)
+        item_type = data.get("item_type")  # 0:作者, 1:Tag
+        value = data.get("value", "").strip()
+
+        if item_type not in [0, 1]:
+            return {"err": "params.invalid", "msg": _(u"类型参数无效")}
+
+        if not value:
+            return {"err": "params.invalid", "msg": _(u"值不能为空")}
+
+        user_id = self.user_id()
+
+        # 查找并删除置顶项
+        sticky_item = self.sqlite_session.query(StickyItem).filter(
+            StickyItem.reader_id == user_id,
+            StickyItem.item_type == item_type,
+            StickyItem.value == value
+        ).first()
+
+        if not sticky_item:
+            return {"err": "not_found", "msg": _(u"未找到置顶项")}
+
+        try:
+            self.sqlite_session.delete(sticky_item)
+            self.sqlite_session.commit()
+            return {"err": "ok", "msg": _(u"取消置顶成功")}
+        except Exception as e:
+            logging.error("Unpin item failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _(u"取消置顶失败")}
+
+
 def routes():
     return [
         (r"/api/welcome", Welcome),
@@ -553,4 +649,6 @@ def routes():
         (r"/api/user/active/send", UserSendActive),
         (r"/api/active/(.*)/(.*)", UserActive),
         (r"/api/done/", Done),
+        (r"/api/user/pin", PinItem),
+        (r"/api/user/unpin", UnpinItem),
     ]

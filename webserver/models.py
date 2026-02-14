@@ -523,5 +523,26 @@ class ReadingState(Base, SQLAlchemyMixin):
         self.download = 1 if download_status else 0
 
 
+class StickyItem(Base, SQLAlchemyMixin):
+    """置顶项目 - 用于置顶作者或标签"""
+    __tablename__ = "sticky_item"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    reader_id = Column(Integer, ForeignKey("readers.id"), nullable=False)
+    item_type = Column(Integer, nullable=False)  # 0:作者, 1:Tag
+    value = Column(String(256), nullable=False)  # 存储具体的作者或Tag名称
+    create_time = Column(DateTime, default=datetime.datetime.now)
+
+    # 建立关系
+    reader = relationship(Reader, backref="sticky_items")
+
+    def __init__(self, reader_id, item_type, value):
+        super(StickyItem, self).__init__()
+        self.reader_id = reader_id
+        self.item_type = item_type
+        self.value = value
+        self.create_time = datetime.datetime.now()
+
+
 def user_syncdb(engine):
     Base.metadata.create_all(engine)

@@ -7,6 +7,7 @@ from gettext import gettext as _
 
 from webserver import utils
 from webserver.handlers.base import ListHandler, js
+from webserver.models import StickyItem
 
 
 class LanguageNameUtil:
@@ -114,6 +115,29 @@ class MetaList(ListHandler):
         # category = meta if meta in ["series", "publisher"] else meta + "s"
         items = self.get_category_with_count(meta)
         count = len(items)
+
+        # 获取置顶项目
+        pins = []
+        if self.current_user and meta in ["tag", "author"]:
+            # 0:作者, 1:Tag
+            item_type = 0 if meta == "author" else 1
+            sticky_items = self.sqlite_session.query(StickyItem).filter(
+                StickyItem.reader_id == self.user_id(),
+                StickyItem.item_type == item_type
+            ).all()
+
+            # 为每个置顶项查找对应的count
+            items_dict = {item["name"]: item for item in items}
+            for sticky in sticky_items:
+                if sticky.value in items_dict:
+                    # 从items中找到并移除
+                    item = items_dict[sticky.value]
+                    pins.append({"name": item["name"], "count": item["count"]})
+                    items.remove(item)
+                else:
+                    # 如果items中没有，count为0
+                    pins.append({"name": sticky.value, "count": 0})
+
         if items:
             if meta == "rating":
                 items.sort(key=lambda x: x["name"], reverse=True)
@@ -125,7 +149,7 @@ class MetaList(ListHandler):
                     for item in items:
                         item["name"] = LanguageNameUtil.get_language_name(item["name"])
                 items.sort(key=lambda x: x["count"], reverse=True)
-        return {"meta": meta, "title": title, "items": items, "total": count}
+        return {"meta": meta, "title": title, "items": items, "total": count, "pins": pins}
 
 
 class MetaBooks(ListHandler):
