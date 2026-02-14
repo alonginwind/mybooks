@@ -271,6 +271,9 @@ class BaseHandler(web.RequestHandler):
         self.sqlite_session.close()
         ScopedSession.remove()
 
+    def data_received(self, chunk):
+        pass
+
     def static_url(self, path, **kwargs):
         if path.endswith("/"):
             prefix = self.settings.get("static_url_prefix", "/static/")
