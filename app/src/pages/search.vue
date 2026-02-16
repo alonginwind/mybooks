@@ -160,7 +160,12 @@ export default {
           });
         }
 
-        // 第三步：扩展查询
+        // 标题和分词搜索完成后，立即渲染第一批结果
+        if (this.allBooks.length > 0) {
+          this.updateBooksFromCache(0);
+        }
+
+        // 第三步：扩展查询（耗时较长，在后台继续执行）
         this.searchStatus = this.$t('listBook.searchingExtended');
         const extResults = await this.searchExtended(this.searchName);
         if (extResults && extResults.books) {
@@ -170,14 +175,14 @@ export default {
               seenIds.add(book.id);
             }
           });
+
+          // 扩展搜索完成后，再次更新显示
+          this.updateBooksFromCache(0);
         }
 
         // 更新总数和页数
         this.total = this.allBooks.length;
         this.page_cnt = Math.max(1, Math.ceil(this.total / this.page_size));
-
-        // 显示第一页
-        this.updateBooksFromCache(0);
 
       } catch (error) {
         console.error('Search failed:', error);
