@@ -31,3 +31,11 @@ CALIBRE_COLUMN_PHY_COUNT = "#book_count"
 # Audio related constants
 ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
 ENABLE_AUDIO_CONVERSION_LOG = "ENABLE_AUDIO_CONVERSION_LOG"
+
+# Performance profiling options
+# 当设置中此选项设为True时，表示每隔5分钟对后台占用的内存进行统计分析
+# 统计的结果输出到/data/logs/profiling.log中
+# 同时统计后台各接口调用的次数、平均耗时、最大耗时的数据
+ENABLE_PROFILE = "ENABLE_PROFILE"
+PROFILE_OUTPUT_INTERVAL = 5 * 60  # 每5分钟输出一次性能分析结果（单位：秒）
+PROFILE_LOG_PATH = "/data/logs/profiling.log"  # 性能分析日志文件路径

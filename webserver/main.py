@@ -335,6 +335,13 @@ def make_app():
         logging.info("Starting item to calibre sync service")
         ItemSyncService().sync_items_to_calibre()
 
+    # Start performance profiling service if enabled
+    from webserver.constants import ENABLE_PROFILE
+    if CONF.get(ENABLE_PROFILE, False):
+        from webserver.services.profile_service import get_profile_service
+        profile_service = get_profile_service()
+        profile_service.start()
+
     return app
 
 

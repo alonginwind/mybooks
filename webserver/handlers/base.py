@@ -236,6 +236,11 @@ class BaseHandler(web.RequestHandler):
             self.cdn_url = self.request.protocol + "://" + CONF["static_host"]
 
     def prepare(self):
+        # 性能分析：记录请求开始时间
+        from webserver.constants import ENABLE_PROFILE
+        if CONF.get(ENABLE_PROFILE, False):
+            self._request_start_time = time.time()
+
         self.set_hosts()
         self.set_i18n()
         self.process_auth_header()
@@ -265,8 +270,24 @@ class BaseHandler(web.RequestHandler):
         self.cookies_cache = {}
         self._cached_user_id = None
         self._cached_username = None
+        self._request_start_time = None  # 用于性能分析
 
     def on_finish(self):
+        # 性能分析：记录请求耗时
+        from webserver.constants import ENABLE_PROFILE
+        if CONF.get(ENABLE_PROFILE, False) and self._request_start_time is not None:
+            try:
+                duration = time.time() - self._request_start_time
+                endpoint = self.request.path
+                method = self.request.method
+
+                # 记录到ProfileService
+                from webserver.services.profile_service import get_profile_service
+                profile_service = get_profile_service()
+                profile_service.record_request(endpoint, method, duration)
+            except Exception as e:
+                logging.error(f"Failed to record profiling data: {e}")
+
         ScopedSession = self.settings["ScopedSession"]
         self.sqlite_session.close()
         ScopedSession.remove()
