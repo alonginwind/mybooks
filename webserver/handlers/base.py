@@ -683,11 +683,17 @@ class ListHandler(BaseHandler):
             ids = set(random.sample(list(ids), max_count))
         books = self.calibre_db.get_data_as_dict(ids=ids)
 
+        # 提前查询被标记为sole的图书ID并过滤
+        ids = [book["id"] for book in books]
+        sole_book_ids = set(item.book_id for item in self.sqlite_session.query(Item).filter(Item.book_id.in_(ids), Item.sole == 1, Item.collector_id != self.user_id()).all()) if ids else set()
+        books = [b for b in books if b["id"] not in sole_book_ids]
+
+        # 只查询剩余书籍的Item信息
         item = Item()
         empty_item = item.to_dict()
         empty_item["collector"] = self.sqlite_session.query(Reader).order_by(Reader.id).first()
-        ids = [book["id"] for book in books]
-        items = self.sqlite_session.query(Item).filter(Item.book_id.in_(ids)).all() if ids else []
+        remaining_ids = [book["id"] for book in books]
+        items = self.sqlite_session.query(Item).filter(Item.book_id.in_(remaining_ids)).all() if remaining_ids else []
         maps = {}
         for b in items:
             d = b.to_dict()
@@ -695,17 +701,8 @@ class ListHandler(BaseHandler):
             d["collector"] = c
             maps[b.book_id] = d
 
-        soled_books = set()
         for book in books:
-            book_item = maps.get(book["id"], empty_item)
-            # logging.info("book %d, sole = %s, collector = %s" % (book["id"], book_item["sole"], book_item["collector_id"]))
-            if book_item["sole"] and book_item["collector_id"] != self.user_id():
-                soled_books.add(book["id"])
-            else:
-                book.update(maps.get(book["id"], empty_item))
-
-        if len(soled_books) > 0 and len(books) > 0:
-            books = [b for b in books if b["id"] not in soled_books]
+            book.update(maps.get(book["id"], empty_item))
 
         return books
 
