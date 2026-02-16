@@ -8,11 +8,12 @@
 - 输出到 /data/logs/profiling.log
 """
 
+import gc
 import logging
 import os
 import psutil
+import sys
 import threading
-import time
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List
@@ -20,6 +21,7 @@ from typing import Dict, List
 import tornado.ioloop
 
 from webserver import loader
+from webserver.constants import ENABLE_PROFILE, PROFILE_INTERVAL, PROFILE_OUTPUT_INTERVAL
 
 
 CONF = loader.get_settings()
@@ -119,6 +121,51 @@ class ProfileService:
             logging.error(f"Failed to get memory info: {e}")
             return {}
 
+    def get_top_memory_types(self, top_n: int = 10) -> List[Dict]:
+        """
+        获取占用内存最大的前N个数据类型
+
+        Args:
+            top_n: 返回前N个类型，默认10
+
+        Returns:
+            列表，每项包含 type_name, count, total_size, avg_size
+        """
+        try:
+            # 强制垃圾回收
+            gc.collect()
+
+            # 统计每种类型的对象数量和总大小
+            type_stats = defaultdict(lambda: {"count": 0, "total_size": 0})
+
+            for obj in gc.get_objects():
+                try:
+                    obj_type = type(obj).__name__
+                    obj_size = sys.getsizeof(obj)
+                    type_stats[obj_type]["count"] += 1
+                    type_stats[obj_type]["total_size"] += obj_size
+                except Exception:
+                    # 某些对象可能无法获取大小，跳过
+                    continue
+
+            # 转换为列表并按总大小排序
+            result = []
+            for type_name, stats in type_stats.items():
+                result.append({
+                    "type_name": type_name,
+                    "count": stats["count"],
+                    "total_size": stats["total_size"] / (1024 * 1024),  # 转换为 MB
+                    "avg_size": stats["total_size"] / stats["count"] if stats["count"] > 0 else 0
+                })
+
+            # 按总大小排序并返回前N个
+            result.sort(key=lambda x: x["total_size"], reverse=True)
+            return result[:top_n]
+
+        except Exception as e:
+            logging.error(f"Failed to get top memory types: {e}", exc_info=True)
+            return []
+
     def _get_stats_snapshot(self) -> Dict:
         """获取统计数据快照并重置计数器"""
         with self._stats_lock:
@@ -165,6 +212,25 @@ class ProfileService:
             else:
                 log_lines.append("  (Failed to collect memory info)")
 
+            # Python 对象内存占用统计
+            log_lines.append("\n[Top 10 Memory-Consuming Types]")
+            try:
+                top_types = self.get_top_memory_types(10)
+                if top_types:
+                    log_lines.append(f"  {'Type':<30} {'Count':>12} {'Total(MB)':>15} {'Avg(Bytes)':>15}")
+                    log_lines.append("  " + "-" * 75)
+                    for item in top_types:
+                        log_lines.append(
+                            f"  {item['type_name']:<30} "
+                            f"{item['count']:>12,} "
+                            f"{item['total_size']:>15.2f} "
+                            f"{item['avg_size']:>15.2f}"
+                        )
+                else:
+                    log_lines.append("  (Failed to collect type statistics)")
+            except Exception as e:
+                log_lines.append(f"  (Error collecting type statistics: {e})")
+
             # API统计信息
             log_lines.append("\n[API Statistics]")
             if api_stats:
@@ -208,13 +274,11 @@ class ProfileService:
 
     def start(self):
         """启动性能分析服务"""
-        from webserver.constants import ENABLE_PROFILE, PROFILE_OUTPUT_INTERVAL
-
         if not CONF.get(ENABLE_PROFILE, False):
             logging.info("Performance profiling is disabled")
             return
 
-        logging.info("Starting ProfileService...")
+        logging.info("Starting Profile Service...")
 
         # 记录启动信息
         self._start_time = datetime.now()
@@ -223,14 +287,14 @@ class ProfileService:
                     f"Percent={initial_memory.get('percent', 0)}%")
 
         # 使用Tornado的PeriodicCallback定期执行
-        interval_ms = PROFILE_OUTPUT_INTERVAL * 1000  # 转换为毫秒
+        interval_ms = CONF.get(PROFILE_INTERVAL, PROFILE_OUTPUT_INTERVAL) * 1000  # 转换为毫秒
         self._periodic_callback = tornado.ioloop.PeriodicCallback(
             self._write_profiling_log,
             interval_ms
         )
         self._periodic_callback.start()
 
-        logging.info(f"ProfileService started, reporting every {PROFILE_OUTPUT_INTERVAL} seconds")
+        logging.info(f"ProfileService started, reporting every {CONF.get(PROFILE_INTERVAL, PROFILE_OUTPUT_INTERVAL)} seconds")
 
     def stop(self):
         """停止性能分析服务"""
