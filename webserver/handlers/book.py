@@ -1500,6 +1500,7 @@ class SearchBook(ListHandler):
         name = self.get_argument("name", "").strip()
         book_title = self.get_argument("title", "").strip()  # 传入此参数代表只按名称搜索
         exclude_id = int(self.get_argument("exclude", "0").strip())
+        seg = int(self.get_argument("seg", "0").strip())  # 是否进行分词查询
         order_by = self.get_argument("order", "").strip()
 
         if not name and not book_title:
@@ -1514,7 +1515,8 @@ class SearchBook(ListHandler):
         seen = set()
 
         seg_or_query = None
-        if not title_search and name.find(":") == -1:
+        # 只有当 seg=1 时才进行分词搜索
+        if seg == 1 and title_search:
             # 分词搜索：当name长度在2-10之间且jieba可用时
             seg_or_query = self._search_by_segmentation(name, ids, seen)
 
