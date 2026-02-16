@@ -273,7 +273,7 @@ class ProfileService:
 
     def start(self):
         """启动性能分析服务"""
-        if not CONF.get(ENABLE_PROFILE, False):
+        if CONF.get(ENABLE_PROFILE) is not True:
             logging.info("Performance profiling is disabled")
             return
 

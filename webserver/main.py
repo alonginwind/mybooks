@@ -337,7 +337,7 @@ def make_app():
 
     # Start performance profiling service if enabled
     from webserver.constants import ENABLE_PROFILE
-    if CONF.get(ENABLE_PROFILE, False):
+    if CONF.get(ENABLE_PROFILE) is True:
         from webserver.services.profile_service import get_profile_service
         profile_service = get_profile_service()
         profile_service.start()

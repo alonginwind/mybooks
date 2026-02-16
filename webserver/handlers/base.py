@@ -238,7 +238,7 @@ class BaseHandler(web.RequestHandler):
     def prepare(self):
         # 性能分析：记录请求开始时间
         from webserver.constants import ENABLE_PROFILE
-        if CONF.get(ENABLE_PROFILE, False):
+        if CONF.get(ENABLE_PROFILE) is True:
             self._request_start_time = time.time()
 
         self.set_hosts()
@@ -275,7 +275,7 @@ class BaseHandler(web.RequestHandler):
     def on_finish(self):
         # 性能分析：记录请求耗时
         from webserver.constants import ENABLE_PROFILE
-        if CONF.get(ENABLE_PROFILE, False) and self._request_start_time is not None:
+        if CONF.get(ENABLE_PROFILE) is True and self._request_start_time is not None:
             try:
                 duration = time.time() - self._request_start_time
                 endpoint = self.request.path
