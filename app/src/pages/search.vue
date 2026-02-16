@@ -17,6 +17,13 @@
         <book-cards :books="books" :isAudioPage="false"></book-cards>
       </v-col>
 
+      <v-col cols="12" v-if="extendedSearching">
+        <v-container class="text-center py-4">
+          <v-progress-circular indeterminate color="primary" size="32"></v-progress-circular>
+          <span class="ml-3 grey--text">{{ searchStatus }}</span>
+        </v-container>
+      </v-col>
+
       <v-col cols=12>
         <v-container class="max-width">
           <v-pagination v-if="page_cnt > 0" v-model="page" :length="page_cnt" circle
@@ -61,6 +68,7 @@ export default {
     page_cnt: 0,
     inited: false,
     searching: false,
+    extendedSearching: false,
     searchStatus: "",
     searchName: "", // 搜索关键词
     cachedSearchName: "", // 缓存的搜索关键词，用于判断是否需要重新查询
@@ -109,7 +117,10 @@ export default {
 
       // 如果搜索关键词变化了，清空缓存
       if (this.searchName !== this.cachedSearchName) {
+        this.books = [];
         this.allBooks = [];
+        this.total = 0;
+        this.page_cnt = 0;
         this.cachedSearchName = this.searchName;
       }
 
@@ -132,7 +143,10 @@ export default {
 
     async performFullSearch() {
       this.searching = true;
+      this.books = [];
       this.allBooks = [];
+      this.total = 0;
+      this.page_cnt = 0;
       const seenIds = new Set();
 
       try {
@@ -161,11 +175,13 @@ export default {
         }
 
         // 标题和分词搜索完成后，立即渲染第一批结果
+        this.searching = false;
         if (this.allBooks.length > 0) {
           this.updateBooksFromCache(0);
         }
 
         // 第三步：扩展查询（耗时较长，在后台继续执行）
+        this.extendedSearching = true;
         this.searchStatus = this.$t('listBook.searchingExtended');
         const extResults = await this.searchExtended(this.searchName);
         if (extResults && extResults.books) {
@@ -186,11 +202,14 @@ export default {
 
       } catch (error) {
         console.error('Search failed:', error);
-        this.allBooks = [];
-        this.total = 0;
-        this.page_cnt = 0;
+        if (this.allBooks.length === 0) {
+          this.allBooks = [];
+          this.total = 0;
+          this.page_cnt = 0;
+        }
       } finally {
         this.searching = false;
+        this.extendedSearching = false;
         this.searchStatus = "";
       }
     },
