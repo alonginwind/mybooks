@@ -162,6 +162,40 @@ class ProfileService:
             logging.error(f"Failed to get top memory classnames: {e}", exc_info=True)
             return []
 
+    def get_model_objects_stats(self) -> List[Dict]:
+        try:
+            gc.collect()
+            from webserver import models
+
+            # 获取 models 模块中定义的所有类
+            model_classes = []
+            for name in dir(models):
+                obj = getattr(models, name)
+                if isinstance(obj, type) and hasattr(obj, '__tablename__'):
+                    model_classes.append((name, obj))
+
+            class_counts = defaultdict(int)
+            for obj in gc.get_objects():
+                obj_type = type(obj)
+                obj_module = getattr(obj_type, '__module__', '')
+                if obj_module == 'webserver.models':
+                    class_name = obj_type.__name__
+                    class_counts[class_name] += 1
+            result = []
+            for class_name, _ in model_classes:
+                count = class_counts.get(class_name, 0)
+                result.append({
+                    "class_name": class_name,
+                    "count": count
+                })
+
+            result.sort(key=lambda x: x["count"], reverse=True)
+            return result
+
+        except Exception as e:
+            logging.error(f"Failed to get model objects stats: {e}", exc_info=True)
+            return []
+
     def _get_stats_snapshot(self) -> Dict:
         with self._stats_lock:
             snapshot = {}
@@ -233,6 +267,27 @@ class ProfileService:
                     log_lines.append("  (Failed to collect class statistics)")
             except Exception as e:
                 log_lines.append(f"  (Error collecting class statistics: {e})")
+
+            # Model对象统计
+            log_lines.append("\n[Model Objects Statistics]")
+            try:
+                model_stats = self.get_model_objects_stats()
+                if model_stats:
+                    log_lines.append(f"  {'Model Class':<40} {'Count':>12}")
+                    log_lines.append("  " + "-" * 55)
+                    for item in model_stats:
+                        if item['count'] > 0:  # 只显示有实例的模型
+                            log_lines.append(
+                                f"  {item['class_name']:<40} "
+                                f"{item['count']:>12,}"
+                            )
+                    total_model_objects = sum(item['count'] for item in model_stats)
+                    log_lines.append("  " + "-" * 55)
+                    log_lines.append(f"  {'Total Model Objects':<40} {total_model_objects:>12,}")
+                else:
+                    log_lines.append("  (Failed to collect model statistics)")
+            except Exception as e:
+                log_lines.append(f"  (Error collecting model statistics: {e})")
 
             # API统计信息
             log_lines.append("\n[API Statistics]")
