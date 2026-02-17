@@ -538,7 +538,7 @@
                 </v-card-text>
             </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
+        <v-col cols="12" sm="6" class="book-action-col" :class="{ 'book-action-col--txt': is_txt }">
             <v-card outlined>
                 <v-list>
                     <v-list-item :href="'/read/' + book.id" target="_blank">
@@ -555,7 +555,7 @@
                 </v-list>
             </v-card>
         </v-col>
-        <v-col cols="12" sm="4" md="2" v-show="is_txt">
+        <v-col cols="12" sm="6" class="book-action-col book-action-col--txt" v-show="is_txt">
           <v-card outlined>
             <v-list>
               <v-list-item :href="'/book/' + book.id+'/readtxt'" target="_blank">
@@ -572,7 +572,7 @@
             </v-list>
           </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
+        <v-col cols="12" sm="6" class="book-action-col" :class="{ 'book-action-col--txt': is_txt }">
             <v-card outlined>
                 <v-list>
                     <v-list-item @click="dialog_download = !dialog_download">
@@ -589,7 +589,7 @@
                 </v-list>
             </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
+        <v-col cols="12" sm="6" class="book-action-col" :class="{ 'book-action-col--txt': is_txt }">
             <v-card outlined>
                 <v-list>
                     <v-list-item @click="switch_audio_dialog" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL">
@@ -616,7 +616,7 @@
                 </v-list>
             </v-card>
         </v-col>
-        <v-col cols="12" :sm="is_txt?5:4" :md="is_txt?2:3">
+        <v-col cols="12" sm="6" class="book-action-col" :class="{ 'book-action-col--txt': is_txt }">
             <v-card outlined>
                 <v-list>
                     <v-list-item @click="dialog_send_to_device = true" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats">
@@ -625,7 +625,7 @@
                         </v-list-item-avatar>
                         <v-list-item-content>
                             <v-list-item-title :class="{ 'grey--text': book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats }">
-                                发送到设备
+                                {{ $t('book.sendToDevice') }}
                             </v-list-item-title>
                         </v-list-item-content>
                         <v-list-item-action>
@@ -2477,5 +2477,25 @@ h1.book-detail-title {
 
 .dialog-border .v-card__title {
     border-bottom: 1px solid #e0e0e0;
+}
+
+.book-action-col {
+    display: flex;
+}
+
+.book-action-col > .v-card {
+    width: 100%;
+}
+
+@media (min-width: 960px) {
+    .book-action-col {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+
+    .book-action-col.book-action-col--txt {
+        flex: 0 0 20%;
+        max-width: 20%;
+    }
 }
 </style>
