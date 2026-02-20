@@ -26,6 +26,7 @@ class AutoFillService(AsyncService):
         self.current_book_id = None
         self.start_time = None
         self.task_id = None
+        AsyncService.__init__(self)
 
     def status(self):
         """获取运行状态及处理的进度信息"""

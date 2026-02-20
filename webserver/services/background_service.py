@@ -14,6 +14,7 @@ class BackgroundTask:
     SERVICE_TYPE_SCAN = "scan"  # 批量图书导入
     SERVICE_TYPE_AUDIO = "audio"  # 音频转换
     SERVICE_TYPE_CONVERT = "convert"  # 图书转换
+    SERVICE_TYPE_AI_FILL = "ai_fill"  # AI 更新
 
     # 任务状态
     STATUS_RUNNING = "running"  # 运行中
@@ -107,8 +108,12 @@ class BackgroundService:
             BackgroundTask: 任务对象
         """
         with self._tasks_lock:
-            # 对于 autofill 和 scan 类型，替换现有任务
-            if service_type in [BackgroundTask.SERVICE_TYPE_AUTOFILL, BackgroundTask.SERVICE_TYPE_SCAN]:
+            # 对于 autofill、scan 和 ai_fill 类型，替换现有任务
+            if service_type in [
+                BackgroundTask.SERVICE_TYPE_AUTOFILL,
+                BackgroundTask.SERVICE_TYPE_SCAN,
+                BackgroundTask.SERVICE_TYPE_AI_FILL,
+            ]:
                 # 删除该类型的现有运行中任务
                 tasks_to_remove = [
                     task_id for task_id, task in self._tasks.items()

@@ -27,22 +27,17 @@ class DeepSeekMCPAgent:
     """
 
     def __init__(self, cookies: Optional[Dict] = None):
-        # 初始化DeepSeek客户端
         self.deepseek_client = OpenAI(
             api_key=DEEPSEEK_API_KEY,
             base_url=DEEPSEEK_API_BASE,
             timeout=30.0
         )
 
-        # 初始化MCP客户端
         self.mcp_client = MCPStreamClient(MCP_SERVER_URL, MCP_TOKEN, cookies)
-
-        # 会话状态
         self.session_active = True
         self.conversation_history = []
 
     async def initialize(self):
-        """初始化代理"""
         print("初始化DeepSeek-MCP代理...")
         await self.mcp_client.connect()
         print("代理初始化完成")
@@ -235,7 +230,6 @@ class DeepSeekMCPAgent:
             yield {"type": "error", "content": error_msg}
 
     def get_conversation_summary(self) -> str:
-        """获取对话摘要"""
         if not self.conversation_history:
             return "暂无对话历史"
 
@@ -245,6 +239,5 @@ class DeepSeekMCPAgent:
         return f"对话历史：{len(self.conversation_history)}条消息（用户:{user_count}，助手:{assistant_count}）"
 
     async def close(self):
-        """关闭代理"""
         await self.mcp_client.close()
         self.session_active = False
