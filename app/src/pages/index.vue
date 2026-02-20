@@ -41,7 +41,7 @@
             <v-card :to="book.href" class="ma-1">
                 <div class="book-img-container">
                     <v-img
-                        :src="book.img"
+                        :src="book.thumb"
                         :aspect-ratio="11/15"
                         style="border-radius: 12px;"
                         class="book-img-hover"
