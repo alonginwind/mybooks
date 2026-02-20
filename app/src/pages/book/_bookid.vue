@@ -619,12 +619,12 @@
         <v-col cols="12" sm="6" class="book-action-col" :class="{ 'book-action-col--txt': is_txt }">
             <v-card outlined>
                 <v-list>
-                    <v-list-item @click="dialog_send_to_device = true" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats">
-                        <v-list-item-avatar large :color="book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats ? 'grey' : 'primary'">
+                    <v-list-item @click="dialog_send_to_device = true" :disabled="!hasCompatibleFormats">
+                        <v-list-item-avatar large :color="!hasCompatibleFormats ? 'grey' : 'primary'">
                             <v-icon dark>devices</v-icon>
                         </v-list-item-avatar>
                         <v-list-item-content>
-                            <v-list-item-title :class="{ 'grey--text': book.book_type == this.BOOK_TYPE.PHYSICAL || !hasCompatibleFormats }">
+                            <v-list-item-title :class="{ 'grey--text': !hasCompatibleFormats }">
                                 {{ $t('book.sendToDevice') }}
                             </v-list-item-title>
                         </v-list-item-content>
@@ -1738,7 +1738,6 @@ export default {
             // 默认选择第一个格式
             this.selectedDeletedFormat = this.book.files[0].format.toLowerCase();
             this.dialog_delete_format = true;
-            console.log("show delete format dialog");
         },
         confirmSeparate() {
             if (!this.selectedSeparateFormat) {
@@ -2195,24 +2194,22 @@ export default {
             }
             try {
                 const [settingsResponse, devicesResponse] = await Promise.all([
-                    this.$backend('/admin/settings'),
-                    this.$backend('/user/devices'),
+                    this.$backend('/admin/settings').catch(() => null),
+                    this.$backend('/user/devices').catch(() => null),
                 ]);
-                if (settingsResponse.err === 'ok' && settingsResponse.settings) {
-                    const globalDevices = settingsResponse.settings.DEVICES || [];
-                    const personalDevices = (devicesResponse.err === 'ok' ? devicesResponse.devices : null) || [];
-                    // Merge: personal devices first, then global devices not already present by name
-                    const usedNames = new Set(personalDevices.map(d => d.name));
-                    const extraGlobal = globalDevices.filter(d => !usedNames.has(d.name));
-                    this.devices = [...personalDevices, ...extraGlobal];
-                    if (settingsResponse.settings.BOOK_NAV) {
-                        this.categories = settingsResponse.settings.BOOK_NAV.split('\n').map(line => {
-                            const parts = line.split('=');
-                            return parts[0].trim();
-                        }).filter(c => c);
-                        // 添加国际化的"清除"选项
-                        this.categories.push(this.$t('book.clearCategory'));
-                    }
+                const personalDevices = (devicesResponse?.err === 'ok' ? devicesResponse.devices : null) || [];
+                const globalDevices = (settingsResponse?.err === 'ok' ? settingsResponse.settings?.DEVICES : null) || [];
+                // Merge: personal devices first, then global devices not already present by name
+                const usedNames = new Set(personalDevices.map(d => d.name));
+                const extraGlobal = globalDevices.filter(d => !usedNames.has(d.name));
+                this.devices = [...personalDevices, ...extraGlobal];
+                if (settingsResponse?.err === 'ok' && settingsResponse.settings?.BOOK_NAV) {
+                    this.categories = settingsResponse.settings.BOOK_NAV.split('\n').map(line => {
+                        const parts = line.split('=');
+                        return parts[0].trim();
+                    }).filter(c => c);
+                    // 添加国际化的"清除"选项
+                    this.categories.push(this.$t('book.clearCategory'));
                 }
             } catch (error) {
                 console.error('Failed to get settings:', error);
@@ -2370,7 +2367,6 @@ export default {
                     this.$alert('error', response.msg || '发送失败');
                 }
             } catch (error) {
-                console.error('发送到设备失败:', error);
                 this.$alert('error', '发送失败，请稍后重试');
             } finally {
                 this.sending_to_device = false;
