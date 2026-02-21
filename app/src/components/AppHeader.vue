@@ -5,7 +5,9 @@
             app
             fixed
             width="240"
+            :color="drawerColor"
             :clipped="$vuetify.breakpoint.lgAndUp"
+            class="app-navigation-drawer"
         >
             <v-list dense v-if="items.length > 0">
                 <template v-for="(item, idx) in items">
@@ -18,7 +20,7 @@
                                 <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
                             </v-list-item-action>
                             <v-list-item-content>
-                                <v-list-item-title v-text="$t(item.text)"></v-list-item-title>
+                                <v-list-item-title class="text-white"  v-text="$t(item.text)"></v-list-item-title>
                             </v-list-item-content>
                         </template>
 
@@ -375,6 +377,9 @@ export default {
         appBarColor() {
             return this.$vuetify.theme.dark ? 'dark' : '#003153';
         },
+        drawerColor() {
+            return this.$vuetify.theme.dark ? 'dark' : '#F8FAF8';
+        },
         isAiFeatureEnabled() {
             if (process.client) {
                 return localStorage.getItem('aiEnabled') === 'true';
@@ -712,6 +717,76 @@ export default {
 };
 
 </script>
+
+<style>
+/* Navigation drawer panel styles */
+.app-navigation-drawer {
+    border-right: 2px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.3s ease !important;
+    border-bottom-right-radius: 12px !important;
+}
+
+.app-navigation-drawer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.12), transparent);
+}
+
+/* Ensure the drawer has proper padding */
+.app-navigation-drawer .v-list {
+    padding: 12px 8px !important;
+}
+
+.app-navigation-drawer .v-subheader {
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    font-size: 0.75rem !important;
+    opacity: 0.8 !important;
+}
+
+/* Enhanced 3D Icon styles */
+.app-navigation-drawer .v-icon {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: translateZ(0);
+}
+
+.app-navigation-drawer .v-list-item:hover .v-icon {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    transform: translateY(-2px) scale(1.05);
+}
+
+.app-navigation-drawer .v-list-item--active .v-icon {
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.35)) drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+    transform: translateY(-2px) scale(1.02);
+}
+
+/* Enhanced icon container with depth */
+.app-navigation-drawer .v-list-item-action {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    border-radius: 12px;
+    padding: 8px !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(255, 255, 255, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.app-navigation-drawer .v-list-item:hover .v-list-item-action {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.app-navigation-drawer .v-list-item--active .v-list-item-action {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+</style>
 
 <style scoped>
 @keyframes blink {
