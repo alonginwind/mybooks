@@ -3,41 +3,66 @@
         <v-navigation-drawer
             v-model="sidebar"
             app
-            fixed
-            width="240"
+            :width="240"
+            :mini-variant-width="64"
+            :mini-variant="miniVariant"
             :color="drawerColor"
-            :clipped="$vuetify.breakpoint.lgAndUp"
+            :clipped="false"
             class="app-navigation-drawer"
+            @mouseenter="handleMouseEnter"
+            @mouseleave="handleMouseLeave"
         >
-            <v-list dense v-if="items.length > 0">
-                <template v-for="(item, idx) in items">
-                    <v-subheader v-if="item.heading" :key="idx">{{ $t(item.heading) }}</v-subheader>
+            <template v-slot:prepend>
+                <v-list-item class="px-2">
+                    <v-list-item-avatar v-if="user.is_login" @click.stop="showUserMenu = true">
+                        <img :src="user.avatar" @error="handleAvatarError" ref="drawerAvatar" />
+                    </v-list-item-avatar>
+                    <v-avatar v-else color="grey" size="40">
+                        <v-icon>mdi-account</v-icon>
+                    </v-avatar>
+                    <v-list-item-content v-if="!miniVariant">
+                        <v-list-item-title v-if="user.is_login">{{ user.nickname }}</v-list-item-title>
+                        <v-list-item-subtitle v-if="user.is_login">{{ user.email }}</v-list-item-subtitle>
+                        <v-list-item-title v-else>{{ $t('appHeader.please_login') }}</v-list-item-title>
+                    </v-list-item-content>
+                    <v-list-item-action v-if="!miniVariant">
+                        <v-btn icon @click="toggleMiniVariant">
+                            <v-icon>mdi-chevron-left</v-icon>
+                        </v-btn>
+                    </v-list-item-action>
+                </v-list-item>
+                <v-divider></v-divider>
+            </template>
 
-                    <!-- 二级菜单 -->
-                    <v-list-group v-else-if="item.groups" no-action :value="item.expand">
+            <v-list dense>
+                <template v-for="(item, idx) in items">
+                    <v-subheader v-if="item.heading" :key="'heading-' + idx" v-show="!miniVariant">{{ $t(item.heading) }}</v-subheader>
+
+                    <v-list-group v-else-if="item.groups && item.groups.length > 0" no-action :value="item.expand" :key="'group-' + idx" v-show="!miniVariant">
                         <template v-slot:activator>
-                            <v-list-item-action class="mt-1 mb-1 mr-2" dense>
-                                <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
-                            </v-list-item-action>
-                            <v-list-item-content>
-                                <v-list-item-title class="text-white"  v-text="$t(item.text)"></v-list-item-title>
-                            </v-list-item-content>
+                            <v-list-item>
+                                <v-list-item-action class="mt-1 mb-1 mr-2" dense>
+                                    <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
+                                </v-list-item-action>
+                                <v-list-item-content>
+                                    <v-list-item-title>{{ $t(item.text) }}</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
                         </template>
 
-                        <v-list-item v-for="link in item.groups" :key="link.href" :to="link.href">
+                        <v-list-item v-for="link in item.groups" :key="'link-' + link.href" :to="link.href">
                             <v-list-item-content>
-                                <v-list-item-title
-                                    ><v-icon :color="link.color || ''">{{ link.icon }}</v-icon> {{ $t(link.text) }}</v-list-item-title
-                                >
+                                <v-list-item-title>
+                                    <v-icon :color="link.color || ''">{{ link.icon }}</v-icon> {{ $t(link.text) }}
+                                </v-list-item-title>
                             </v-list-item-content>
                         </v-list-item>
                     </v-list-group>
 
-                    <!-- 友情链接 -->
-                    <template v-else-if="item.links">
-                        <v-list-item dense v-for="(links, cidx) in chunk(item.links, 2)" :key="idx + 'chunk' + cidx">
+                    <template v-else-if="item.links" v-show="!miniVariant">
+                        <v-list-item dense v-for="(links, cidx) in chunk(item.links, 2)" :key="'chunk-' + idx + '-' + cidx">
                             <v-row>
-                                <v-col class="pa-0" cols="6" v-for="link in links" :key="link.href">
+                                <v-col class="pa-0" cols="6" v-for="link in links" :key="'btn-' + link.href">
                                     <v-btn v-if="item.target != ''" text target="_blank" :href="link.href">
                                         <v-icon v-if="link.icon" :color="link.color || ''" left>{{ link.icon }}</v-icon> {{ $t(link.text) }}
                                     </v-btn>
@@ -49,25 +74,41 @@
                         </v-list-item>
                     </template>
 
-                    <!-- 导航菜单 -->
-                    <v-list-item dense v-else :key="item.text" :to="item.href" :target="item.target">
-                        <v-list-item-action class="mt-1 mb-1 mr-2" dense>
+                    <v-list-item
+                        dense
+                        v-else
+                        :key="'item-' + idx"
+                        :to="item.href"
+                        :target="item.target"
+                        :class="{ 'v-list-item--icon-only': miniVariant }"
+                    >
+                        <v-list-item-action class="mt-1 mb-1 mr-2" dense v-if="!miniVariant">
                             <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
                         </v-list-item-action>
-                        <v-list-item-content>
+                        <v-icon v-else :color="item.color || ''" size="24">{{ item.icon }}</v-icon>
+                        <v-list-item-content v-if="!miniVariant">
                             <v-list-item-title>
                                 {{ $t(item.text) }}
                             </v-list-item-title>
                         </v-list-item-content>
-                        <v-list-item-action class="mt-1 mb-1 mr-2" v-if="item.count">
+                        <v-list-item-action class="mt-1 mb-1 mr-2" v-if="item.count && !miniVariant">
                             <v-chip small outlined>{{ item.count }}</v-chip>
                         </v-list-item-action>
                     </v-list-item>
                 </template>
             </v-list>
+
+            <template v-slot:append>
+                <v-divider></v-divider>
+                <v-list-item class="px-2" @click="toggleMiniVariant">
+                    <v-icon v-if="miniVariant">mdi-chevron-right</v-icon>
+                    <v-icon v-else>mdi-chevron-left</v-icon>
+                    <span v-if="!miniVariant" class="ml-2">{{ $t('appHeader.minimize') }}</span>
+                </v-list-item>
+            </template>
         </v-navigation-drawer>
 
-        <v-app-bar class="px-0" :color="appBarColor" dense dark app fixed clipped-left extension-height="64">
+        <v-app-bar class="px-0" :color="appBarColor" dense dark app fixed extension-height="64">
             <template v-if="btn_search && $vuetify.breakpoint.xs" #extension>
                 <v-container fluid>
                     <v-form @submit.prevent="do_search">
@@ -92,8 +133,7 @@
                 </v-container>
             </template>
 
-            <v-toolbar-title class="ml-n5 mr-12 align-center d-flex">
-                <v-app-bar-nav-icon @click.stop="sidebar = !sidebar"><v-icon>menu</v-icon></v-app-bar-nav-icon>
+            <v-toolbar-title class="ml-4 mr-12 align-center d-flex">
                 <div class="breathing-light"></div>
                 <span class="cursor-pointer ml-2" @click="$router.push('/')">{{ sys.title }}</span>
             </v-toolbar-title>
@@ -127,7 +167,6 @@
 
             <template v-if="err == 'ok'">
                 <template v-if="user.is_login">
-                    <!-- Running Tasks Indicator -->
                     <v-menu offset-y right :close-on-content-click="false" v-if="runningTasks.length > 0">
                         <template v-slot:activator="{ on }">
                             <v-btn v-on="on" icon class="mr-2" width="48px" height="48px">
@@ -162,7 +201,6 @@
                         </v-card>
                     </v-menu>
 
-                    <!-- Messages Notification -->
                     <v-menu offset-y right :close-on-content-click="false" v-if="messages.length > 0">
                         <template v-slot:activator="{ on }">
                             <v-btn v-on="on" icon color="yellow"> <v-icon class="blink">notifications</v-icon> </v-btn>
@@ -171,7 +209,7 @@
                             <v-card-title class="py-2">
                                 <span>{{ $t('appHeader.message_notification') }}</span>
                                 <v-spacer></v-spacer>
-                                <v-btn rounded color='error' @click="clearAllMessages" style="color: white;" v-if = "messages.length > 3">
+                                <v-btn rounded color='error' @click="clearAllMessages" style="color: white;" v-if="messages.length > 3">
                                     <v-icon left>mdi-delete-sweep</v-icon>
                                     {{ $t('appHeader.clear_messages') }}
                                 </v-btn>
@@ -199,16 +237,16 @@
                         </v-card>
                     </v-menu>
 
-                    <v-menu offset-y right>
+                    <v-menu v-model="showUserMenu" offset-y right>
                         <template v-slot:activator="{ on }">
-                            <v-btn v-on="on" class="mr-2" icon large outlined
-                                ><v-avatar size="32px"><img :src="user.avatar" /></v-avatar
-                            ></v-btn>
+                            <v-btn v-on="on" class="mr-2" icon large outlined>
+                                <v-avatar size="32px"><img :src="user.avatar" @error="handleToolbarAvatarError" ref="toolbarAvatar" /></v-avatar>
+                            </v-btn>
                         </template>
                         <v-list min-width="240">
                             <v-list-item>
                                 <v-list-item-avatar>
-                                    <img :src="user.avatar" />
+                                    <img :src="user.avatar" @error="handleMenuAvatarError" ref="menuAvatar" />
                                 </v-list-item-avatar>
                                 <v-list-item-content>
                                     <v-list-item-title> {{ user.nickname }} </v-list-item-title>
@@ -253,7 +291,6 @@
             </template>
         </v-app-bar>
 
-        <!-- AI对话窗口 -->
         <v-dialog v-model="ai_enabled" persistent max-width="700" scrollable>
             <v-card class="dialog-border d-flex flex-column" style="height: 600px;">
                 <v-card-title class="primary white--text py-3">
@@ -338,6 +375,7 @@ export default {
         err: "",
         visit_admin_pages: false,
         sidebar: null,
+        miniVariant: false,
         right: null,
         btn_search: false,
         search: "",
@@ -348,6 +386,7 @@ export default {
         ai_ws: null,
         ai_input: '',
         user: {},
+        showUserMenu: false,
         sys: {
             books: 0,
             tags: 0,
@@ -378,7 +417,7 @@ export default {
             return this.$vuetify.theme.dark ? 'dark' : '#003153';
         },
         drawerColor() {
-            return this.$vuetify.theme.dark ? 'dark' : '#F8FAF8';
+            return this.$vuetify.theme.dark ? 'dark' : '#F7FAF7';
         },
         isAiFeatureEnabled() {
             if (process.client) {
@@ -388,7 +427,6 @@ export default {
         },
         items: function () {
             var home_links = [
-                // home
                 { icon: "home", href: "/", text: "appHeader.home", color:"primary" },
             ].concat(this.user.is_login ? [
                 { icon: "mdi-account-cog", href: "/user/usersettings", text: "appHeader.user_center", color: "primary" },
@@ -408,49 +446,38 @@ export default {
                 },
             ];
             var reading_links = [
-                { heading: "appHeader.readingInfo" },
                 {
-                    target: "",
-                    links: [
+                    icon: "mdi-account-group",
+                    text: "appHeader.reading",
+                    expand: this.$route.path.indexOf("/reading/") == 0 || this.$route.path.indexOf("/favorites/") == 0 || this.$route.path.indexOf("/wants/") == 0 || this.$route.path.indexOf("/read-done/") == 0,
+                    color: "primary",
+                    groups: [
                         { icon: "mdi-heart", href: "/favorites", text: "appHeader.favorites", color: "red" },
                         { icon: "mdi-bookmark-plus", href: "/wants", text: "appHeader.wants", color: "orange" },
                         { icon: "mdi-book-open-page-variant", href: "/reading", text: "appHeader.reading", color: "blue" },
                         { icon: "mdi-check-circle", href: "/read-done", text: "appHeader.readDone", color: "green" }
-                    ],
-                },
+                    ]
+                }
             ];
             var nav_links = [
-                { heading: "appHeader.categoryBrowse" },
                 { icon: "mdi-headphones", href: "/audiobooks", text: "appHeader.audioBooks", count: this.sys.audiobooks, color: "purple"},
                 { icon: "category", href: "/categories", text: "appHeader.categoryBrowse", color: "green" },
                 { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors, color: "primary"},
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
-                {
-                    target: "",
-                    links: [
-                        { icon: "widgets", href: "/nav", text: "appHeader.tagCategory", count: this.sys.books, color: "primary" },
-                        { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags, color: "green"},
-                        { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},
-                        { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "primary"},
-                        { icon: "mdi-history", href: "/all", text: "appHeader.allBooks", color: "primary"},
-                        { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", color: "primary"},
-                        { icon: "mdi-star-shooting", href: "/rating", text: "appHeader.rating", color: "orange"},
-                        { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},
-                    ],
-                },
-
-            ];
-            var friend_links = [
-                // links
-                { heading: "appHeader.friendLinks" },
-                { links: this.sys.friends, target: "_blank" },
+                { icon: "widgets", href: "/nav", text: "appHeader.tagCategory", count: this.sys.books, color: "primary" },
+                { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags, color: "green"},
+                { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},
+                { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "primary"},
+                { icon: "mdi-history", href: "/all", text: "appHeader.allBooks", color: "primary"},
+                { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", color: "primary"},
+                { icon: "mdi-star-shooting", href: "/rating", text: "appHeader.rating", color: "orange"},
+                { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},
             ];
 
             return home_links
                 .concat(this.user.is_admin ? admin_links : [])
                 .concat(this.user.is_login ? reading_links : [])
                 .concat(nav_links)
-                .concat(this.sys.friends.length > 0 ? friend_links : [])
         },
     },
     mounted() {
@@ -498,17 +525,39 @@ export default {
             }
         });
 
-        // Load running tasks initially
         this.loadRunningTasks();
-        // Start polling for running tasks every 10 seconds
         this.startTaskPolling();
     },
     beforeDestroy() {
         this.close_ai();
-        // Clear task polling timer
         this.stopTaskPolling();
     },
     methods: {
+        getDefaultAvatar() {
+            return window.location.origin + '/avatar/reader.png';
+        },
+        handleAvatarError(event) {
+            event.target.src = this.getDefaultAvatar();
+        },
+        handleToolbarAvatarError(event) {
+            event.target.src = this.getDefaultAvatar();
+        },
+        handleMenuAvatarError(event) {
+            event.target.src = this.getDefaultAvatar();
+        },
+        toggleMiniVariant() {
+            this.miniVariant = !this.miniVariant;
+        },
+        handleMouseEnter() {
+            if (this.miniVariant) {
+                this.sidebar = true;
+            }
+        },
+        handleMouseLeave() {
+            if (this.miniVariant) {
+                this.sidebar = true;
+            }
+        },
         toggle_ai() {
             if (!this.user.is_login) {
                 alert("请先登录以使用AI功能");
@@ -517,7 +566,6 @@ export default {
             this.ai_enabled = !this.ai_enabled;
             if (this.ai_enabled) {
                 this.connect_ai();
-                // 聚焦输入框并滚动到底部
                 this.$nextTick(() => {
                     if (this.$refs.aiInput) {
                         this.$refs.aiInput.focus();
@@ -534,7 +582,6 @@ export default {
                 return;
             }
 
-            // Use window.location to build WebSocket URL
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.host;
             const ws_url = `${protocol}//${host}/api/assistant/ws`;
@@ -559,12 +606,10 @@ export default {
                         this.scroll_ai_bottom();
                     }
                 } else if (data.type === 'status') {
-                    // 状态消息可能在没有消息时到达（如连接成功），只在有消息时更新
                     if (this.ai_messages.length > 0) {
                         const lastMsg = this.ai_messages[this.ai_messages.length - 1];
                         lastMsg.status = data.content;
                     } else {
-                        // 连接成功的状态消息，可以在控制台显示
                         console.log('AI Status:', data.content);
                     }
                 } else if (data.type === 'end') {
@@ -611,15 +656,12 @@ export default {
             const message = this.ai_input.trim();
             this.ai_input = '';
 
-            // 添加用户消息
             this.ai_messages.push({ role: 'user', content: message });
 
-            // 立即滚动到底部显示用户消息
             this.$nextTick(() => {
                 this.scroll_ai_bottom();
             });
 
-            // 发送到WebSocket
             this.ai_ws.send(JSON.stringify({ type: 'query', content: message }));
         },
         scroll_ai_bottom() {
@@ -631,6 +673,7 @@ export default {
             });
         },
         chunk: function (arr, len) {
+            if (!arr || !Array.isArray(arr)) return [];
             var e = arr.length;
             var r = [];
             for (var idx = 0; idx < e; idx += len) {
@@ -692,7 +735,7 @@ export default {
         startTaskPolling() {
             this.taskPollingTimer = setInterval(() => {
                 this.loadRunningTasks();
-            }, 10000); // Poll every 10 seconds
+            }, 10000);
         },
         stopTaskPolling() {
             if (this.taskPollingTimer) {
@@ -719,7 +762,6 @@ export default {
 </script>
 
 <style>
-/* Navigation drawer panel styles */
 .app-navigation-drawer {
     border-right: 2px solid rgba(0, 0, 0, 0.08) !important;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08) !important;
@@ -737,7 +779,6 @@ export default {
     background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.12), transparent);
 }
 
-/* Ensure the drawer has proper padding */
 .app-navigation-drawer .v-list {
     padding: 12px 8px !important;
 }
@@ -749,7 +790,6 @@ export default {
     opacity: 0.8 !important;
 }
 
-/* Enhanced 3D Icon styles */
 .app-navigation-drawer .v-icon {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -766,7 +806,6 @@ export default {
     transform: translateY(-2px) scale(1.02);
 }
 
-/* Enhanced icon container with depth */
 .app-navigation-drawer .v-list-item-action {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
     border-radius: 12px;
@@ -785,6 +824,15 @@ export default {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(255, 255, 255, 0.2);
     transform: translateY(-1px);
+}
+
+.app-navigation-drawer .v-list-item--icon-only {
+    justify-content: center;
+    padding: 12px 0 !important;
+}
+
+.app-navigation-drawer .v-list-item--icon-only .v-icon {
+    font-size: 24px;
 }
 </style>
 
@@ -819,18 +867,15 @@ export default {
   margin-left: 4px !important;
   margin-right: 4px !important;
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.6) !important;
-  /* 防止被其他样式覆盖的额外保护 */
   background: #ffffff !important;
   color: #ffffff !important;
   border: none !important;
   outline: none !important;
   filter: none !important;
-  /* 确保元素不会被阅读插件等修改 */
   -webkit-appearance: none !important;
   appearance: none !important;
 }
 
-/* Dialog border styles */
 .dialog-border {
     border: 2px solid #e0e0e0 !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
@@ -841,7 +886,6 @@ export default {
     border-bottom: 1px solid #e0e0e0;
 }
 
-/* AI Chat styles */
 .chat-messages {
     overflow-y: auto;
     scroll-behavior: smooth;
