@@ -13,39 +13,66 @@
             @mouseleave="handleMouseLeave"
         >
             <template v-slot:prepend>
-                <v-menu v-model="showUserMenu" offset-y v-if="user.is_login">
-                    <template v-slot:activator="{ on }">
-                        <v-list-item class="px-2" v-on="on">
-                            <v-list-item-avatar>
-                                <img :src="user.avatar" @error="handleAvatarError" ref="drawerAvatar" />
-                            </v-list-item-avatar>
-                            <v-list-item-content v-if="!miniVariant">
-                                <v-list-item-title>{{ user.nickname }}</v-list-item-title>
-                                <v-list-item-subtitle>{{ user.email }}</v-list-item-subtitle>
-                            </v-list-item-content>
-                        </v-list-item>
+                <template v-if="user.is_login">
+                    <template v-if="!miniVariant">
+                        <v-menu v-model="showUserMenu" offset-y>
+                            <template v-slot:activator="{ on }">
+                                <v-list-item class="px-2" v-on="on">
+                                    <v-list-item-avatar color="primary" class="avatar-round">
+                                        <img :src="user.avatar" @error="handleAvatarError" ref="drawerAvatar" class="avatar-img" />
+                                    </v-list-item-avatar>
+                                    <v-list-item-content>
+                                        <v-list-item-title>{{ user.nickname }}</v-list-item-title>
+                                        <v-list-item-subtitle>{{ user.email }}</v-list-item-subtitle>
+                                    </v-list-item-content>
+                                    <v-btn icon class="ml-auto" @click.stop="toggleMiniVariant">
+                                        <v-icon>mdi-chevron-left</v-icon>
+                                    </v-btn>
+                                </v-list-item>
+                            </template>
+                            <v-list min-width="240">
+                                <v-list-item to="/soledbooks">
+                                    <v-list-item-action><v-icon>mdi-shield-account</v-icon></v-list-item-action>
+                                    <v-list-item-title> {{ $t('appHeader.soledBooks') }} </v-list-item-title>
+                                </v-list-item>
+                                <v-list-item to="/logout">
+                                    <v-list-item-action><v-icon>exit_to_app</v-icon></v-list-item-action>
+                                    <v-list-item-title> {{ $t('appHeader.logout') }} </v-list-item-title>
+                                </v-list-item>
+                            </v-list>
+                        </v-menu>
                     </template>
-                    <v-list min-width="240">
-                        <v-list-item to="/soledbooks">
-                            <v-list-item-action><v-icon>mdi-shield-account</v-icon></v-list-item-action>
-                            <v-list-item-title> {{ $t('appHeader.soledBooks') }} </v-list-item-title>
-                        </v-list-item>
-                        <v-list-item to="/logout">
-                            <v-list-item-action><v-icon>exit_to_app</v-icon></v-list-item-action>
-                            <v-list-item-title> {{ $t('appHeader.logout') }} </v-list-item-title>
-                        </v-list-item>
-                    </v-list>
-                </v-menu>
-                <v-list-item class="px-2" v-else>
-                    <v-avatar color="grey" size="40">
-                        <v-icon>mdi-account</v-icon>
-                    </v-avatar>
-                    <v-list-item-content>
-                        <v-btn to="/login" color="indigo accent-4" class="mt-1">
-                            <v-icon left>account_circle</v-icon> {{ $t('appHeader.please_login') }}
-                        </v-btn>
-                    </v-list-item-content>
-                </v-list-item>
+                    <template v-else>
+                        <v-menu v-model="showUserMenu" offset-y>
+                            <template v-slot:activator="{ on }">
+                                <v-list-item class="px-2 justify-center" v-on="on" :ripple="false" :dense="true">
+                                    <v-list-item-avatar color="primary" class="avatar-round">
+                                        <img :src="user.avatar" @error="handleAvatarError" ref="drawerAvatarMini" class="avatar-img" />
+                                    </v-list-item-avatar>
+                                </v-list-item>
+                            </template>
+                            <v-list min-width="240">
+                                <v-list-item to="/soledbooks">
+                                    <v-list-item-action><v-icon>mdi-shield-account</v-icon></v-list-item-action>
+                                    <v-list-item-title> {{ $t('appHeader.soledBooks') }} </v-list-item-title>
+                                </v-list-item>
+                                <v-list-item to="/logout">
+                                    <v-list-item-action><v-icon>exit_to_app</v-icon></v-list-item-action>
+                                    <v-list-item-title> {{ $t('appHeader.logout') }} </v-list-item-title>
+                                </v-list-item>
+                            </v-list>
+                        </v-menu>
+                    </template>
+                </template>
+                <template v-else>
+                    <v-list-item class="px-2">
+                        <v-list-item-content>
+                            <v-btn to="/login" color="indigo accent-4" class="mt-1">
+                                <v-icon left>account_circle</v-icon> {{ $t('appHeader.please_login') }}
+                            </v-btn>
+                        </v-list-item-content>
+                    </v-list-item>
+                </template>
                 <v-divider></v-divider>
             </template>
 
@@ -60,7 +87,12 @@
                         :class="{ 'v-list-item--icon-only': miniVariant }"
                         @click="handleMiniVariantGroupClick(idx, item)"
                     >
-                        <v-icon :color="item.color || ''" size="24">{{ item.icon }}</v-icon>
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-icon v-bind="attrs" v-on="on" :color="item.color || ''" size="24">{{ item.icon }}</v-icon>
+                            </template>
+                            {{ $t(item.text) }}
+                        </v-tooltip>
                     </v-list-item>
 
                     <v-list-group
@@ -108,7 +140,7 @@
                     <v-list-item
                         dense
                         v-else
-                        :key="'item-' + idx"
+                        :key="'item-' + idx + '-' + (item.href || item.text)"
                         :to="item.href"
                         :target="item.target"
                         :class="{ 'v-list-item--icon-only': miniVariant }"
@@ -116,7 +148,14 @@
                         <v-list-item-action class="mt-1 mb-1 mr-2" dense v-if="!miniVariant">
                             <v-icon class="pa-0 ma-0" :color="item.color || ''">{{ item.icon }}</v-icon>
                         </v-list-item-action>
-                        <v-icon v-else :color="item.color || ''" size="24">{{ item.icon }}</v-icon>
+                        <template v-else>
+                            <v-tooltip bottom>
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-icon v-bind="attrs" v-on="on" :color="item.color || ''" size="24">{{ item.icon }}</v-icon>
+                                </template>
+                                {{ $t(item.text) }}
+                            </v-tooltip>
+                        </template>
                         <v-list-item-content v-if="!miniVariant">
                             <v-list-item-title>
                                 {{ $t(item.text) }}
@@ -131,7 +170,7 @@
 
             <template v-slot:append>
                 <v-divider></v-divider>
-                <v-list-item class="px-2 justify-center" @click="toggleMiniVariant">
+                <v-list-item class="px-2 justify-center" @click="toggleMiniVariant" :disabled="!user.is_login" :class="{ 'v-list-item--disabled': !user.is_login }">
                     <v-icon>mdi-chevron-{{ miniVariant ? 'right' : 'left' }}</v-icon>
                 </v-list-item>
             </template>
@@ -519,6 +558,9 @@ export default {
             event.target.src = this.getDefaultAvatar();
         },
         toggleMiniVariant() {
+            if (!this.user.is_login) {
+                return;
+            }
             this.miniVariant = !this.miniVariant;
         },
         handleMouseEnter() {
@@ -743,6 +785,18 @@ export default {
 </script>
 
 <style>
+.avatar-round {
+    border-radius: 50% !important;
+    overflow: hidden;
+}
+
+.avatar-img {
+    border-radius: 50% !important;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .app-navigation-drawer {
     border-right: 2px solid rgba(0, 0, 0, 0.08) !important;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08) !important;
@@ -874,6 +928,63 @@ export default {
 
 .app-navigation-drawer .v-list-group__items > .v-list-item {
     padding-left: 48px !important;
+}
+
+.v-list-item--disabled {
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.v-list-item--disabled .v-icon {
+    filter: grayscale(100%) !important;
+}
+
+.v-list-item.justify-center {
+    padding: 12px 0 !important;
+    justify-content: center !important;
+    transition: none !important;
+    transform: none !important;
+}
+
+.v-list-item.justify-center .v-list-item__prepend {
+    margin: 0 !important;
+}
+
+.v-list-item.justify-center .v-list-item-avatar {
+    margin: 0 !important;
+    transition: none !important;
+    transform: none !important;
+}
+
+.v-list-item.justify-center:hover,
+.v-list-item.justify-center:active,
+.v-list-item.justify-center:focus,
+.v-list-item.justify-center:focus-within,
+.v-list-item.justify-center:focus-visible {
+    transform: none !important;
+    transition: none !important;
+}
+
+.v-list-item.justify-center .v-list-item__content {
+    display: none !important;
+}
+
+.v-list-item.justify-center .v-list-item__prepend,
+.v-list-item.justify-center .v-list-item__append {
+    transition: none !important;
+    transform: none !important;
+}
+
+.v-list-item.justify-center * {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+.v-list-item.justify-center::before,
+.v-list-item.justify-center::after {
+    display: none !important;
 }
 </style>
 

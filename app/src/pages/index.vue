@@ -67,7 +67,6 @@
     <v-row>
         <v-col cols=12>
             <v-divider class="new-legend"></v-divider>
-            <p class="ma-0 title">{{ $t('index.categoryBrowse') }}</p>
         </v-col>
         <v-col cols=12 sm=6 md=4 v-for="nav in navs" :key="nav.text">
             <v-card outlined style="border-radius: 12px;">
