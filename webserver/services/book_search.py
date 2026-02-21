@@ -54,9 +54,9 @@ class BookSearch:
         if not title and not isbn:
             return []
 
-        # 清理标题，移除括号及其内容
+        # 清理标题，移除括号及其内容（含括号本身）
         if title:
-            clean_title = re.sub(u"[(（].*《》<>", "", title)
+            clean_title = re.sub(r'\([^)]*\)|\[[^\]]*\]|（[^）]*）|【[^】]*】', '', title).strip()
         else:
             clean_title = ""
 
@@ -75,8 +75,9 @@ class BookSearch:
                 books = douban_api.search_books(clean_title) or []
             except Exception as e:
                 logging.error(_(u"豆瓣接口查询 %s 失败: %s" % (clean_title, str(e))))
+
         # 如果有ISBN号但没搜索到合适的书，则精准查询一次ISBN
-        if isbn and not BookSearch.has_proper_book(books, title, isbn, publisher):
+        if isbn and not BookSearch.has_proper_book(books, clean_title, isbn, publisher):
             try:
                 book = douban_api.get_book_by_isbn(isbn)
                 if book:
@@ -96,14 +97,5 @@ class BookSearch:
                 books.append(book)
         except Exception as e:
             logging.error(_(u"百度百科查询失败: %s" % str(e)))
-
-        # 优书网搜索
-        youshu_api = youshu.YoushuApi(copy_image=True)
-        try:
-            book = youshu_api.get_book(clean_title)
-            if book:
-                books.append(book)
-        except Exception as e:
-            logging.error(_(u"优书网查询失败: %s" % str(e)))
 
         return books

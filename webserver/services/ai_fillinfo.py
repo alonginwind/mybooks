@@ -4,7 +4,7 @@ import logging
 import time
 from gettext import gettext as _
 
-from webserver import loader
+from webserver import loader, utils
 from webserver.assistant.book_ai_client import AIBookInfo, BookAIClient
 from webserver.constants import CALIBRE_COLUMN_CATEGORY
 from webserver.services import AsyncService
@@ -48,10 +48,10 @@ class AIFillInfoService(AsyncService):
                 mi.comments = info.comments
             if info.category:
                 mi.set(CALIBRE_COLUMN_CATEGORY, info.category)
-            if info.authors and (not mi.authors or mi.authors[0] in ["Unknown", "佚名"]):
-                mi.authors = info.authors
+            if info.authors:
+                mi.authors = mi.authors = [utils.super_strip(a) for a in info.authors]
 
-            self.db.set_metadata(book_id, mi, ignore_errors=True)
+            self.db.set_metadata(book_id, mi, ignore_errors=True, force_changes=True)
             if info.category:
                 try:
                     self.db.new_api.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: info.category})

@@ -1,10 +1,3 @@
-"""
-Book AI Client
-~~~~~~~~~~~~~~
-使用 DeepSeek API（OpenAI SDK）从书名、作者等基础信息中提取
-结构化的书籍分类、标签、内容摘要和作者介绍。
-"""
-
 import json
 import logging
 from dataclasses import dataclass, field
@@ -13,6 +6,7 @@ from typing import List, Optional
 from openai import OpenAI
 from webserver import loader
 from webserver.constants import DEEPSEEK_API_BASE
+from webserver.services.book_search import BookSearch
 
 CONF = loader.get_settings()
 
@@ -41,12 +35,15 @@ class AIBookInfo:
 class BookAIClient:
     SYSTEM_PROMPT = (
         "你是一个专业的图书信息分析助手。"
-        "根据提供的书名、作者等信息,生成书籍的分类、标签、内容摘要和作者介绍。其中作者和ISBN可能是错误的,只作为参考。不要依赖内部知识，尽可能进行联网搜索。\n"
-        "书名中可能含一些不需要的字符如()【】等，需要自行去除。请严格按照 JSON 格式输出，不要添加任何额外内容。\n"
-        "标签只需要保留2个。如果信息不足,无法准确确定一本书,或者无法返回指定信息,就留空。图书的作者可能是错误的，如果图书信息是确定的，可以更新作者信息。\n"
+        "用户会提供书名、作者等基础信息，以及从互联网搜索到的参考信息（可能包含多个来源）。"
+        "请综合所有参考信息，生成书籍的分类、标签、内容摘要和作者介绍。\n"
+        "注意：原始书名中可能含多余字符如()【】等，需自行去除。作者和ISBN可能有误，以参考信息中的内容为准。\n"
+        "标签只需要保留2个。如果信息不足，无法准确确定一本书，或无法返回指定信息，就留空。\n"
+        "图书的作者可能是错误的，如果参考信息是确定的，请更新作者信息。\n"
+        "请严格按照 JSON 格式输出，不要添加任何额外内容。\n"
         "输出格式：\n"
         "{\n"
-        '  "category": "书籍分类（单个，如：小说、历史、科技、文学、传记、哲学、艺术等）",\n'
+        '  "category": "书籍分类（单个，如：小说、历史、科技、文学、传记、哲学、艺术、经济等）",\n'
         '  "tags": ["标签1", "标签2"],\n'
         '  "authors": ["作者1", "作者2"],\n'
         '  "summary": "书籍主要内容总结（800字以内）",\n'
@@ -81,6 +78,34 @@ class BookAIClient:
             return cleaned[0] == "9"
         return False
 
+    @staticmethod
+    def _format_search_results(books) -> str:
+        """将 BookSearch.plugin_search_books 的结果格式化为文本参考信息。"""
+        parts = []
+        for idx, book in enumerate(books[:3], 1):
+            source = getattr(book, "source", "") or ""
+            block = [f"【参考来源{idx}：{source}】"]
+            result_title = getattr(book, "title", "") or ""
+            if result_title:
+                block.append(f"书名：{result_title}")
+            result_authors = getattr(book, "authors", []) or []
+            if result_authors:
+                block.append(f"作者：{'、'.join(str(a) for a in result_authors)}")
+            result_publisher = getattr(book, "publisher", "") or ""
+            if result_publisher:
+                block.append(f"出版社：{result_publisher}")
+            result_tags = getattr(book, "tags", []) or []
+            if result_tags:
+                block.append(f"标签：{', '.join(str(t) for t in result_tags[:8])}")
+            result_comments = getattr(book, "comments", "") or ""
+            if result_comments:
+                block.append(f"简介：{result_comments[:500]}")
+            result_author_intro = getattr(book, "douban_author_intro", "") or ""
+            if result_author_intro:
+                block.append(f"作者介绍：{result_author_intro[:300]}")
+            parts.append("\n".join(block))
+        return "\n\n".join(parts)
+
     def get_book_info(
         self,
         title: str,
@@ -91,8 +116,20 @@ class BookAIClient:
         lines = [f"书名：{title}", f"作者：{author_str}"]
         if isbn and self._is_valid_isbn(isbn):
             lines.append(f"ISBN：{isbn}")
-        user_prompt = "\n".join(lines)
 
+        # 从网络搜索补充参考信息
+        try:
+            search_isbn = isbn if (isbn and self._is_valid_isbn(isbn)) else None
+            search_results = BookSearch.plugin_search_books(title=title, isbn=search_isbn)
+            if search_results:
+                ref_text = self._format_search_results(search_results)
+                lines.append("\n以下是从互联网搜索到的参考信息：")
+                lines.append(ref_text)
+                logging.info("[BookAI] Got %d search result(s) for '%s'", len(search_results), title)
+        except Exception as e:
+            logging.warning("[BookAI] BookSearch failed for '%s': %s", title, e)
+
+        user_prompt = "\n".join(lines)
         try:
             response = self.client.chat.completions.create(
                 model=self.model,

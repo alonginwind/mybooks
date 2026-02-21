@@ -354,6 +354,7 @@
         "updateTagsSuccessful": "标签更新成功",
         "aiUpdate": "AI更新信息",
         "aiUpdateSuccess": "AI更新成功",
+        "aiUpdating": "AI正在分析处理，请稍候...",
         "resetInfo": "重置信息",
         "resetSuccessful": "重置信息成功",
         "convert": "EPUB/KINDLE转换",

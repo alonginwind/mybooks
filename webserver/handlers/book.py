@@ -1240,7 +1240,7 @@ class BookEdit(BaseHandler):
         if data.get("pubdate", None):
             content = douban.str2date(data["pubdate"])
             if content is None:
-                return {"err": "params.pudate.invalid", "msg": _(u"出版日期参数错误，格式应为 2019-05-10或2019-05或2019年或2019")}
+                return {"err": "params.pudate.invalid", "msg": _(u"出版日期参数错误，格式应为 2026-05-10或2026-05或2026年或2026")}
             mi.set("pubdate", content)
 
         if data.get("book_count", None):

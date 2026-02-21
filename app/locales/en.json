@@ -469,6 +469,7 @@
         "updateTagsSuccessful": "Tags updated successfully",
         "aiUpdate": "AI Update Info",
         "aiUpdateSuccess": "AI update successful",
+        "aiUpdating": "AI is processing, please wait...",
         "resetInfo": "Reset information",
         "resetSuccessful": "Succeed to reset book information",
         "convert": "EPUB/AZW3 Conversion",

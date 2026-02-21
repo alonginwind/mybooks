@@ -328,6 +328,10 @@
                                     <v-icon>{{ book.sole ? 'public_off' : 'public' }}</v-icon>
                                     {{ book.sole ? $t('book.setPublic') : $t('book.setSole') }}
                                 </v-list-item>
+                                <v-list-item @click="ai_fill_book">
+                                    <v-icon>mdi-robot</v-icon>
+                                    {{ $t('book.aiUpdate') }}
+                                </v-list-item>
                                 <v-list-item @click="delete_book">
                                     <v-icon>delete_forever</v-icon>
                                     {{ $t('book.deleteBook') }}
@@ -671,6 +675,14 @@
             </v-card>
         </v-col>
     </v-row>
+
+    <!-- AI更新加载浮层 -->
+    <v-overlay :value="ai_filling" z-index="9999">
+        <div class="text-center">
+            <v-progress-circular indeterminate color="white" size="64"></v-progress-circular>
+            <p class="mt-4 white--text text-h6">{{ $t('book.aiUpdating') }}</p>
+        </div>
+    </v-overlay>
 
     <!-- 同名图书列表 -->
     <v-row v-if="sameNameBooks.length > 0" class="mt-6">
