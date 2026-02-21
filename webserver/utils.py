@@ -76,7 +76,7 @@ class SimpleBookFormatter:
             "languages": self.val("languages", None),
             "isbn": self.val("isbn", None),
             "img": self.cdn_url + "/get/cover/%(id)s.jpg?t=%(ts)s" % b,
-            "thumb": self.cdn_url + "/get/thumb_120_160/%(id)s.jpg?t=%(ts)s&size=120x160" % b,
+            "thumb": self.cdn_url + "/get/thumb_240_320/%(id)s.jpg?t=%(ts)s&size=240x320" % b,
             # 额外填充的字段
             "collector": self.get_collector(),
             "count_visit": self.val("count_visit", 0),

@@ -67,7 +67,7 @@ class ImageHandler(BaseHandler):
 
             if thumbnail:
                 return generate_thumbnail(
-                    cover, width=thumb_width, height=thumb_height
+                    cover, width=thumb_width, height=thumb_height, compression_quality=83
                 )[-1]
             else:
                 return cover
