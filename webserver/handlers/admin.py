@@ -664,9 +664,9 @@ class AdminBookAIFill(BaseHandler):
         elif isinstance(idlist, list):
             for bid in idlist:
                 if not isinstance(bid, int):
-                    return {"err": "params.error.idlist", "msg": _(u"idlist参数错误")}
+                    return {"err": "params.error.idlist", "msg": _(u"参数错误")}
         else:
-            return {"err": "params.error.idlist", "msg": _(u"idlist参数错误")}
+            return {"err": "params.error.idlist", "msg": _(u"参数错误")}
 
         AIFillInfoService().fill_all(idlist)
         return {"err": "ok", "msg": _(u"AI 更新任务已启动，请耐心等待")}
