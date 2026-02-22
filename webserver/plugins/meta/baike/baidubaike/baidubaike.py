@@ -72,8 +72,8 @@ class Page(object):
                 title_div = item.find(class_="info-title")
                 content_div = item.find(class_="info-content")
                 if title_div and content_div:
-                    name = title_div.get_text(strip=True).replace(u"\xa0", "")
-                    value = content_div.get_text(strip=True).replace(u"\xa0", "")
+                    name = title_div.get_text(strip=True).replace(u"\xa0", "").strip()
+                    value = content_div.get_text(strip=True).replace(u"\xa0", "").strip()
                     info[name] = value
         return info
 
