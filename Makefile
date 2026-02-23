@@ -5,6 +5,7 @@ IMAGE := poxenstudio/talebook:$(VER)
 REPO1 := poxenstudio/talebook:latest
 TAG1 := poxenstudio/talebook:server-side-render
 TAG2 := poxenstudio/talebook:server-side-render-$(VER)
+BUILDER := shukubuilder
 ARCH := $(shell uname -m)
 PLATFORM ?= linux/$(shell if [ "$(ARCH)" = "x86_64" ]; then echo "amd64"; elif [ "$(ARCH)" = "aarch64" ] || [ "$(ARCH)" = "arm64" ]; then echo "arm64"; else echo "amd64"; fi)
 
@@ -29,17 +30,19 @@ push:
 # 初始化多架构构建环境（Linux必须要运行一次），不要使用snap安装的docker
 setup-multiarch:
 	docker run --privileged --rm tonistiigi/binfmt --install all
-	docker buildx create --use --name mybuilder || docker buildx use mybuilder
-	docker buildx inspect --bootstrap
+	docker buildx create --use --name $(BUILDER) || docker buildx use $(BUILDER)
+	docker buildx inspect $(BUILDER) --bootstrap
 
 
 # 构建并推送多架构镜像（同时支持 amd64 和 arm64）
 build-multiarch: test
 	docker buildx build --platform=linux/amd64,linux/arm64 \
+		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
 		-f Dockerfile -t $(IMAGE) -t $(REPO1) \
 		--target production --push .
 	docker buildx build --platform=linux/amd64,linux/arm64 \
+		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
 		-f Dockerfile -t $(TAG1) -t $(TAG2) \
 		--target production-ssr --push .
@@ -47,10 +50,12 @@ build-multiarch: test
 # 仅构建多架构镜像到本地缓存（不推送）
 build-multiarch-local: test
 	docker buildx build --platform=linux/amd64,linux/arm64 \
+		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
 		-f Dockerfile -t $(IMAGE) -t $(REPO1) \
 		--target production --load .
 	docker buildx build --platform=linux/amd64,linux/arm64 \
+		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
 		-f Dockerfile -t $(TAG1) -t $(TAG2) \
 		--target production-ssr --load .
