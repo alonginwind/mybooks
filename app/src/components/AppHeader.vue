@@ -3,80 +3,16 @@
         <v-navigation-drawer
             v-model="sidebar"
             app
+            fixed
             :width="240"
             :mini-variant-width="64"
             :mini-variant="miniVariant && user.is_login"
             :color="drawerColor"
-            :clipped="false"
+            :clipped="$vuetify.breakpoint.lgAndUp"
             class="app-navigation-drawer"
             @mouseenter="handleMouseEnter"
             @mouseleave="handleMouseLeave"
         >
-            <template v-slot:prepend>
-                <template v-if="user.is_login">
-                    <template v-if="!miniVariant">
-                        <v-menu v-model="showUserMenu" offset-y>
-                            <template v-slot:activator="{ on }">
-                                <v-list-item class="px-2 app-prepend-item" v-on="on">
-                                    <v-list-item-avatar color="primary" class="avatar-round">
-                                        <img :src="user.avatar" @error="handleAvatarError" ref="drawerAvatar" class="avatar-img" />
-                                    </v-list-item-avatar>
-                                    <v-list-item-content>
-                                        <v-list-item-title>{{ user.nickname }}</v-list-item-title>
-                                    </v-list-item-content>
-                                    <v-btn icon class="ml-auto" @click.stop="toggleMiniVariant">
-                                        <v-icon>mdi-chevron-left</v-icon>
-                                    </v-btn>
-                                </v-list-item>
-                            </template>
-                            <v-list min-width="240">
-                                <v-list-item to="/soledbooks">
-                                    <v-list-item-action><v-icon>mdi-shield-account</v-icon></v-list-item-action>
-                                    <v-list-item-title> {{ $t('appHeader.soledBooks') }} </v-list-item-title>
-                                </v-list-item>
-                                <v-list-item to="/logout">
-                                    <v-list-item-action><v-icon>exit_to_app</v-icon></v-list-item-action>
-                                    <v-list-item-title> {{ $t('appHeader.logout') }} </v-list-item-title>
-                                </v-list-item>
-                            </v-list>
-                        </v-menu>
-                    </template>
-                    <template v-else>
-                        <v-menu v-model="showUserMenu" offset-y>
-                            <template v-slot:activator="{ on }">
-                                <v-list-item class="px-2 justify-center app-prepend-item" v-on="on" :ripple="false" :dense="true">
-                                    <v-list-item-avatar color="primary" class="avatar-round">
-                                        <img :src="user.avatar" @error="handleAvatarError" ref="drawerAvatarMini" class="avatar-img" />
-                                    </v-list-item-avatar>
-                                </v-list-item>
-                            </template>
-                            <v-list min-width="240">
-                                <v-list-item to="/soledbooks">
-                                    <v-list-item-action><v-icon>mdi-shield-account</v-icon></v-list-item-action>
-                                    <v-list-item-title> {{ $t('appHeader.soledBooks') }} </v-list-item-title>
-                                </v-list-item>
-                                <v-list-item to="/logout">
-                                    <v-list-item-action><v-icon>exit_to_app</v-icon></v-list-item-action>
-                                    <v-list-item-title> {{ $t('appHeader.logout') }} </v-list-item-title>
-                                </v-list-item>
-                            </v-list>
-                        </v-menu>
-                    </template>
-                </template>
-                <template v-else>
-                    <v-list-item class="px-2 app-prepend-item">
-                        <v-avatar color="grey" size="40" class="avatar-round">
-                            <v-icon>mdi-account</v-icon>
-                        </v-avatar>
-                        <v-list-item-content>
-                            <v-btn to="/login" color="indigo accent-4" class="mt-1">
-                                <v-icon left>account_circle</v-icon> {{ $t('appHeader.please_login') }}
-                            </v-btn>
-                        </v-list-item-content>
-                    </v-list-item>
-                </template>
-                <v-divider></v-divider>
-            </template>
 
             <v-list dense>
                 <template v-for="(item, idx) in items">
@@ -175,16 +111,9 @@
                     </v-list-item>
                 </template>
             </v-list>
-
-            <template v-slot:append>
-                <v-divider></v-divider>
-                <v-list-item class="px-2" :class="[miniVariant ? 'justify-center' : 'justify-end', { 'v-list-item--disabled': !user.is_login }]" @click="toggleMiniVariant" :disabled="!user.is_login">
-                    <v-icon>mdi-chevron-{{ miniVariant ? 'right' : 'left' }}</v-icon>
-                </v-list-item>
-            </template>
         </v-navigation-drawer>
 
-        <v-app-bar class="px-0" :color="appBarColor" dense dark app fixed extension-height="64">
+        <v-app-bar class="px-0" :color="appBarColor" dense dark app fixed clipped-left extension-height="64">
             <template v-if="btn_search && $vuetify.breakpoint.xs" #extension>
                 <v-container fluid>
                     <v-form @submit.prevent="doSearch">
@@ -207,6 +136,36 @@
                         </v-row>
                     </v-form>
                 </v-container>
+            </template>
+
+            <template v-if="user.is_login">
+                <v-btn icon @click="toggleMiniVariant">
+                    <v-avatar color="primary" class="avatar-round" size="36">
+                        <img :src="user.avatar" @error="handleAvatarError" class="avatar-img" />
+                    </v-avatar>
+                </v-btn>
+                <v-menu v-model="showUserMenu" offset-y>
+                    <template v-slot:activator="{ on }">
+                        <v-btn icon v-on="on" class="ml-2">
+                            <v-icon>mdi-dots-vertical</v-icon>
+                        </v-btn>
+                    </template>
+                    <v-list min-width="240">
+                        <v-list-item to="/soledbooks">
+                            <v-list-item-action><v-icon>mdi-shield-account</v-icon></v-list-item-action>
+                            <v-list-item-title> {{ $t('appHeader.soledBooks') }} </v-list-item-title>
+                        </v-list-item>
+                        <v-list-item to="/logout">
+                            <v-list-item-action><v-icon>exit_to_app</v-icon></v-list-item-action>
+                            <v-list-item-title> {{ $t('appHeader.logout') }} </v-list-item-title>
+                        </v-list-item>
+                    </v-list>
+                </v-menu>
+            </template>
+            <template v-else>
+                <v-btn to="/login" color="indigo accent-4" class="ml-4">
+                    <v-icon left>account_circle</v-icon> {{ $t('appHeader.please_login') }}
+                </v-btn>
             </template>
 
             <v-toolbar-title class="ml-4 mr-12 align-center d-flex">
@@ -557,7 +516,8 @@ export default {
                 this.$store.commit("set_header", rsp.sys.header);
             }
             if (rsp.user.is_login) {
-                this.sidebar = this.$vuetify.breakpoint.lgAndUp;
+                this.sidebar = true;
+                this.miniVariant = !this.$vuetify.breakpoint.lgAndUp;
             }
         });
         this.$backend("/user/messages").then((rsp) => {
@@ -588,16 +548,11 @@ export default {
                 return;
             }
             this.miniVariant = !this.miniVariant;
+            this.sidebar = true;
         },
         handleMouseEnter() {
-            if (this.miniVariant) {
-                this.sidebar = true;
-            }
         },
         handleMouseLeave() {
-            if (this.miniVariant) {
-                this.sidebar = false;
-            }
         },
         toggleAi() {
             if (!this.user.is_login) {
@@ -830,6 +785,8 @@ export default {
     transition: all 0.3s ease !important;
     border-bottom-right-radius: 12px !important;
 }
+
+
 
 .app-navigation-drawer ::-webkit-scrollbar {
     width: 8px;
