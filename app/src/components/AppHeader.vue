@@ -438,7 +438,7 @@ export default {
     }),
     computed: {
         appBarColor() {
-            return this.$vuetify.theme.dark ? 'dark' : '##003153';
+            return this.$vuetify.theme.dark ? 'dark' : '#003153';
         },
         drawerColor() {
             return this.$vuetify.theme.dark ? 'dark' : '#F7FAF7';
