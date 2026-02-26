@@ -9,51 +9,7 @@ NAS用户，可以参阅网友们写的指南：
 
 常见配置指南
 ===========
-本文主要介绍talebook程序的使用说明，以及常见问题。如需手动安装或者提交PR，请参阅[开发者指南](./Development.zh_CN.md)。
-
-### 配置Kindle推送功能
-以使用QQ邮箱推送为例，进入[QQ邮箱网址](http://service.mail.qq.com/cgi-bin/help?subtype=1&&no=1001256&&id=28), 申请SMTP账号，然后在管理员界面中配置即可。
-
-请注意，用户名是必须包含邮箱后缀的（例如 `@qq.com`），例如 `demo@gmail.com`
-
-### 配置用户登录功能
-本程序支持用户注册及社交网站登录功能，按照管理员配置界面的说明，可以配置出符合自己需求的用户能力。
-
-这里重点说明下常见的社交网站的API账号申请地址：
- - [微博开发者网址](http://open.weibo.com/developers)
- - [QQ互联登录网址](https://connect.qq.com/)
- - [Github]() 待补充
-
-### Logo (适用于v3.5.9及后续版本)
-
-favicon和导航菜单中的二维码logo，放置在数据目录 ```/data/books/logo/```中，可直接使用新图片覆盖掉。
-
-
-### Logo (适用于v3.5.8及更旧版本)
-
-favicon和导航菜单中的二维码logo，已经内置在了代码目录```/var/www/talebook/app/dist/img/```中。
- - favicon.ico: 网站图标文件
- - link.png: 二维码图片
-
-如果需要定制修改这两个文件，请直接将使用新的文件覆盖即可。
-
-若使用docker启动，则需要在docker启动时挂载这两个目录。例如：
-```
-docker run -d --name talebook -p 80:80 -v /data/calibre:/data -v /data/logo:/var/www/talebook/app/dist/img/ poxenstudio/talebook
-```
-
-### 上传文件的大小
-如果发现上传大文件时出现了失败，那么可能会有两种原因：
-
-1. 如果是程序抛出异常（例如issue#61），那么是由于本项目中的tornado框架默认限制为100M。请进入管理员配置中修改调大对应的配置。
-
-1. 如果明确提示`413`错误码，那么一般是由于nginx限制了上传大小。本项目中自带的nginx已配置了`client_max_body_size 0`，即不限制上传大小；
-因此建议使用者排查下是否在本项目之外配置有其他的nginx代理转发，调整其中的配置。
-
-### 如何配置豆瓣插件?
-需启用[cxfksword/douban-api-rs](https://github.com/cxfksword/douban-api-rs)服务，然后将对应的URL地址（例如 `http://10.0.0.1:8080` ）填写到高级配置项中。
-
-对于使用docker-composer启动的（例如使用本项目自带的 `docker-compose.yml` 配置），那么URL地址为： `http://douban-rs-api:80/` ，因为依据docker-composer的说明，服务名称可解析出对应的IP地址。
+请参考[功能手册](https://mybooks.top/talebook/features.html)。
 
 常见问题排查
 ===============
