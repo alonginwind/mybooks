@@ -6,7 +6,7 @@
             fixed
             :width="240"
             :mini-variant-width="64"
-            :mini-variant="miniVariant && user.is_login"
+            :mini-variant="miniVariant"
             :color="drawerColor"
             :clipped="$vuetify.breakpoint.lgAndUp"
             class="app-navigation-drawer"
@@ -350,8 +350,7 @@ import { colors } from 'vuetify/lib';
 export default {
     data: () => ({
         err: "",
-        visit_admin_pages: false,
-        sidebar: null,
+        sidebar: false,
         miniVariant: false,
         right: null,
         btn_search: false,
@@ -362,7 +361,7 @@ export default {
         ai_messages: [],
         ai_ws: null,
         ai_input: '',
-        user: {},
+        user: { is_login: false },
         sys: {
             books: 0,
             tags: 0,
@@ -487,9 +486,17 @@ export default {
         },
     },
     mounted() {
-        this.visit_admin_pages = this.isPathMatch("/admin/");
-        this.sidebar = false;
-        this.miniVariant = false;
+        if (process.client) {
+            const savedSidebar = localStorage.getItem('drawerSidebar');
+            const savedMiniVariant = localStorage.getItem('drawerMiniVariant');
+            if (savedMiniVariant !== null && savedMiniVariant === 'true') {
+                this.miniVariant = true;
+                this.sidebar = true;
+            } else if (savedSidebar !== null) {
+                this.sidebar = savedSidebar === 'true';
+            }
+        }
+
         this.$backend("/user/info").then((rsp) => {
             this.err = rsp.err;
             this.sys = rsp.sys;
@@ -522,8 +529,12 @@ export default {
                 this.$store.commit("set_header", rsp.sys.header);
             }
             if (rsp.user.is_login) {
-                this.sidebar = this.$vuetify.breakpoint.lgAndUp;
-                this.miniVariant = this.$vuetify.breakpoint.lgAndUp;
+                if (process.client && localStorage.getItem('drawerSidebar') === null) {
+                    this.sidebar = this.$vuetify.breakpoint.lgAndUp;
+                }
+                if (process.client && localStorage.getItem('drawerMiniVariant') === null) {
+                    this.miniVariant = this.$vuetify.breakpoint.lgAndUp;
+                }
             }
         });
         this.$backend("/user/messages").then((rsp) => {
@@ -558,6 +569,10 @@ export default {
                 this.miniVariant = false;
             } else {
                 this.miniVariant = !this.miniVariant;
+            }
+            if (process.client) {
+                localStorage.setItem('drawerSidebar', this.sidebar);
+                localStorage.setItem('drawerMiniVariant', this.miniVariant);
             }
         },
         handleMouseEnter() {
@@ -766,6 +781,9 @@ export default {
         handleMiniVariantGroupClick(idx, item) {
             this.miniVariant = false;
             this.$set(this.expandedGroups, idx, true);
+            if (process.client) {
+                localStorage.setItem('drawerMiniVariant', this.miniVariant);
+            }
         },
         isPathMatch(path) {
             return this.$route.path.indexOf(path) === 0;
