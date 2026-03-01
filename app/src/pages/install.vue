@@ -2,7 +2,7 @@
     <v-row align-center justify=center>
         <v-col xs=12 sm=8 md=4>
             <v-card class="elevation-12">
-                <v-toolbar dark color="primary">
+                <v-toolbar dark color="#003153">
                     <v-toolbar-title>{{ $t('install.title') }}</v-toolbar-title>
                 </v-toolbar>
                 <v-card-text>
