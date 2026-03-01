@@ -777,8 +777,9 @@ class ReleaseNotes(BaseHandler):
     @js
     def get(self):
         last_revsion = CONF.get("LAST_REVISION", "")
-        logging.error("Current version: %s, Last revision: %s", VERSION, last_revsion)
-        if last_revsion != VERSION:
+        force = self.get_argument("force", "false") == "true"
+        logging.info("Current version: %s, Last revision: %s", VERSION, last_revsion)
+        if last_revsion != VERSION or force:
             args = loader.SettingsLoader()
             args["LAST_REVISION"] = VERSION
             logic = SettingsSaverLogic()
@@ -786,7 +787,6 @@ class ReleaseNotes(BaseHandler):
 
             # Load the release notes from the public folder
             release_note_path = CONF["static_path"] + "/static/release_notes.txt"
-            logging.error("Release note path: %s", release_note_path)
             notes = ""
             if os.path.exists(release_note_path):
                 with open(release_note_path, "r", encoding="utf-8") as f:

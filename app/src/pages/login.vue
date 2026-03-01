@@ -2,7 +2,7 @@
     <v-row justify="center" class="fill-center">
         <v-col xs="12" sm="8" md="4">
             <v-card v-if="show_login" class="elevation-12">
-                <v-toolbar dark color="primary">
+                <v-toolbar dark :color="appBarColor">
                     <v-toolbar-title>{{ $t('login.welcome') }}</v-toolbar-title>
                     <v-spacer></v-spacer>
                     <v-btn v-if="$store.state.sys && $store.state.sys.allow && $store.state.sys.allow.register" rounded color="green" to="/signup">{{ $t('login.register') }}</v-btn>
@@ -128,6 +128,9 @@ export default {
                 return [];
             }
             return this.$store.state.sys.socials;
+        },
+        appBarColor() {
+            return this.$vuetify.theme.dark ? 'dark' : '#003153';
         },
     },
     methods: {
