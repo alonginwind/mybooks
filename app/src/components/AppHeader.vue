@@ -132,7 +132,7 @@
             </template>
         </v-navigation-drawer>
 
-        <v-app-bar class="px-0" :color="appBarColor" dense dark app fixed clipped-left extension-height="64">
+        <v-app-bar v-if="$store.state.nav" class="px-0" :color="appBarColor" dense dark app fixed clipped-left extension-height="64">
             <template v-if="btn_search && $vuetify.breakpoint.xs" #extension>
                 <v-container fluid>
                     <v-form @submit.prevent="doSearch">
