@@ -230,6 +230,12 @@ export default {
         show: false,
         title: "settings.basic_info",
         fields: [
+          { icon: "home", key: "site_title", label: "settings.site_title", },
+          { icon: "info", key: "site_icon", label: "settings.site_icon", type: 'select_image',
+            items: Array.from({ length: 9 }, (_, i) => ({ image_file: "favicon_" + i.toString(), value: "favicon_" + i.toString() }))
+          },
+          { icon: "mdi-copyright", key: "HEADER", label: "settings.site_header", type: 'textarea' },
+          { icon: "mdi-copyright", key: "FOOTER", label: "settings.site_footer", type: 'textarea' },
           {
             icon: "language", key: "site_language", label: "settings.language_switch", type: 'select',
             items: [{ text: '简体中文', value: "zh" }, { text: 'English', value: "en" }]
@@ -238,12 +244,6 @@ export default {
             icon: "palette", key: "site_theme", label: "settings.theme_switch", type: 'select',
             items: [{ text: this.$t('settings.light_color'), value: "light" }, { text: this.$t('settings.dark_color'), value: "dark" }]
           },
-          { icon: "home", key: "site_title", label: "settings.site_title", },
-          { icon: "info", key: "site_icon", label: "settings.site_icon", type: 'select_image',
-            items: Array.from({ length: 9 }, (_, i) => ({ image_file: "favicon_" + i.toString(), value: "favicon_" + i.toString() }))
-          },
-          { icon: "mdi-copyright", key: "HEADER", label: "settings.site_header", type: 'textarea' },
-          { icon: "mdi-copyright", key: "FOOTER", label: "settings.site_footer", type: 'textarea' },
           {
             icon: "home", key:"INDEX_PAGE_TYPE", label: "settings.index_page_type", type: 'select',
             items: [{ text: this.$t('settings.index_page_type_index'), value: "index" }, { text: this.$t('settings.index_page_type_all'), value: "all" }, { text: this.$t('settings.index_page_type_categories'), value: "categories" }]

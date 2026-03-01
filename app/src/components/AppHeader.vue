@@ -169,7 +169,7 @@
             </v-tooltip>
 
             <v-toolbar-title class="ml-4 mr-12 align-center d-flex">
-                <span class="cursor-pointer" @click="$router.push('/')">{{ sys.title.length > 10 ? sys.title.substring(0, 10) + '...' : sys.title }}</span>
+                <span class="cursor-pointer" @click="$router.push('/')">{{ sys.title.length > 16 ? sys.title.substring(0, 16) + '...' : sys.title }}</span>
             </v-toolbar-title>
 
             <v-spacer></v-spacer>
