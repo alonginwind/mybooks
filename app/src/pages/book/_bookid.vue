@@ -673,7 +673,7 @@
                     ></v-progress-circular>
                     <book-cards v-else :books="suggestionBooks">
                         <template #introduce="{ book }">
-                            <div class="text-caption grey--text mt-1">
+                            <div class="text-caption grey--text mt-1 text-truncate">
                                 {{ book.author }}
                             </div>
                         </template>
