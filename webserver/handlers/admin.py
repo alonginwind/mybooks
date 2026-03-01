@@ -429,7 +429,7 @@ class AdminInstall(BaseHandler):
 
         # 设置admin user的信息
         user.email = email
-        user.avatar = CONF["avatar_service"] + "/avatar/" + hashlib.md5(email.encode("UTF-8")).hexdigest()
+        user.avatar = "reader.svg"
         user.update_time = datetime.datetime.now()
         user.access_time = datetime.datetime.now()
         user.active = True
