@@ -62,12 +62,14 @@ results = identify(
 
 if results:
     print("=== 查询结果(ISBN) ===")
-    mi = results[0]
-    print(mi.title, mi.authors, mi.publisher, mi.pubdate)
-    print(mi.comments)       # 简介
-    print(mi.rating)         # 评分
-    print(mi.tags)           # 标签
-    print(mi.identifiers)    # {'isbn': '...', 'amazon': '...', 'google': '...'}
+    print("结果数量:", len(results))
+    for result in results:
+        print(f"Title: {result.title}, Authors: {result.authors}, Publisher: {result.publisher}, PubDate: {result.pubdate}")
+        print(f"Identifiers: {result.identifiers}, Language: {result.language}")
+        print(f"Rating: {result.rating}, Tags: {result.tags}")
+        print(f"Comments: {result.comments[:100]}...")  # 只显示简介的前100字符
+        print(result.identifiers)
+        print("-" * 40)
 
 # # ② 按书名+作者查询
 # results = identify(
