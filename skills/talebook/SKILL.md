@@ -1,254 +1,624 @@
 ---
 name: talebook
 homepage: https://www.mybooks.top
-allowed-tools: Bash(curl:*)
-metadata: {"clawdbot":{},"openclaw":{"requires":{"bins":[]},"always":true}}
-description: "Talebook是个人书库管理系统，提供电子书管理，包括存储、分类、搜索和元数据管理功能。你可以帮助用户：查询书库中书籍总量和统计信息,浏览书库中的书籍列表,搜索特定书籍,更新书籍的元数据（书名、作者、标签、分类等）,从在线来源查询书籍信息, 对书库中书籍进行自动元数据填充（封面、简介、标签等）"
+allowed-tools: Bash(python3:*)
+metadata: {"clawdbot":{},"openclaw":{"requires":{"bins":["curl","python3"]},"always":true}}
+description: "Talebook(PoxenStudio)是个人书库管理系统，提供电子书及实体书管理，包括存储、分类、搜索和元数据管理功能。你可以帮助用户：查询书库统计信息和阅读统计,搜索/浏览书籍,获取书籍详情,更新书籍元数据（书名、作者、标签、分类、简介等）,自动联网填充书籍信息,发送书籍到邮箱或阅读器设备,上传电子书或通过ISBN添加实体书,管理阅读状态（想读/在读/已读/收藏）,查看作者信息和分类信息"
 ---
 
 # talebook
-## Quick Start
+
+## Requirements
 ```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh <tool-name> '<json-args>'
+# 需要配置环境变量后方可使用
+export TALEBOOK_HOST="http://127.0.0.1:8082"
+export TALEBOOK_USER="admin"
+export TALEBOOK_PASSWORD="your_password"
+`
+# 或者在~/.openclaw/.env文件中添加：
+TALEBOOK_HOST="http://127.0.0.1:8082"
+TALEBOOK_USER="admin"
+TALEBOOK_PASSWORD="your_password"
+
+然后按如下方式执行：
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh <tool-name> '<json-args>'
 ```
 
-## 使用方法
+## 通用响应格式与认证方式
 
-### `get_books_count` — 获取书库统计
+### 通用 JSON 响应结构
+所有 API 均返回如下格式：
+```json
+{
+  "err": "ok",       // "ok" 表示成功，其他字符串表示错误码
+  "msg": "...",      // 可选，人类可读的成功/错误说明
+  "data": { }        // 可选，具体响应数据（因接口而异）
+}
+```
 
-**使用场景**：
-- 用户询问"我的书库有多少本书？"
-- 需要了解书库规模时作为第一步查询
+常见错误码：
+| `err` 值 | 含义 |
+|----------|------|
+| `"ok"` | 操作成功 |
+| `"user.need_login"` | 未登录或登录态已过期 |
+| `"permission"` | 无权限执行该操作 |
+| `"params.invalid"` | 请求参数错误 |
+| `"params.book.invalid"` | 书籍不存在或 ID 错误 |
+| `"task.running"` | 后台任务正在进行中，稍后重试 |
+
+### 认证方式
+- 脚本通过 `TALEBOOK_USER` / `TALEBOOK_PASSWORD` 环境变量自动调用 `/api/user/sign_in` 完成登录
+- 服务端通过 **Secure Cookie**（`user_id` + `lt`）维持会话，Cookie 由 curl 的 cookie jar 自动管理
+- 若响应中出现 `err=user.need_login`，脚本会自动重新登录后重试一次；仍失败则报错退出
+- **必须**在调用前配置 `TALEBOOK_HOST`、`TALEBOOK_USER`、`TALEBOOK_PASSWORD` 三个环境变量，否则脚本直接报错退出
+
+---
+
+## 工具列表
+
+### `get_user_info` — 用户信息与系统统计
+
+**使用场景**：获取当前登录用户信息，同时返回书库总体统计（书籍数、作者数等）
 
 **参数**：无
 
-**执行脚本**:
+**执行脚本**：
 ```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh get_books_count '{}'
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh get_user_info '{}'
 ```
 
-**返回示例**：
+**响应示例**：
 ```json
 {
-  "status": "success",
-  "data": { "books": 1280, "authors": 342 },
-  "message": "Total 1280 books, and 342 authors."
+  "err": "ok",
+  "user": { "is_login": true, "nickname": "管理员", "is_admin": true },
+  "sys": { "books": 1280, "authors": 342, "tags": 86, "mtime": "2025-03-01" }
 }
 ```
 
 ---
 
-### `get_books` — 分页浏览书籍列表
+### `library_stats` — 书库统计
 
-**使用场景**：
-- 用户想浏览书库里有哪些书
-- 需要获取最近添加的书籍（使用 `desc: true`）
-- 遍历所有书籍时逐页获取
+**使用场景**：获取书库详细统计，包括电子书/实体书数量及本月新增
 
-**参数**：
+**参数**：无
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| `page` | number | ✅ | — | 页码，从 1 开始 |
-| `page_size` | number | ❌ | 10 | 每页数量，范围 10–20 |
-| `desc` | boolean | ❌ | — | 是否按 ID 倒序（true = 最新在前） |
-| `include_comments` | boolean | ❌ | false | 是否包含书籍简介（会增加 token 消耗） |
-
-**执行脚本**:
+**执行脚本**：
 ```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh get_books '{"page":"<page>"}'
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh library_stats '{}'
 ```
 
-**使用建议**：
-- 通常先调用 `get_books_count` 了解总量，再分页获取
-- 如只关心最新书籍，设 `desc: true`，只取第 1 页
-- 不需要展示简介时，保持 `include_comments: false` 以减少 token 消耗
+**响应示例**：
+```json
+{
+  "err": "ok",
+  "stats": {
+    "total_books": 1280,
+    "ebook_count": 1210,
+    "physical_count": 70,
+    "month_ebook_count": 12,
+    "month_physical_count": 3,
+    "current_year": 2025,
+    "current_month": 3
+  }
+}
+```
+
+---
+
+### `reading_stats` — 阅读统计
+
+**使用场景**：获取当前用户的阅读统计（在读/已读数量、本月数据）及当前在读书单
+
+**参数**：无
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh reading_stats '{}'
+```
+
+**响应示例**：
+```json
+{
+  "err": "ok",
+  "stats": {
+    "total_reading": 5,
+    "total_read_done": 42,
+    "month_reading": 2,
+    "month_read_done": 3
+  },
+  "current_reading_books": [ /* 书籍对象列表 */ ],
+  "month_read_done_books": [ /* 书籍对象列表 */ ]
+}
+```
 
 ---
 
 ### `search_books` — 搜索书籍
 
 **使用场景**：
-- 用户询问"有没有余华的书？"→ 用 `name` 参数
-- 用户想找高评分书籍 →用 `rating` 参数
-- 用户按标签分类找书，例如"科幻类" → 用 `tags` 参数
-- 用户提供 ISBN 编号查书 → 用 `isbn` 参数
-- 用户想找某个时间段添加的书 → 用 `create_time` 参数
-
-**参数**（至少提供其中一个）：
-
-| 参数 | 类型 | 说明 | 示例 |
-|------|------|------|------|
-| `name` | string | 按书名或作者名搜索，支持简繁体自动转换 | `"活着"` / `"余华"` |
-| `rating` | string | 评分条件查询 | `">=4"` / `"5"` |
-| `tags` | string | 标签搜索，多个标签用英文逗号分隔（取交集） | `"小说,中国"` |
-| `isbn` | string | ISBN 编号精确匹配 | `"9787020024759"` |
-| `create_time` | string | 添加时间范围查询 | `">2024-01-01"` |
-| `include_comments` | boolean | 是否包含书籍简介，默认 false | — |
-
-**执行脚本**:
-```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh search_books '{}'
-```
-
-**返回说明**：
-- `data.list`：书籍列表，每本书包含：`id`、`title`、`author`、`tags`、`category`、`rating`、`publisher`、`pubdate`（以及可选的 `comments`）
-- `data.total`：匹配的书籍总数（最多返回 20 条，但 `total` 反映实际命中数）
-
-**注意**：`name` 搜索时系统会自动尝试简繁体转换，中文书名两种写法均可命中。
-
----
-
-### `update_book_info` — 更新书籍元数据
-
-**使用场景**：
-- 用户说"帮我把《XX》的作者改成YY"
-- 用户要为书籍添加或修改标签、分类
-- 用户需要手动修正书名、ISBN 或简介
-- 通过 `query_book_metadata` 查到正确信息后，回填到书库
-
-**参数**：
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `book_id` | string/integer | ✅ | 书籍 ID |
-| `title` | string | ❌ | 书名 |
-| `authors` | string/array | ❌ | 作者，可以是字符串或字符串数组 |
-| `isbn` | string | ❌ | ISBN 编号 |
-| `comments` | string | ❌ | 书籍简介（支持 HTML，**不要**将 `<>` 转义为 `&lt;&gt;`） |
-| `tags` | string/array | ❌ | 标签，可以是字符串或字符串数组 |
-| `category` | string | ❌ | 分类，自由文本字段，可用于任意分类目的 |
-
-**执行脚本**:
-```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh update_book_info '{"book_id":"<book_id>"}'
-```
-
-**注意事项**：
-- 只传入需要修改的字段，未传入的字段保持不变
-- `comments` 如包含 HTML 标签请保留原始格式，不要转义
-- 操作需要当前用户对该书有编辑权限（需为管理员或书籍拥有者）
-
-**返回示例**：
-```json
-{
-  "status": "success",
-  "message": "Successfully updated book (ID: 42)",
-  "updated_fields": ["title: 活着", "authors: ['余华']"],
-  "updated_by": "admin"
-}
-```
-
----
-
-### `query_book_metadata` — 在线查询书籍元数据
-
-**使用场景**：
-- 用户询问"帮我查一下《三体》的出版信息"
-- 在更新书库前，先从网上查询准确元数据
-- 用户提供 ISBN，需要获取书籍详细信息
-
-**参数**（至少提供其中一个）：
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `title` | string | 二选一 | 书名关键词 |
-| `isbn` | string | 二选一 | ISBN 编号 |
-
-**返回字段**（每本书）：
-
-| 字段 | 说明 |
-|------|------|
-| `title` | 书名 |
-| `authors` | 作者列表 |
-| `publisher` | 出版社 |
-| `isbn` / `isbn13` | ISBN 编号 |
-| `comments` | 书籍简介 |
-| `tags` | 标签列表 |
-| `rating` | 评分（0–10） |
-| `pubdate` | 出版日期 |
-| `cover_url` | 封面图片链接 |
-| `source` | 数据来源（`douban` / `baike` / `youshu` 等） |
-| `provider_key` / `provider_value` | 数据源标识符（可用于后续精确匹配） |
-
-**执行脚本**:
-```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh query_book_metadata '{"title":"<title>"}'
-```
-
-**典型工作流**：
-1. `query_book_metadata` 查询在线信息，确认结果
-2. 展示给用户确认
-3. 调用 `update_book_info` 将选定数据写入书库
-
----
-
-### `auto_fill_book_info` — 自动填充书籍信息
-
-**使用场景**：
-- 用户说"帮我更新《XX》的封面和简介"
-- 用户说"书库里有很多书信息不完整，帮我补全"
-- 用户想批量给书籍打上标签
-- 这是**更新书库中现有书籍**的首选工具（比手动 `query + update` 更便捷）
+- 按书名或作者名搜索，支持简繁体自动转换
+- "有没有余华的书？" / "找一下《三体》"
 
 **参数**：
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| `book_ids` | array/integer/string | 二选一 | — | 书籍 ID 或 ID 数组 |
-| `title` | string | 二选一 | — | 书名关键词。匹配唯一书籍时自动更新；匹配多本时返回列表供选择 |
-| `only_tags` | boolean | ❌ | false | 为 `true` 时仅更新标签，不修改其他元数据 |
+| `name` | string | ✅ | — | 搜索关键词（书名或作者名） |
+| `num` | int | ❌ | 20 | 每页数量 |
+| `page` | int | ❌ | 1 | 页码，从 1 开始 |
 
-**执行脚本**:
+**执行脚本**：
 ```bash
-$HOME/.openclaw/skills/talebook/scripts/talebook-api.sh auto_fill_book_info '{}'
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh search_books '{"name":"三体"}'
 ```
 
-**两种调用模式**：
-
-**模式 A：通过 `title` 查找并更新**
-```
-用户说："帮我更新《活着》的信息"
-→ 调用 auto_fill_book_info(title="活着")
-→ 若仅匹配一本：直接更新，返回成功
-→ 若匹配多本：返回书籍列表，提示用户选择具体 book_id
-```
-
-**模式 B：通过 `book_ids` 直接更新**
-```
-用户说："帮我更新 ID 为 42、43 的书"
-→ 调用 auto_fill_book_info(book_ids=[42, 43])
-→ 返回每本书的处理结果
-```
-
-**返回结果格式**：
-
-当 `title` 匹配多本书时，返回：
+**响应示例**：
 ```json
 {
-  "status": "multiple_found",
-  "message": "Found 3 books with title '活着'. Please specify book_ids to update.",
-  "books": [
-    { "id": 42, "title": "活着", "authors": ["余华"], "publisher": "..." },
-    ...
-  ],
-  "total": 3
+  "err": "ok",
+  "title": "搜索：三体",
+  "total": 3,
+  "books": [ /* 书籍对象列表 */ ]
 }
 ```
 
-更新完成后，返回：
+---
+
+### `search_by_category` — 按分类查询书籍
+
+**使用场景**：查询指定分类下的所有书籍（基于自定义 `#category` 字段）
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `category` | string | ✅ | — | 分类名称，如 "科幻" |
+| `num` | int | ❌ | 20 | 每页数量 |
+| `page` | int | ❌ | 1 | 页码，从 1 开始 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh search_by_category '{"category":"科幻"}'
+```
+
+---
+
+### `get_book` — 书籍详情
+
+**使用场景**：获取指定书籍的完整信息，包括元数据、可用格式、封面、阅读状态等
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `book_id` | int | ✅ | 书籍 ID |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh get_book '{"book_id":42}'
+```
+
+**响应示例**：
 ```json
 {
-  "status": "completed",
-  "summary": { "total": 2, "success": 2, "failed": 0, "skipped": 0 },
-  "results": [
-    { "book_id": 42, "title": "活着", "status": "success", "message": "Book information updated successfully" }
-  ],
-  "updated_by": "admin"
+  "err": "ok",
+  "book": {
+    "id": 42,
+    "title": "活着",
+    "authors": ["余华"],
+    "tags": ["小说", "中国文学"],
+    "publisher": "作家出版社",
+    "isbn": "9787506365437",
+    "pubdate": "2012-08-01",
+    "rating": 9,
+    "comments": "《活着》讲述了...",
+    "category": "现代文学",
+    "available_formats": ["epub", "pdf"],
+    "fmt_epub": "/path/to/file.epub",
+    "cover_url": "/get/cover/42",
+    "state": {
+      "favorite": 0,
+      "wants": 0,
+      "read_state": 1
+    }
+  },
+  "kindle_sender": "sender@example.com"
 }
 ```
 
-**auto_fill 会同步更新的内容包括**：封面图片、书籍简介（comments）、出版社、出版日期、作者、标签（tags）。书名默认**保留原值不修改**（防止错误覆盖）。
+---
+
+### `edit_book` — 编辑书籍元数据
+
+**使用场景**：
+- 手动修改书名、作者、标签、分类等字段
+- 修改实体书数量或类型
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `book_id` | int | ✅ | 书籍 ID |
+| `title` | string | ❌ | 书名 |
+| `authors` | array | ❌ | 作者列表，如 `["余华"]` |
+| `tags` | array | ❌ | 标签列表，**替换**原有标签（想追加需先 `get_book` 获取现有标签再合并） |
+| `publisher` | string | ❌ | 出版社 |
+| `isbn` | string | ❌ | ISBN 编号 |
+| `series` | string | ❌ | 系列/丛书名 |
+| `rating` | number | ❌ | 评分（0–10） |
+| `languages` | array | ❌ | 语言代码列表，如 `["zho"]`（中文）、`["eng"]`（英文） |
+| `pubdate` | string | ❌ | 出版日期，格式：`"2024-01-15"` / `"2024-01"` / `"2024"` |
+| `comments` | string | ❌ | 书籍简介，支持 HTML，请勿将 `<>` 转义为 `&lt;&gt;` |
+| `category` | string | ❌ | 自定义分类（最长 80 字符；传 `"清除"` 或 `"clear"` 清空分类） |
+| `book_count` | int | ❌ | 实体书数量（需配合 `book_type: 1` 使用） |
+| `book_type` | int | ❌ | 书籍类型：`0`=电子书，`1`=实体书 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh edit_book '{"book_id":42,"tags":["小说","中国文学"],"category":"现代文学"}'
+```
+
+**响应示例**：
+```json
+{ "err": "ok", "msg": "更新成功", "books": [42] }
+```
+
+---
+
+### `book_fill` — 自动联网填充书籍信息
+
+**使用场景**：
+- "帮我更新《XX》的封面和简介"
+- "书库里有很多书信息不完整，帮我补全"
+- 批量补全多本书的封面、简介、出版社、出版日期、标签等
+
+**权限**：需要管理员权限
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `idlist` | array 或 `"all"` | ✅ | 书籍 ID 数组，或 `"all"` 表示全库处理 |
+
+**注意**：任务在后台异步执行，调用后立即返回；书名**默认保留原值不修改**（防止错误覆盖）
+
+**执行脚本**：
+```bash
+# 更新单本书
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh book_fill '{"idlist":[42]}'
+
+# 批量更新
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh book_fill '{"idlist":[42,43,44]}'
+```
+
+**响应示例**：
+```json
+{ "err": "ok", "msg": "任务启动成功！请耐心等待，稍后再来刷新页面" }
+```
+
+---
+
+### `mailto` — 发送书籍到邮箱
+
+**使用场景**：将书籍以附件形式发送到指定邮箱（如 Kindle 邮箱）
+
+**格式优先级**：epub > azw3 > pdf > mobi > txt（取首个存在的格式）
+
+**权限**：需要登录，且账号需有推送权限（`can_push`）
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `book_id` | int | ✅ | 书籍 ID |
+| `email` | string | ✅ | 目标邮箱地址（可以是 Kindle 邮箱） |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh mailto '{"book_id":42,"email":"user@kindle.com"}'
+```
+
+**响应示例**：
+```json
+{ "err": "ok", "msg": "后台正在推送，稍后可以刷新页面，在通知消息中查看结果。" }
+```
+
+---
+
+### `send_to_device` — 发送书籍到阅读器设备
+
+**使用场景**：通过 WiFi 将书籍直接推送到阅读器设备（仅支持当前网络内的临时设备）
+
+**支持的设备类型（`device_type`）**：
+
+| 类型 | 设备 | 传输方式 | `device_url` 说明 |
+|------|------|----------|-------------------|
+| `kindle` | Kindle 系列 | 邮件发送 | 不需填写，改用 `mailbox` 参数 |
+| `duokan` | 多看阅读器 | HTTP WiFi 上传 | 设备局域网 IP，如 `192.168.1.100` |
+| `ireader` | 掌阅 iReader | HTTP WiFi 上传 | 设备局域网 IP |
+| `hanwang` | 汉王电纸书 | HTTP WiFi 上传 | 设备局域网 IP |
+| `boox` | 文石 BOOX | HTTP WiFi 上传 | 设备局域网 IP |
+| `dangdang` | 当当阅读器 | HTTP WiFi 上传 | 设备局域网 IP |
+
+**WiFi 传输格式优先级**：epub > azw3 > pdf > txt
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `book_id` | int | ✅ | 书籍 ID |
+| `device_type` | string | ✅ | 设备类型（见上表） |
+| `device_url` | string | kindle 以外必填 | 设备局域网 IP 或地址（如 `"192.168.1.100"` 或 `"http://192.168.1.100:80"`） |
+| `mailbox` | string | kindle 时必填 | Kindle 邮箱地址 |
+
+**执行脚本**：
+```bash
+# 发送到多看设备
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh send_to_device \
+  '{"book_id":42,"device_type":"duokan","device_url":"192.168.1.100"}'
+
+# 发送到 Kindle（通过邮件）
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh send_to_device \
+  '{"book_id":42,"device_type":"kindle","mailbox":"mykindle@kindle.cn"}'
+```
+
+**响应示例**：
+```json
+{ "err": "ok", "msg": "书籍发送成功" }
+```
+
+---
+
+### `categories` — 查看分类信息
+
+**使用场景**：获取当前书库中所有自定义分类及各分类下的书籍数量
+
+**参数**：无
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh categories '{}'
+```
+
+**响应示例**：
+```json
+{
+  "err": "ok",
+  "categories": [
+    { "name": "现代文学", "count": 128 },
+    { "name": "科幻", "count": 56 }
+  ]
+}
+```
+
+---
+
+### `list_authors` — 查看作者列表
+
+**使用场景**：获取所有有在库书籍的作者及其书籍数量
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `show` | string | ❌ | 传 `"all"` 显示全部，否则返回前 N 条 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh list_authors '{}'
+```
+
+**响应示例**：
+```json
+{
+  "err": "ok",
+  "meta": "author",
+  "title": "全部作者",
+  "items": [
+    { "name": "余华", "count": 5 },
+    { "name": "刘慈欣", "count": 8 }
+  ],
+  "total": 342
+}
+```
+
+---
+
+### `get_author_books` — 查询作者的在库书籍
+
+**使用场景**：获取指定作者在书库中的所有书籍
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `author_name` | string | ✅ | — | 作者名 |
+| `num` | int | ❌ | 20 | 每页数量 |
+| `page` | int | ❌ | 1 | 页码，从 1 开始 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh get_author_books '{"author_name":"余华"}'
+```
+
+---
+
+### `book_upload` — 上传电子书
+
+**使用场景**：上传本地电子书文件到书库，支持 epub/mobi/azw/azw3/pdf/txt/lrf/rtf/djvu/docx 等格式
+
+**权限**：需要登录，且账号需有上传权限（`can_upload`）
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `file_path` | string | ✅ | 本地文件的绝对路径 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh book_upload '{"file_path":"/path/to/book.epub"}'
+```
+
+**响应示例**：
+```json
+{ "err": "ok", "book_id": 123 }
+```
+
+---
+
+### `book_add_by_isbn` — 通过 ISBN 添加实体书
+
+**使用场景**：
+- 扫描实体书的 ISBN 条码后，将书入库
+- 若该 ISBN 书籍已存在，则自动将实体书数量 +1
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `isbn` | string | ✅ | ISBN 编号，如 `"9787020024759"` |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh book_add_by_isbn '{"isbn":"9787020024759"}'
+```
+
+**响应示例**（新增）：
+```json
+{ "err": "ok", "msg": "图书添加成功", "book_id": 456 }
+```
+
+**响应示例**（已存在，更新数量）：
+```json
+{ "err": "ok", "msg": "实体书数量已更新，当前数量：2", "book_id": 123 }
+```
+
+---
+
+### `wants` — 标记/取消想读
+
+**使用场景**：将书籍加入/移出"想读（待读）"清单
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `book_id` | int | ✅ | — | 书籍 ID |
+| `wants` | bool | ❌ | `true` | `true`=标记想读，`false`=取消 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh wants '{"book_id":42}'
+```
+
+---
+
+### `list_wants` — 想读清单
+
+**使用场景**：获取当前用户的"想读（待读）"书籍列表
+
+**参数**：无
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh list_wants '{}'
+```
+
+---
+
+### `favorite` — 收藏/取消收藏
+
+**使用场景**：收藏或取消收藏指定书籍
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `book_id` | int | ✅ | — | 书籍 ID |
+| `favorite` | bool | ❌ | `true` | `true`=收藏，`false`=取消收藏 |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh favorite '{"book_id":42}'
+```
+
+---
+
+### `list_favorites` — 收藏列表
+
+**使用场景**：获取当前用户的所有收藏书籍
+
+**参数**：无
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh list_favorites '{}'
+```
+
+---
+
+### `reading` — 设置阅读状态
+
+**使用场景**：标记某本书的阅读状态（未读/在读/已读完）
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `book_id` | int | ✅ | 书籍 ID |
+| `read_state` | int | ✅ | 阅读状态：`0`=未读，`1`=在读，`2`=已读完 |
+
+**执行脚本**：
+```bash
+# 标记为在读
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh reading '{"book_id":42,"read_state":1}'
+```
+
+---
+
+### `list_reading` — 在读书单
+
+**使用场景**：获取当前用户的"正在阅读"书籍列表
+
+**参数**：无
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh list_reading '{}'
+```
+
+---
+
+### `read_done` — 标记已读完
+
+**使用场景**：快捷将某本书标记为已读完（即 `reading` 工具中 `read_state=2` 的简化版）
+
+**参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `book_id` | int | ✅ | 书籍 ID |
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh read_done '{"book_id":42}'
+```
+
+---
+
+### `list_read_done` — 已读清单
+
+**使用场景**：获取当前用户的"已读完"书籍列表
+
+**参数**：无
+
+**执行脚本**：
+```bash
+$HOME/.openclaw/skills/talebook/scripts/talebook_api.sh list_read_done '{}'
+```
 
 ---
 
@@ -257,45 +627,74 @@ $HOME/.openclaw/skills/talebook/scripts/talebook-api.sh auto_fill_book_info '{}'
 ```
 用户请求
 │
-├─ "有多少书？" / "统计书库" → get_books_count
+├─ "书库有多少书？" / "统计书库"
+│   → library_stats（详细分类统计）
+│   → 或 get_user_info（快速总数）
 │
-├─ "列出书籍" / "浏览书库" → get_books（分页）
+├─ "我读了多少书？" / "阅读情况"
+│   → reading_stats
 │
-├─ "找 XX 书" / "搜索 YY 作者" → search_books
+├─ "找一下 XX 书" / "搜索 YY 作者"
+│   → search_books（按关键词）
 │
-├─ "查一下 XX 的出版信息"（不修改书库）→ query_book_metadata
+├─ "找 XX 分类下的书"
+│   → search_by_category
 │
-├─ "更新 XX 的信息" / "补全封面简介"（修改书库）→ auto_fill_book_info
-│   │
-│   └─ 若返回 multiple_found → 展示列表 → 用户确认 → 再次调用 auto_fill_book_info(book_ids=...)
+├─ "查看书籍详情"
+│   → get_book
 │
-└─ "手动修改某字段"（如改标签、改分类）→ update_book_info
-    │（可先用 search_books 找到 book_id，再调用 update_book_info）
+├─ "更新/补全《XX》的封面、简介、标签信息"（自动从网上获取）
+│   → book_fill（需要管理员权限，传入 book_id 数组）
+│
+├─ "手动修改《XX》的标签/分类/书名等字段"
+│   → 先 search_books 确认 book_id → 再 edit_book
+│
+├─ "把书发给我的 Kindle / 发到邮箱"
+│   → mailto（发邮箱附件）
+│
+├─ "把书发到我的多看/掌阅/BOOX 设备"
+│   → send_to_device（需设备在同一局域网并开启 WiFi 接收）
+│
+├─ "上传这本书" / "添加实体书"
+│   → book_upload（电子书文件）
+│   → book_add_by_isbn（实体书 ISBN）
+│
+├─ "这本书想读" / "加入待读清单"
+│   → wants
+│
+├─ "收藏这本书"
+│   → favorite
+│
+├─ "标记正在读" / "标记已读完"
+│   → reading（read_state: 1 或 2）
+│   → read_done（快捷标记已读完）
+│
+└─ "有哪些分类？" / "XX 作者有哪些书？"
+    → categories / list_authors / get_author_books
 ```
 
 ---
 
 ## 错误处理规范
 
-| `status` 值 | 含义 | 建议处理 |
-|-------------|------|----------|
-| `"success"` / `"completed"` | 操作成功 | 展示结果 |
-| `"multiple_found"` | 搜索到多本匹配书籍（`auto_fill_book_info` 专用） | 展示书籍列表，请用户指定 |
-| `"error"` | 操作失败，见 `message` 字段 | 向用户说明原因 |
-| `"failed"` | 单本书处理失败（批量操作中） | 汇报具体失败原因 |
-
-常见错误提示：
-- `"Authentication required"` — token 配置有误，检查 MCP 连接配置
-- `"Permission denied"` — 当前用户无权限操作该书籍
-- `"Book not found"` — 书籍 ID 不存在，可先通过 `search_books` 确认
-- `"No books found"` — 搜索无结果，建议尝试其他关键词或简繁体转换
+| `err` 值 | 含义 | 建议处理 |
+|----------|------|----------|
+| `"ok"` | 操作成功 | 展示结果 |
+| `"user.need_login"` | 未登录或登录态过期 | 脚本自动重登录，仍失败则检查环境变量 |
+| `"permission"` | 无权限 | 说明当前账号权限不足，需管理员协助 |
+| `"params.book.invalid"` | 书籍不存在 | 建议用 `search_books` 重新确认 book_id |
+| `"task.running"` | 后台有任务在运行 | 等待当前任务完成后重试 |
+| `"book.notfound"` | ISBN 对应的书籍未在网上找到 | 换其他数据源或手动添加 |
+| `"connection.failed"` | 无法连接到设备 | 检查设备 IP 和 WiFi 接收功能是否开启 |
 
 ---
 
 ## 注意事项
 
-1. **无需登录**：MCP token 已通过 mcporter 内嵌在连接地址中，所有工具调用均已自动鉴权。
-2. **书籍 ID**：`book_id` 是书库中的唯一整数标识符，可通过 `search_books` 或 `get_books` 获取。
-3. **批量操作**：`auto_fill_book_info` 支持传入 ID 数组，适合批量更新，但建议每批不超过 10 本，避免请求超时。
-4. **在线数据源**：`auto_fill_book_info` 和 `query_book_metadata` 依赖豆瓣（douban）、百科（baike）等在线源，网络不可用或书籍较冷门时可能无法获取数据。
-5. **标签操作**：修改标签时，`update_book_info` 的 `tags` 参数会**替换**原有标签，若只想追加，需先通过 `search_books` 或 `get_books` 获取现有标签再合并后传入。
+1. **认证**：每次调用前脚本会自动登录，无需手动管理 Cookie；若未配置环境变量，脚本立即报错退出。
+2. **book_id**：书籍的唯一整数标识符，可通过 `search_books` 或 `get_book` 获取。
+3. **book_fill 异步性**：联网填充任务在后台运行，调用后立即返回；可通过 `get_book` 查看更新结果。
+4. **edit_book 标签替换**：`tags` 参数会**完整替换**原有标签，如需追加请先 `get_book` 获取现有标签再合并传入。
+5. **send_to_device 限制**：仅支持本地临时推送，不支持通过服务器中转到远程设备。
+6. **在线数据源**：`book_fill` 依赖豆瓣（douban）、百科（baike）等在线源，网络不可用或书籍较冷门时可能无结果。
+7. **批量 book_fill**：建议每批不超过 10 本，避免触发后台任务冲突（`task.running` 错误）。
