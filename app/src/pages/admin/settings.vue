@@ -33,6 +33,29 @@
                   <v-img :src="`${site_url}/logo/${item.image_file}.ico`" max-width="32" max-height="32" />
                 </template>
               </v-select>
+              <template v-else-if="f.type === 'meta_sources'" :key="f.key + '-meta_sources'">
+                <v-select small
+                  v-model="settings['META_SELECTED_SOURCE']"
+                  :items="metaSourceItems"
+                  :label="$t(f.label)"
+                  :prepend-icon="f.icon"
+                  multiple
+                  chips
+                  small-chips
+                  :disabled="!settings['auto_fill_meta']"
+                >
+                  <template v-slot:item="{ item, attrs, on }">
+                    <v-list-item v-on="on" v-bind="attrs">
+                      <v-list-item-action>
+                        <v-checkbox :input-value="attrs.inputValue" color="primary"></v-checkbox>
+                      </v-list-item-action>
+                      <v-list-item-content>
+                        <v-list-item-title>{{ item.text }}</v-list-item-title>
+                      </v-list-item-content>
+                    </v-list-item>
+                  </template>
+                </v-select>
+              </template>
               <v-text-field v-else :prepend-icon="f.icon" v-model="settings[f.key]" :key="f.key + '-text'" :label="$t(f.label)"
                 type="text"></v-text-field>
             </template>
@@ -360,6 +383,7 @@ export default {
         title: "settings.internet_book_sources",
         fields: [
           { icon: "", key: "auto_fill_meta", label: "settings.auto_fill_meta", type: 'checkbox' },
+          { icon: "mdi-source-branch", key: "META_SELECTED_SOURCE", label: "settings.meta_selected_source", type: 'meta_sources' },
           { icon: "info", key: "douban_baseurl", label: "settings.douban_baseurl" },
           { icon: "info", key: "douban_apikey", label: "settings.douban_api_key" },
           { icon: "info", key: "douban_max_count", label: "settings.douban_max_count" },
@@ -425,6 +449,9 @@ export default {
         if (!('DEVICES' in this.settings) || !Array.isArray(this.settings['DEVICES'])) {
           this.settings['DEVICES'] = [];
         }
+        if (!('META_SELECTED_SOURCE' in this.settings) || !Array.isArray(this.settings['META_SELECTED_SOURCE'])) {
+          this.settings['META_SELECTED_SOURCE'] = (this.settings['META_ALL_SOURCES'] || ['douban', 'baidu', 'google', 'amazon', 'xinhua']).slice();
+        }
         if (process.client && this.settings['MAX_UPLOAD_SIZE'] !== '') {
           localStorage.setItem('max_upload_size', this.settings['MAX_UPLOAD_SIZE']);
         }
@@ -466,6 +493,15 @@ export default {
       v => !v || (v.length >= 16 && v.length <= 128) || 'Length must be between 16 and 128 characters'
     ],
   }),
+  computed: {
+    metaSourceItems() {
+      const allSources = this.settings['META_ALL_SOURCES'] || ['douban', 'baidu', 'google', 'amazon', 'xinhua'];
+      return allSources.map(source => ({
+        text: this.$t('settings.meta_source_' + source),
+        value: source,
+      }));
+    },
+  },
   beforeDestroy() {
     // 页面销毁时移除settings-page类名
     if (process.client) {

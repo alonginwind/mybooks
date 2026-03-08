@@ -160,7 +160,6 @@ class ScanService(AsyncService):
             if not self.save_or_rollback(row):
                 continue
             rows.append(row)
-        # self.session.bulk_save_objects(rows)
 
         logging.info("========== start to check files hash & meta ============")
         # 检查文件哈希值，检查DB重复情况

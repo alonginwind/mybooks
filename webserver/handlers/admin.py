@@ -32,6 +32,8 @@ from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL, BO
 CONF = loader.get_settings()
 USER_UPDATE_TS_MAP = {}
 ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
+META_ALL_SOURCES = ["douban", "baidu", "google", "amazon", "xinhua"]
+DEFAULT_META_SOURCES = ["douban", "baidu", "xinhua"]
 
 
 class AdminUsers(BaseHandler):
@@ -342,7 +344,8 @@ class AdminSettings(BaseHandler):
             "DEFAULT_PAGE_SIZE",
             "WEBDAV_SYNC_FOLDER",
             "ENABLE_AUDIO_CONVERSION_LOG",
-            "ENABLE_OPDS_SERVICE"
+            "ENABLE_OPDS_SERVICE",
+            "META_SELECTED_SOURCES"
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon
@@ -365,6 +368,10 @@ class AdminSettings(BaseHandler):
             args[ENABLE_VIP_QUOTA_KEY] = current_vip_quota
         if ENABLE_OPDS_SERVICE not in args:
             args[ENABLE_OPDS_SERVICE] = CONF.get(ENABLE_OPDS_SERVICE, True)
+
+        args["META_ALL_SOURCES"] = META_ALL_SOURCES
+        if "META_SELECTED_SOURCES" not in args:
+            args["META_SELECTED_SOURCES"] = DEFAULT_META_SOURCES
 
         if args["site_icon"] != "favicon_0" and args["site_icon"] != current_icon:
             new_icon_path = CONF["static_path"] + "/logo/" + args["site_icon"] + ".ico"
