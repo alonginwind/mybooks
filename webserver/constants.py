@@ -44,3 +44,5 @@ PROFILE_LOG_PATH = "/data/log/profiling.log"  # 性能分析日志文件路径
 ENABLE_OPDS_SERVICE = "ENABLE_OPDS_SERVICE"
 
 DEEPSEEK_API_BASE = "https://api.deepseek.com"
+
+AUTO_FILL_META = "auto_fill_meta"

@@ -41,7 +41,7 @@ from webserver.handlers.audio import AudioUtils
 from webserver.constants import COLUMN_CATEGORY, CALIBRE_COLUMN_CATEGORY
 from webserver.constants import CALIBRE_ERROR_FLAG, SUPPORTED_EBOOK_FORMATS
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT
-from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
+from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL, AUTO_FILL_META
 
 
 CONF = loader.get_settings()
@@ -235,7 +235,7 @@ class BookUpdateTags(BaseHandler):
                 logging.info(f"Limiting tag update to first 300 books out of {total_count}")
 
             # Call AutoFillService to update tags in background
-            AutoFillService().auto_fill_all(book_ids, only_tags=True)
+            AutoFillService().auto_fill_all(book_ids, only_tags=True, force=True)
 
             msg = _(u"已提交 %d 本书籍的标签更新任务，正在后台处理, 请稍后刷新查看结果") % len(book_ids)
             if total_count > 300:
@@ -1711,7 +1711,8 @@ class BookUpload(BaseHandler):
         item.collector_id = self.user_id()
         self.sqlite_session.add(item)
         self.sqlite_session.commit()
-        AutoFillService().auto_fill(book_id)
+        if CONF.get(AUTO_FILL_META, False):
+            AutoFillService().auto_fill(book_id)
         return book_id
 
     def get_upload_file(self):
@@ -1887,7 +1888,8 @@ class BookUploadChunk(BaseHandler):
         item.collector_id = self.user_id()
         self.sqlite_session.add(item)
         self.sqlite_session.commit()
-        AutoFillService().auto_fill(book_id)
+        if CONF.get(AUTO_FILL_META, False):
+            AutoFillService().auto_fill(book_id)
         return book_id
 
     @staticmethod

@@ -19,7 +19,7 @@ from typing import Any, Sequence, Dict, Optional
 
 from mcp.server import Server
 from mcp.types import Tool, TextContent
-from webserver.constants import CALIBRE_COLUMN_CATEGORY, COLUMN_CATEGORY
+from webserver.constants import CALIBRE_COLUMN_CATEGORY, COLUMN_CATEGORY, AUTO_FILL_META
 from webserver.constants import CALIBRE_ERROR_FLAG, CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
 from webserver.handlers.base import BaseHandler
 from webserver.utils import MCPBookFormatter
@@ -1012,7 +1012,8 @@ class MCPService:
         item.collector_id = user_id
         self.base_handler.sqlite_session.add(item)
         self.base_handler.sqlite_session.commit()
-        AutoFillService().auto_fill(book_id)
+        if CONF.get(AUTO_FILL_META, False):
+            AutoFillService().auto_fill(book_id)
         return book_id
 
     async def _add_format_to_existing_book(self, book_id: int, fpath: str,

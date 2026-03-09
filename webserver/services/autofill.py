@@ -42,8 +42,8 @@ class AutoFillService(AsyncService):
         }
 
     @AsyncService.register_service
-    def auto_fill_all(self, idlist: list, only_tags=False, qpm=60):
-        if not CONF['auto_fill_meta']:
+    def auto_fill_all(self, idlist: list, only_tags=False, force=False, qpm=60):
+        if not CONF['auto_fill_meta'] and not force:
             logging.info("Auto-fill meta is disabled in settings, skipping auto_fill_all.")
             return
 
