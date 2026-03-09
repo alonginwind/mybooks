@@ -12,7 +12,8 @@ from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.plugins.meta.calibre import CalibreMetadataApi
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
-from webserver.constants import AUTO_FILL_META, META_SELECTED_SOURCES
+from webserver.constants import AUTO_FILL_META, META_SELECTED_SOURCES, \
+    META_SOURCE_DOUBAN, META_SOURCE_BAIDU, META_SOURCE_GOOGLE, META_SOURCE_AMAZON
 
 CONF = loader.get_settings()
 
@@ -45,7 +46,7 @@ class AutoFillService(AsyncService):
 
     @AsyncService.register_service
     def auto_fill_all(self, idlist: list, only_tags=False, force=False, qpm=60):
-        if not CONF[AUTO_FILL_META] and not force:
+        if not CONF.get(AUTO_FILL_META, False) and not force:
             logging.info("Auto-fill meta is disabled in settings, skipping auto_fill_all.")
             return
 
@@ -171,7 +172,7 @@ class AutoFillService(AsyncService):
     @AsyncService.register_function
     def auto_fill(self, book_id, only_tags=False, force_update=False):
         mi = self.db.get_metadata(book_id, index_is_id=True)
-        if not force_update and (not CONF['auto_fill_meta'] or only_tags):
+        if not force_update and (not CONF.get(AUTO_FILL_META, False) or only_tags):
             self.do_fill_tags(book_id, mi, need_commit=True)
             return True
         return self.do_fill_metadata(book_id, mi)
@@ -209,7 +210,7 @@ class AutoFillService(AsyncService):
         return True
 
     def should_update(self, mi):
-        if not mi.comments or not mi.has_cover:
+        if not mi.comments or not mi.has_cover or not mi.authors or mi.authors[0] in (u"佚名", u"未知", u"Unknown"):
             return True
         return False
 
@@ -240,124 +241,126 @@ class AutoFillService(AsyncService):
         return False
 
     def plugin_search_best_book_info(self, mi):
+        sources = CONF.get(META_SELECTED_SOURCES, [])
+        if not sources:
+            return None
+
         title = re.sub("[(（].*", "", mi.title)
-        api = douban.DoubanBookApi(
-            CONF["douban_apikey"],
-            CONF["douban_baseurl"],
-            copy_image=True,
-            manual_select=False,
-            maxCount=CONF["douban_max_count"],
-        )
         book = None
         books = []
 
-        # 1. 查询 ISBN
-        try:
-            book = api.get_book_by_isbn(mi.isbn)
-        except:
-            logging.error(_("douban 接口查询 %s 失败"), title)
+        # 1. 豆瓣查询 ISBN
+        if META_SOURCE_DOUBAN in sources:
+            try:
+                api = douban.DoubanBookApi(
+                    CONF["douban_apikey"],
+                    CONF["douban_baseurl"],
+                    copy_image=True,
+                    manual_select=False,
+                    maxCount=CONF["douban_max_count"],
+                )
+                book = api.get_book_by_isbn(mi.isbn)
+                if book:
+                    return api.get_book_detail(book)
 
-        if book:
-            return api.get_book_detail(book)
+                # 2. 豆瓣查询 title
+                books = api.search_books(title)
+                if books:
+                    for b in books:
+                        if mi.title == b.get("title") and mi.publisher == b.get("publisher"):
+                            return api.get_book_detail(b)
+                    return api.get_book_detail(books[0])
+            except Exception:
+                logging.error(_("douban 接口查询 %s 失败"), title)
 
-        # 2. 查 title
-        try:
-            books = api.search_books(title)
-        except:
-            logging.error(_("douban 接口查询 %s 失败"), title)
+        # 3 & 4. 使用 Google Books 和 Amazon.com 查询
+        calibre_sources = [s for s in sources if s in (META_SOURCE_GOOGLE, META_SOURCE_AMAZON)]
+        if calibre_sources:
+            try:
+                result = CalibreMetadataApi.get_book_by_isbn(mi.isbn, sources=calibre_sources)
+                if result and result.cover_data:
+                    return result
+            except Exception:
+                logging.error(_("calibre 插件 ISBN 查询 %s 失败"), title)
 
-        if books:
-            # 优先选择匹配度更高的书
-            for b in books:
-                if mi.title == b.get("title") and mi.publisher == b.get("publisher"):
-                    return api.get_book_detail(b)
-            return api.get_book_detail(books[0])
+            try:
+                result = CalibreMetadataApi.get_book_by_title(title, authors=mi.authors, sources=calibre_sources)
+                if result and result.cover_data:
+                    return result
+            except Exception:
+                logging.error(_("calibre 插件书名查询 %s 失败"), title)
 
-        # 3. 使用 Google Books 和 Amazon.com 按 ISBN 查询
-        try:
-            result = CalibreMetadataApi.get_book_by_isbn(mi.isbn)
-            if result and result.cover_data:
-                return result
-        except:
-            logging.error(_("calibre 插件 ISBN 查询 %s 失败"), title)
-
-        # 4. 使用 Google Books 和 Amazon.com 按书名查询
-        try:
-            result = CalibreMetadataApi.get_book_by_title(title, authors=mi.authors)
-            if result and result.cover_data:
-                return result
-        except:
-            logging.error(_("calibre 插件书名查询 %s 失败"), title)
-
-        # 5. 查 baidu
-        api = baike.BaiduBaikeApi(copy_image=True)
-        try:
-            book = api.get_book(title)
-            if book:
-                return book
-        except:
-            logging.error(_("baidu 接口查询 %s 失败"), title)
+        # 5. 百度百科查询
+        if META_SOURCE_BAIDU in sources:
+            api = baike.BaiduBaikeApi(copy_image=True)
+            try:
+                book = api.get_book(title)
+                if book:
+                    return book
+            except Exception:
+                logging.error(_("baidu 接口查询 %s 失败"), title)
 
         return None
 
     def plugin_search_best_book(self, title, isbn, author, publisher):
+        sources = CONF.get(META_SELECTED_SOURCES, [])
+        if not sources:
+            return None
+
         title = re.sub("[(（].*", "", title)
-        api = douban.DoubanBookApi(
-            CONF["douban_apikey"],
-            CONF["douban_baseurl"],
-            copy_image=True,
-            manual_select=False,
-            maxCount=CONF["douban_max_count"],
-        )
         book = None
         books = []
 
-        # 1. 查询 ISBN
-        try:
-            book = api.get_book_by_isbn(isbn)
-        except:
-            logging.error(_("douban 接口查询 %s 失败"), title)
+        # 1. 豆瓣查询 ISBN
+        if META_SOURCE_DOUBAN in sources:
+            try:
+                api = douban.DoubanBookApi(
+                    CONF["douban_apikey"],
+                    CONF["douban_baseurl"],
+                    copy_image=True,
+                    manual_select=False,
+                    maxCount=CONF["douban_max_count"],
+                )
+                book = api.get_book_by_isbn(isbn)
+                if book:
+                    return api.get_book_detail(book)
 
-        if book:
-            return api.get_book_detail(book)
+                # 2. 豆瓣查询 title
+                books = api.search_books(title)
+                if books:
+                    for b in books:
+                        if title == b.get("title") and publisher == b.get("publisher"):
+                            return api.get_book_detail(b)
+                    return api.get_book_detail(books[0])
+            except Exception:
+                logging.error(_("douban 接口查询 %s 失败"), title)
 
-        # 2. 查 title
-        try:
-            books = api.search_books(title)
-        except:
-            logging.error(_("douban 接口查询 %s 失败"), title)
+        # 3 & 4. 使用 Google Books 和 Amazon.com 查询
+        calibre_sources = [s for s in sources if s in (META_SOURCE_GOOGLE, META_SOURCE_AMAZON)]
+        if calibre_sources:
+            try:
+                result = CalibreMetadataApi.get_book_by_isbn(isbn, sources=calibre_sources)
+                if result and result.cover_data:
+                    return result
+            except Exception:
+                logging.error(_("calibre 插件 ISBN 查询 %s 失败"), title)
 
-        if books:
-            # 优先选择匹配度更高的书
-            for b in books:
-                if title == b.get("title") and publisher == b.get("publisher"):
-                    return api.get_book_detail(b)
-            return api.get_book_detail(books[0])
+            try:
+                result = CalibreMetadataApi.get_book_by_title(title, authors=[author] if author else None, sources=calibre_sources)
+                if result and result.cover_data:
+                    return result
+            except Exception:
+                logging.error(_("calibre 插件书名查询 %s 失败"), title)
 
-        # 3. 使用 Google Books 和 Amazon.com 按 ISBN 查询
-        try:
-            result = CalibreMetadataApi.get_book_by_isbn(isbn)
-            if result and result.cover_data:
-                return result
-        except:
-            logging.error(_("calibre 插件 ISBN 查询 %s 失败"), title)
-
-        # 4. 使用 Google Books 和 Amazon.com 按书名查询
-        try:
-            result = CalibreMetadataApi.get_book_by_title(title, authors=[author] if author else None)
-            if result and result.cover_data:
-                return result
-        except:
-            logging.error(_("calibre 插件书名查询 %s 失败"), title)
-
-        # 5. 查 baidu
-        api = baike.BaiduBaikeApi(copy_image=True)
-        try:
-            book = api.get_book(title)
-            if book:
-                return book
-        except:
-            logging.error(_("baidu 接口查询 %s 失败"), title)
+        # 5. 百度百科查询
+        if META_SOURCE_BAIDU in sources:
+            api = baike.BaiduBaikeApi(copy_image=True)
+            try:
+                book = api.get_book(title)
+                if book:
+                    return book
+            except Exception:
+                logging.error(_("baidu 接口查询 %s 失败"), title)
 
         return None
 

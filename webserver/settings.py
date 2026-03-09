@@ -78,7 +78,7 @@ settings = {
     "CALIBRE_CACHE_CLEAN_ENABLED": False,
     "CALIBRE_CACHE_CLEAN_INTERVAL": 1800,
 
-    "META_SELECTED_SOURCES": ["douban", "baidu"],
+    "META_SELECTED_SOURCES": ["douban", "baidu", "xinhua"],
 
     "EPUB_VIEWER": "epubjs.html",
     "CANDLE_READER_SERVER": "https://brs.talebook.org",

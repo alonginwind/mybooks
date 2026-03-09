@@ -756,7 +756,8 @@ class BaseHandler(web.RequestHandler):
                         mi.title_sort = utils.super_strip(mi.title)
                     if mi.authors:
                         mi.author_sort = utils.super_strip(mi.authors[0])
-
+                    if not mi.comments:
+                        mi.comments = "<>"
                     # 获取封面数据（cover 方法直接返回字节数据）
                     cover_data = self.calibre_db.cover(book_id, index_is_id=True)
                     if cover_data:

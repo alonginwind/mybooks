@@ -7,6 +7,7 @@ from gettext import gettext as _
 
 from webserver import loader
 from webserver.plugins.meta import baike, douban
+from webserver.constants import META_SELECTED_SOURCES, META_SOURCE_DOUBAN, META_SOURCE_BAIDU
 
 CONF = loader.get_settings()
 
@@ -51,6 +52,10 @@ class BookSearch:
         Returns:
             list: 搜索到的图书元数据列表
         """
+        sources = CONF.get(META_SELECTED_SOURCES, [])
+        if not sources:
+            return []
+
         if not title and not isbn:
             return []
 
@@ -60,42 +65,44 @@ class BookSearch:
         else:
             clean_title = ""
 
-        # 豆瓣搜索
-        douban_api = douban.DoubanBookApi(
-            CONF["douban_apikey"],
-            CONF["douban_baseurl"],
-            copy_image=False,
-            manual_select=False,
-            maxCount=CONF["douban_max_count"],
-        )
-
         books = []
-        if clean_title:
-            try:
-                books = douban_api.search_books(clean_title) or []
-            except Exception as e:
-                logging.error(_(u"豆瓣接口查询 %s 失败: %s" % (clean_title, str(e))))
 
-        # 如果有ISBN号但没搜索到合适的书，则精准查询一次ISBN
-        if isbn and not BookSearch.has_proper_book(books, clean_title, isbn, publisher):
-            try:
-                book = douban_api.get_book_by_isbn(isbn)
-                if book:
-                    books = list(books)
-                    books.insert(0, book)  # 总是把最佳书籍放在第一位
-            except Exception as e:
-                logging.error(_(u"豆瓣ISBN查询失败: %s" % str(e)))
+        # 豆瓣搜索
+        if META_SOURCE_DOUBAN in sources:
+            douban_api = douban.DoubanBookApi(
+                CONF["douban_apikey"],
+                CONF["douban_baseurl"],
+                copy_image=False,
+                manual_select=False,
+                maxCount=CONF["douban_max_count"],
+            )
+            if clean_title:
+                try:
+                    books = douban_api.search_books(clean_title) or []
+                except Exception as e:
+                    logging.error(_(u"豆瓣接口查询 %s 失败: %s" % (clean_title, str(e))))
 
-        # 转换为元数据格式
-        books = [douban_api._metadata(b) for b in books]
+            # 如果有ISBN号但没搜索到合适的书，则精准查询一次ISBN
+            if isbn and not BookSearch.has_proper_book(books, clean_title, isbn, publisher):
+                try:
+                    book = douban_api.get_book_by_isbn(isbn)
+                    if book:
+                        books = list(books)
+                        books.insert(0, book)  # 总是把最佳书籍放在第一位
+                except Exception as e:
+                    logging.error(_(u"豆瓣ISBN查询失败: %s" % str(e)))
+
+            # 转换为元数据格式
+            books = [douban_api._metadata(b) for b in books]
 
         # 百度百科搜索
-        baike_api = baike.BaiduBaikeApi(copy_image=False)
-        try:
-            book = baike_api.get_book(clean_title)
-            if book:
-                books.append(book)
-        except Exception as e:
-            logging.error(_(u"百度百科查询失败: %s" % str(e)))
+        if META_SOURCE_BAIDU in sources:
+            baike_api = baike.BaiduBaikeApi(copy_image=False)
+            try:
+                book = baike_api.get_book(clean_title)
+                if book:
+                    books.append(book)
+            except Exception as e:
+                logging.error(_(u"百度百科查询失败: %s" % str(e)))
 
         return books
