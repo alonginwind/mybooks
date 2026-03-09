@@ -9,8 +9,10 @@ from gettext import gettext as _
 from webserver import loader, utils
 from webserver.plugins.meta import baike, douban
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
+from webserver.plugins.meta.calibre import CalibreMetadataApi
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
+from webserver.constants import AUTO_FILL_META, META_SELECTED_SOURCES
 
 CONF = loader.get_settings()
 
@@ -43,7 +45,7 @@ class AutoFillService(AsyncService):
 
     @AsyncService.register_service
     def auto_fill_all(self, idlist: list, only_tags=False, force=False, qpm=60):
-        if not CONF['auto_fill_meta'] and not force:
+        if not CONF[AUTO_FILL_META] and not force:
             logging.info("Auto-fill meta is disabled in settings, skipping auto_fill_all.")
             return
 
@@ -271,7 +273,23 @@ class AutoFillService(AsyncService):
                     return api.get_book_detail(b)
             return api.get_book_detail(books[0])
 
-        # 3. 查 baidu
+        # 3. 使用 Google Books 和 Amazon.com 按 ISBN 查询
+        try:
+            result = CalibreMetadataApi.get_book_by_isbn(mi.isbn)
+            if result and result.cover_data:
+                return result
+        except:
+            logging.error(_("calibre 插件 ISBN 查询 %s 失败"), title)
+
+        # 4. 使用 Google Books 和 Amazon.com 按书名查询
+        try:
+            result = CalibreMetadataApi.get_book_by_title(title, authors=mi.authors)
+            if result and result.cover_data:
+                return result
+        except:
+            logging.error(_("calibre 插件书名查询 %s 失败"), title)
+
+        # 5. 查 baidu
         api = baike.BaiduBaikeApi(copy_image=True)
         try:
             book = api.get_book(title)
@@ -316,7 +334,23 @@ class AutoFillService(AsyncService):
                     return api.get_book_detail(b)
             return api.get_book_detail(books[0])
 
-        # 3. 查 baidu
+        # 3. 使用 Google Books 和 Amazon.com 按 ISBN 查询
+        try:
+            result = CalibreMetadataApi.get_book_by_isbn(isbn)
+            if result and result.cover_data:
+                return result
+        except:
+            logging.error(_("calibre 插件 ISBN 查询 %s 失败"), title)
+
+        # 4. 使用 Google Books 和 Amazon.com 按书名查询
+        try:
+            result = CalibreMetadataApi.get_book_by_title(title, authors=[author] if author else None)
+            if result and result.cover_data:
+                return result
+        except:
+            logging.error(_("calibre 插件书名查询 %s 失败"), title)
+
+        # 5. 查 baidu
         api = baike.BaiduBaikeApi(copy_image=True)
         try:
             book = api.get_book(title)

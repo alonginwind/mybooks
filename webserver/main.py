@@ -202,6 +202,7 @@ def make_app():
 
     from calibre.db.legacy import LibraryDatabase
     from calibre.utils.date import fromtimestamp
+    from calibre.ebooks.metadata.sources.update import patch_plugins
     need_sync_item_to_calibre = False
     try:
         logging.info("Initializing library database...")
@@ -226,6 +227,9 @@ def make_app():
         logging.error(f"Error initializing library database: {e}")
         logging.error(traceback.format_exc())
         sys.exit(1)
+
+    # patch calibre plugins
+    patch_plugins()
 
     # hook 1: 按字母作为第一级目录，解决书库子目录太多的问题
     logging.info("Patching calibre book names format...")
