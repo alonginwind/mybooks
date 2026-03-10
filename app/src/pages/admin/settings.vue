@@ -215,6 +215,18 @@
               </v-row>
             </template>
 
+            <template v-if="card.show_trash">
+              <div class="text-center">
+                <p v-html="$t('settings.trash_description')"></p>
+                <div style="font-size: 1.2em; margin-bottom: 16px;">
+                  {{ $t('settings.trash_current_size') }}
+                  <span style="font-weight: bold; color: #1976d2;">{{ trashSizeText }}</span>
+                </div>
+                <v-btn color="red" dark @click="trashConfirmDialog = true" style="margin-bottom:24px">
+                  <v-icon>delete</v-icon>{{ $t('settings.trash_clear_button') }}
+                </v-btn>
+              </div>
+            </template>
             <template v-if="card.show_ssl">
               <ssl-manager />
             </template>
@@ -222,6 +234,18 @@
         </v-card-text>
       </v-expand-transition>
     </v-card>
+
+    <v-dialog v-model="trashConfirmDialog" max-width="400" persistent>
+      <v-card>
+        <v-card-title class="headline">{{ $t('settings.trash_clear_confirm_title') }}</v-card-title>
+        <v-card-text>{{ $t('settings.trash_clear_confirm_message') }}</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="trashConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="red" dark @click="clearTrash">{{ $t('settings.trash_clear_confirm_button') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <br />
     <div class="text-center">
@@ -424,7 +448,7 @@ export default {
           { icon: "", key: "ENABLE_PHYSICAL_BOOKS", label: "settings.enable_physical_books", type: 'checkbox' },
           { icon: "", key: "WEBDAV_SYNC_FOLDER", label: "settings.enable_webdav_sync", type: 'checkbox' },
           { icon: "mdi-cloud-print-outline", key: "ENABLE_OPDS_SERVICE", label: "settings.enable_opds_service", type: 'checkbox' },
-	  { icon: "mdi-math-log", key: "ENABLE_AUDIO_CONVERSION_LOG", label: "settings.enable_audio_conversion_log", type: 'checkbox' },
+          { icon: "mdi-math-log", key: "ENABLE_AUDIO_CONVERSION_LOG", label: "settings.enable_audio_conversion_log", type: 'checkbox' },
         ]
       },
 
@@ -433,6 +457,12 @@ export default {
         title: "settings.ssl_certificate_management",
         fields: [],
         show_ssl: true,
+      },
+      {
+        show: false,
+        title: "settings.trash_management",
+        fields: [],
+        show_trash: true,
       },
     ];
 
@@ -497,6 +527,10 @@ export default {
       v => !v || /^[a-zA-Z0-9-]*$/.test(v) || 'Only alphanumeric characters allowed',
       v => !v || (v.length >= 16 && v.length <= 128) || 'Length must be between 16 and 128 characters'
     ],
+    trashSize: 0,
+    trashSizeText: '',
+    trashLoading: false,
+    trashConfirmDialog: false,
   }),
   computed: {
     metaSourceItems() {
@@ -506,6 +540,9 @@ export default {
         value: source,
       }));
     },
+  },
+  mounted() {
+    this.fetchTrashSize();
   },
   beforeDestroy() {
     // 页面销毁时移除settings-page类名
@@ -615,6 +652,37 @@ export default {
         .catch(err => {
           this.$alert('error', this.$t('settings.ai_mcp_token_generate_failed'));
         });
+    },
+    fetchTrashSize() {
+      this.trashLoading = true;
+      this.$backend('/admin/trash/size').then(rsp => {
+        this.trashLoading = false;
+        if (rsp && rsp.err === 'ok') {
+          this.trashSize = rsp.size;
+          this.trashSizeText = this.formatTrashSize(rsp.size);
+        } else {
+          this.trashSizeText = this.$t('settings.trash_unknown');
+        }
+      });
+    },
+    formatTrashSize(size) {
+      if (size < 1024) return size + ' B';
+      if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+      if (size < 1024 * 1024 * 1024) return (size / 1024 / 1024).toFixed(2) + ' MB';
+      return (size / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+    },
+    clearTrash() {
+      this.trashConfirmDialog = false;
+      this.$backend('/admin/trash/clear', {
+        method: 'POST',
+      }).then(rsp => {
+        if (rsp && rsp.err === 'ok') {
+          this.$alert('success', rsp.msg);
+          this.fetchTrashSize();
+        } else {
+          this.$alert('error', rsp.msg);
+        }
+      });
     },
   },
 }

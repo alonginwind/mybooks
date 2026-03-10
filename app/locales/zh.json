@@ -461,6 +461,14 @@
         "ok": "确定"
     },
     "settings": {
+            "trash_management": "回收站",
+            "trash_description": "Calibre回收站(<b>library/.caltrash</b>)用于存放已删除的书籍文件，默认删除后7天自动清理，这里可以主动清理。",
+            "trash_current_size": "当前回收站大小：",
+            "trash_clear_button": "清理回收站",
+            "trash_clear_confirm_title": "清理回收站",
+            "trash_clear_confirm_message": "确定要清理回收站吗？此操作不可恢复。",
+            "trash_clear_confirm_button": "确认清理",
+            "trash_unknown": "未知",
         "basic_info": "基础信息",
         "language_switch": "语言切换",
         "theme_switch": "网站配色切换",

@@ -294,6 +294,14 @@
         "batch_add_no_file": "Please select a CSV file"
     },
     "settings": {
+            "trash_management": "Trash Bin",
+            "trash_description": "The Calibre trash bin(<b>library/.caltrash</b>) stores deleted book files. Clearing it will free up space.",
+            "trash_current_size": "Current trash size: ",
+            "trash_clear_button": "Clear Trash Bin",
+            "trash_clear_confirm_title": "Clear Trash Bin",
+            "trash_clear_confirm_message": "Are you sure you want to clear the trash bin? This action cannot be undone.",
+            "trash_clear_confirm_button": "Confirm Clear",
+            "trash_unknown": "Unknown",
         "basic_info": "Basic Information",
         "language_switch": "Language Switch",
         "theme_switch": "Color Theme",

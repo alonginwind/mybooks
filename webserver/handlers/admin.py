@@ -9,9 +9,11 @@ import shutil
 import ssl
 import subprocess
 import tempfile
+import time
 import traceback
 import uuid
 from gettext import gettext as _
+import threading
 
 import tornado
 
@@ -83,16 +85,12 @@ class AdminUsers(BaseHandler):
                 "update_time": user.update_time.strftime("%Y-%m-%d %H:%M:%S") if user.update_time else "N/A",
                 "access_time": user.access_time.strftime("%Y-%m-%d %H:%M:%S") if user.access_time else "N/A",
             }
-
             if enable_vip_quota:
                 d["vipquota"] = user.vipquota or 0
                 d["vip_expire"] = user.vipexpire.strftime("%Y-%m-%d") if user.vipexpire else ""
-
             for attr in dir(user):
                 if attr.startswith("can_"):
                     d[attr] = getattr(user, attr)()
-
-            # Update the user statistic count
             need_update = False
             ts = USER_UPDATE_TS_MAP.get(user.id, 0)
             if not ts or (datetime.datetime.now() - ts).total_seconds() > 3600:
@@ -837,6 +835,68 @@ class AdminRunningTasks(BaseHandler):
         return {"err": "ok", "tasks": running_tasks}
 
 
+# --- Trash management ---
+TRASH_SIZE_CACHE = {"value": 0, "ts": 0}
+TRASH_SIZE_CACHE_LOCK = threading.Lock()
+TRASH_PATH = "/data/books/library/.caltrash"
+
+
+def get_trash_size():
+    now = time.time()
+    with TRASH_SIZE_CACHE_LOCK:
+        if now - TRASH_SIZE_CACHE["ts"] < 30:
+            return TRASH_SIZE_CACHE["value"]
+        size = 0
+        if os.path.exists(TRASH_PATH):
+            for root, dirs, files in os.walk(TRASH_PATH):
+                for f in files:
+                    fp = os.path.join(root, f)
+                    try:
+                        size += os.path.getsize(fp)
+                    except Exception:
+                        pass
+        TRASH_SIZE_CACHE["value"] = size
+        TRASH_SIZE_CACHE["ts"] = now
+        return size
+
+
+def clear_trash_cache():
+    with TRASH_SIZE_CACHE_LOCK:
+        TRASH_SIZE_CACHE["value"] = 0
+        TRASH_SIZE_CACHE["ts"] = 0
+
+
+class AdminTrashSize(BaseHandler):
+    @js
+    @auth
+    def get(self):
+        if not self.admin_user:
+            return {"err": "permission.not_admin", "msg": _("当前用户非管理员")}
+        size = get_trash_size()
+        return {"err": "ok", "size": size}
+
+
+class AdminTrashClear(BaseHandler):
+    @js
+    @auth
+    def post(self):
+        if not self.admin_user:
+            return {"err": "permission.not_admin", "msg": _("当前用户非管理员")}
+        if not os.path.exists(TRASH_PATH):
+            clear_trash_cache()
+            return {"err": "ok", "msg": _("回收站已清空")}
+        ts = int(time.time())
+        new_name = TRASH_PATH + ".bak_%d" % ts
+        try:
+            os.rename(TRASH_PATH, new_name)
+            os.makedirs(TRASH_PATH, exist_ok=True)
+            shutil.rmtree(new_name)
+            clear_trash_cache()
+            return {"err": "ok", "msg": _("回收站清理成功")}
+        except Exception as e:
+            return {"err": "error", "msg": _("清理失败: %s") % str(e)}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -854,4 +914,6 @@ def routes():
         (r"/api/admin/release/notes", ReleaseNotes),
         (r"/api/admin/token", AdminTokenHandler),
         (r"/api/admin/tasks/running", AdminRunningTasks),
+        (r"/api/admin/trash/size", AdminTrashSize),
+        (r"/api/admin/trash/clear", AdminTrashClear),
     ]

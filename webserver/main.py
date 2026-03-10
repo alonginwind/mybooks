@@ -60,6 +60,18 @@ def add_meta_in_calibre(calibre_db, key, name, datatype):
     return True
 
 
+def config_calibre():
+    from calibre.db.backend import DB
+    db = DB(options.with_library)
+    if not db:
+        return
+    if 'expire_old_trash_after' in db.prefs and db.prefs['expire_old_trash_after'] == 7 * 24 * 3600:
+        logging.info("Calibre trash expire time already set to 7 days, no need to update.")
+        return
+    db.prefs['expire_old_trash_after'] = 7 * 24 * 3600
+    logging.info("Set calibre trash expire time to 7 days.")
+
+
 def init_calibre():
     path = options.path_calibre
     if path not in sys.path:
@@ -208,6 +220,7 @@ def make_app():
 
     try:
         init_calibre()
+        config_calibre()
     except Exception as e:
         logging.error(f"Error initializing calibre: {e}")
         logging.error(traceback.format_exc())
@@ -396,6 +409,8 @@ def setup_logging():
     # 创建控制台处理程序并设置格式
     logger = logging.getLogger()
     if options.log_file_prefix:
+        # remove tornado default file handler to avoid duplicate logs
+        logger.handlers = [h for h in logger.handlers if not isinstance(h, logging.FileHandler)]
         file_handler = RotatingFileHandler(
             options.log_file_prefix,
             maxBytes=5 * 1024 * 1024,
@@ -404,12 +419,6 @@ def setup_logging():
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(tornado.log.LogFormatter())
         logger.addHandler(file_handler)
-
-        # 添加控制台处理程序
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(tornado.log.LogFormatter())
-        logger.addHandler(console_handler)
 
 
 def main():
