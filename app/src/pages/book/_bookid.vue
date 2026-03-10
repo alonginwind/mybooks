@@ -185,7 +185,7 @@
                                         dark
                                         :href="book.website"
                                         target="__blank"
-                                        :color="book.source === '豆瓣' ? 'green' : 'blue'"
+                                        :color="(book.source === '豆瓣' || book.source === 'amazon') ? 'green' : 'blue'"
                                     >{{ book.source }}
                                     </v-chip
                                     >
