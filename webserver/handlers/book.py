@@ -487,9 +487,9 @@ class BookSetSole(BaseHandler):
 
 class BookRefer(BaseHandler):
     _search_executor = ThreadPoolExecutor(max_workers=int(CONF.get("REFER_SEARCH_MAX_WORKERS", 6)))
-    _search_timeout = float(CONF.get("REFER_SEARCH_TIMEOUT", 12))
-    _search_cache_ttl = int(CONF.get("REFER_SEARCH_CACHE_TTL", 120))
-    _search_max_concurrency = int(CONF.get("REFER_SEARCH_MAX_CONCURRENCY", 8))
+    _search_timeout = float(CONF.get("REFER_SEARCH_TIMEOUT", 60))
+    _search_cache_ttl = int(CONF.get("REFER_SEARCH_CACHE_TTL", 480))
+    _search_max_concurrency = int(CONF.get("REFER_SEARCH_MAX_CONCURRENCY", 16))
     _search_cache = {}
     _search_inflight = {}
     _search_state_lock = threading.Lock()

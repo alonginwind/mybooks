@@ -60,6 +60,8 @@ class BookSearch:
         if not title and not isbn:
             return []
 
+        logging.info(_("开始搜索图书，title: %s, isbn: %s, publisher: %s, sources: %s") % (title, isbn, publisher, sources))
+
         # 清理标题，移除括号及其内容（含括号本身）
         if title:
             clean_title = re.sub(r'\([^)]*\)|\[[^\]]*\]|（[^）]*）|【[^】]*】', '', title).strip()
@@ -108,14 +110,18 @@ class BookSearch:
 
         # Google & Amazon 搜索（使用 Calibre Metadata API）
         if any(s in sources for s in [META_SOURCE_GOOGLE, META_SOURCE_AMAZON]):
+            logging.info(_("使用 Calibre Metadata API 搜索图书，title: %s, isbn: %s, sources: %s") % (clean_title, isbn, sources))
             try:
                 from webserver.plugins.meta.calibre import CalibreMetadataApi
-                calibre_books = CalibreMetadataApi.get_book_by_isbn(isbn) if isbn else None
+                calibre_books = CalibreMetadataApi.get_book_by_isbn(isbn, sources) if isbn else None
                 if calibre_books:
                     books.extend(calibre_books)
-                calibre_books = CalibreMetadataApi.get_book_by_title(title=clean_title, timeout=10) if clean_title else None
+                calibre_books = CalibreMetadataApi.get_book_by_title(title=clean_title, sources=sources, timeout=10) if clean_title else None
                 if calibre_books:
                     books.extend(calibre_books)
             except Exception as e:
                 logging.error(_(u"Calibre Metadata API查询失败: %s" % str(e)))
+        else:
+            logging.info(_("未启用 Calibre Metadata API 搜索，跳过 Google 和 Amazon 搜索"))
+        logging.info(_("搜索完成，找到 %d 本书") % len(books))
         return books
