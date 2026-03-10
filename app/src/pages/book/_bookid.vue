@@ -1751,7 +1751,15 @@ export default {
         get_refer() {
             this.dialog_refer = true;
             this.refer_books_loading = true;
-            this.$backend("/book/" + this.book.id + "/refer")
+            // 构造查询参数，传递书籍信息避免后端重复查询数据库
+            const params = new URLSearchParams();
+            if (this.book.title) params.append('title', this.book.title);
+            if (this.book.isbn) params.append('isbn', this.book.isbn);
+            if (this.book.publisher) params.append('publisher', this.book.publisher);
+            const queryString = params.toString();
+            const url = `/book/${this.book.id}/refer${queryString ? '?' + queryString : ''}`;
+
+            this.$backend(url)
                 .then((rsp) => {
                     this.refer_books = rsp.books.map((b) => {
                         b.href = "";

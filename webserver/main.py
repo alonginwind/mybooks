@@ -12,6 +12,7 @@ import traceback
 import tornado.httpserver
 import tornado.ioloop
 import tornado.log
+from tornado.httpclient import AsyncHTTPClient
 from social_tornado.models import init_social
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -414,6 +415,10 @@ def setup_logging():
 def main():
     tornado.options.parse_command_line()
     setup_logging()
+
+    # 配置异步 HTTP 客户端的最大连接数
+    AsyncHTTPClient.configure(None, max_clients=100)
+
     try:
         app = make_app()
     except Exception as e:

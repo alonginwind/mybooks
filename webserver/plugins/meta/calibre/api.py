@@ -3,6 +3,7 @@
 
 import logging
 import requests
+import traceback
 from gettext import gettext as _
 from webserver.constants import CHROME_HEADERS
 
@@ -82,10 +83,12 @@ class CalibreMetadataApi:
                     result.provider_key = result.source = "google"
                     result.provider_value = isbn
                     result.author_sort = result.authors[0] if result.authors else ""
-                    result.rating *= 2  # Calibre Google 插件的评分是 0-5，乘以 2 转换为 0-10
+                    # Calibre Google 插件的评分是 0-5，乘以 2 转换为 0-10
+                    result.rating = int(result.rating) * 2 if result.rating is not None else 0
             return results[:1]
         except Exception as e:
             logging.error(_("CalibreMetadataApi ISBN 查询失败 isbn=%s: %s"), isbn, e)
+            logging.error(traceback.format_exc())
             return None
 
     @classmethod
@@ -106,7 +109,8 @@ class CalibreMetadataApi:
                     result.provider_key = result.source = "amazon"
                     result.provider_value = result.isbn if result.isbn else title
                     result.author_sort = result.authors[0] if result.authors else ""
-                    result.rating *= 2  # Calibre Amazon 插件的评分是 0-5，乘以 2 转换为 0-10
+                    # Calibre Google 插件的评分是 0-5，乘以 2 转换为 0-10
+                    result.rating = int(result.rating) * 2 if result.rating is not None else 0
                     if amazon_plugin and amazon_plugin.cached_cover_url_is_reliable:
                         result.cover_url = amazon_plugin.get_cached_cover_url(result.identifiers)
             return results[:3]

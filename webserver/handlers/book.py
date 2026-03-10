@@ -592,11 +592,23 @@ class BookRefer(BaseHandler):
     @auth
     def get(self, id):
         book_id = int(id)
-        mi = self.calibre_db.get_metadata(book_id, index_is_id=True)
+        # 优先使用URL参数中的书籍信息，避免查询数据库
+        title = self.get_argument('title', "")
+        isbn = self.get_argument('isbn', "")
+        publisher = self.get_argument('publisher', "")
+
+        # 如果参数不完整，则查询数据库获取（保持向后兼容）
+        if not title and not isbn:
+            mi = self.calibre_db.get_metadata(book_id, index_is_id=True)
+            title = title or mi.title
+            isbn = isbn or mi.isbn
+            publisher = publisher or mi.publisher
+
+        logging.info(f"BookRefer: Searching for book meta with title='{title}', isbn='{isbn}', publisher='{publisher}'")
         books = BookSearch.plugin_search_books(
-            title=mi.title,
-            isbn=mi.isbn,
-            publisher=mi.publisher
+            title=title,
+            isbn=isbn,
+            publisher=publisher
         )
         rsp = []
 
