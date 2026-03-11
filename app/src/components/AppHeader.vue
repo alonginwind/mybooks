@@ -485,7 +485,7 @@ export default {
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
                 { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},
                 { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "primary"},
-                { icon: "mdi-history", href: "/all", text: "appHeader.allBooks", color: "primary"},
+                { icon: "mdi-check-all", href: "/all", text: "appHeader.allBooks", color: "primary"},
                 { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", color: "primary"},
                 { icon: "mdi-star-shooting", href: "/rating", text: "appHeader.rating", color: "orange"},
                 { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},
@@ -941,8 +941,9 @@ export default {
 }
 
 .login-button .v-icon {
-    color: white;
+    color: white !important;
     background-color: transparent !important;
+    margin-left: 12px !important;
 }
 
 .app-navigation-drawer .v-subheader {
