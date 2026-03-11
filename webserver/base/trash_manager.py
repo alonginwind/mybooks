@@ -49,7 +49,7 @@ class TrashManager:
         logging.debug("Calculating size of directory: %s", path)
         if not os.path.exists(path):
             return size
-        for root, _, files in os.walk(path):
+        for root, dirs, files in os.walk(path):
             for f in files:
                 fp = os.path.join(root, f)
                 if not os.path.isfile(fp):
