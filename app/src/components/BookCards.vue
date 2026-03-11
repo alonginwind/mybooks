@@ -33,7 +33,18 @@
                             </div>
                             <slot name="introduce" :book="book"></slot>
                             <div class="book-comments flex-grow-1">
-                                <p v-if="book.comments" v-html="book.comments"></p>
+                                <v-tooltip v-if="book.comments && isLongComment(book.comments)"
+                                    :right="!isRightmostCard(idx)"
+                                    :left="isRightmostCard(idx)"
+                                    max-width="420px"
+                                    color="#003153"
+                                >
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <p v-html="book.comments" v-bind="attrs" v-on="on" class="comment-tooltip-activator"></p>
+                                    </template>
+                                    <span>{{ buildCommentPreview(book.comments) }}</span>
+                                </v-tooltip>
+                                <p v-else-if="book.comments" v-html="book.comments"></p>
                                 <p v-else>{{ $t('bookCards.browseDetails') }}</p>
                             </div>
                         </v-card-text>
@@ -73,6 +84,42 @@ export default {
             }).filter(Boolean); // 过滤掉空对象
         },
     },
+    methods: {
+        buildCommentPreview(html) {
+            if (!html) return '';
+            let text = String(html)
+                .replace(/<br\s*\/?\s*>/gi, ' ')
+                .replace(/<\/p>/gi, ' ')
+                .replace(/<[^>]+>/g, '')
+                .replace(/&nbsp;/gi, ' ')
+                .replace(/&amp;/gi, '&')
+                .replace(/&lt;/gi, '<')
+                .replace(/&gt;/gi, '>')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (text.length > 200) {
+                text = text.slice(0, 200) + '...';
+            }
+            return text;
+        },
+        isLongComment(html) {
+            if (!html) return false;
+            let text = String(html).replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').trim();
+            return text.length > 80;
+        },
+        isRightmostCard(idx) {
+            const bp = this.$vuetify.breakpoint;
+            let cols;
+            if (bp.xl) cols = 6;       // xl=2 -> 12/2 = 6 columns
+            else if (bp.lgAndUp) cols = 4;  // lg=3 -> 12/3 = 4 columns
+            else if (bp.mdAndUp) cols = 3;  // md=4 -> 12/4 = 3 columns
+            else if (bp.smAndUp) cols = 2;  // sm=6 -> 12/6 = 2 columns
+            else cols = 1;             // xs=12 -> 1 column
+            if (cols <= 1) return true; // 单列时也用左侧tooltip
+            return (idx + 1) % cols === 0;
+        }
+    },
     data: () => {
         return {
         }
@@ -109,7 +156,6 @@ export default {
     height: 100%;
 }
 .book-comments {
-    overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     line-clamp: 3;
@@ -118,11 +164,17 @@ export default {
     margin-top: 3px;
     margin-bottom: 3px;
     text-align: left;
+    overflow: hidden;
 }
 .book-comments p {
     font-size: small;
     margin-bottom: 0px;
 }
+
+.comment-tooltip-activator {
+    cursor: pointer;
+}
+
 .book-list-card .row {
     margin-bottom: 0px;
 }
