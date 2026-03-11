@@ -174,9 +174,15 @@
                         <book-cards :books="refer_books">
                             <template #actions="{ book }">
                                 <v-card-actions>
-                                    <v-chip class="mr-1" small v-if="book.author_sort">{{ book.author_sort }}</v-chip>
-                                    <v-chip class="mr-1" small v-if="book.publisher">{{ book.publisher }}</v-chip>
-                                    <v-chip small v-if="book.pubyear">{{ book.pubyear }}</v-chip>
+                                    <v-chip class="mr-1 chip-ellipsis" small v-if="book.author_sort" :title="book.author_sort">
+                                        {{ truncateText(book.author_sort, 14) }}
+                                    </v-chip>
+                                    <v-chip class="mr-1 chip-ellipsis" small v-if="book.publisher" :title="book.publisher">
+                                        {{ truncateText(book.publisher, 14) }}
+                                    </v-chip>
+                                    <v-chip class="chip-ellipsis" small v-if="book.pubyear" :title="String(book.pubyear)">
+                                        {{ truncateText(String(book.pubyear), 8) }}
+                                    </v-chip>
                                 </v-card-actions>
                                 <v-divider></v-divider>
                                 <v-card-actions>
@@ -1698,6 +1704,12 @@ export default {
                 }
             }
         },
+        truncateText(value, maxLength = 14) {
+            if (value === null || value === undefined) return '';
+            const text = String(value);
+            if (text.length <= maxLength) return text;
+            return text.slice(0, maxLength) + '...';
+        },
         sendto_kindle() {
             if (process.client) {
                 this.$cookies.set("last_mailto", this.mail_to);
@@ -2772,6 +2784,13 @@ h1.book-detail-title {
 
 .book-action-col > .v-card {
     width: 100%;
+}
+
+.chip-ellipsis {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 @media (min-width: 960px) {
