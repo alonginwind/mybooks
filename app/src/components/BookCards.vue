@@ -33,7 +33,7 @@
                             </div>
                             <slot name="introduce" :book="book"></slot>
                             <div class="book-comments flex-grow-1">
-                                <v-tooltip v-if="book.comments && isLongComment(book.comments)"
+                                <v-tooltip v-if="book.comments && shouldShowCommentTooltip(book.comments)"
                                     :right="!isRightmostCard(idx)"
                                     :left="isRightmostCard(idx)"
                                     max-width="420px"
@@ -85,6 +85,12 @@ export default {
         },
     },
     methods: {
+        shouldShowCommentTooltip(html) {
+            return this.isLongComment(html) && !this.isSmallScreen();
+        },
+        isSmallScreen() {
+            return Boolean(this.$vuetify?.breakpoint?.smAndDown);
+        },
         buildCommentPreview(html) {
             if (!html) return '';
             let text = String(html)
