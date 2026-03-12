@@ -946,6 +946,11 @@ export default {
     margin-left: 12px !important;
 }
 
+.app-navigation-drawer .v-list-item--icon-only.login-button .v-icon {
+    margin-left: 0 !important;
+    color: white !important;
+}
+
 .app-navigation-drawer .v-subheader {
     font-weight: 600 !important;
     letter-spacing: 0.5px !important;
