@@ -1,3 +1,6 @@
 [submodule "webserver/epub_to_audio"]
 	path = webserver/epub_to_audio
 	url = https://github.com/HorkyChen/epub_to_audiobook.git
+[submodule "third-party/epub.js"]
+	path = third-party/epub.js
+	url = git@github.com:PoxenStudio/epub.js.git
