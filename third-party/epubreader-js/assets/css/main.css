@@ -43,7 +43,7 @@ body {
 }
 
 #viewer.paginated {
-    width: calc(100% - 116px);
+    width: 100%;
     height: calc(100% - 116px);
 }
 
@@ -67,40 +67,37 @@ body {
 }
 
 #next {
-	text-align: end;
+	right: 0;
 }
 
 .arrow {
-	flex: 1;
-	padding: 0 1px;
+	position: absolute;
+	top: 58px;    /* Leave space for top toolbar */
+	bottom: 58px; /* Leave space for bottom toolbar */
+	width: 10%; /* Or whatever width is comfortable for clicking */
+	max-width: 100px; /* Prevent it from being too large on wide screens */
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	height: 80vh;
-}
-
-.arrow:disabled,
-.arrow.disabled {
-	visibility: hidden;
+	cursor: pointer;
+	z-index: 10;
+	transition: background 0.3s;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .arrow span {
-	color: #E2E2E2;
-	cursor: pointer;
-	overflow: hidden;
-	font-size: 64px;
-	font-family: arial, sans-serif;
+	padding: 5px;
+	border-radius: 50%;
+	font-family: monospace;
+	font-size: 16px;
 	font-weight: bold;
-	vertical-align: middle;
-
+	color: rgba(200, 200, 200, 0.2); /* Very high transparency by default */
+	background: transparent;
+	transition: all 0.3s;
 	user-select: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
-}
-
-.arrow span:hover {
-	color: #777;
 }
 
 .arrow:active > span,
@@ -234,7 +231,7 @@ only screen and (min-width: 568px) and (max-width: 932px) and (orientation: land
     }
 
 	.arrow span {
-		font-size: 40px;
+		font-size: 20px;
 	}
 }
 
