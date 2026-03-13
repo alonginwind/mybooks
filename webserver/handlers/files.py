@@ -3,6 +3,7 @@
 
 
 import logging
+import mimetypes
 import os
 import re
 import urllib
@@ -217,6 +218,11 @@ class EpubReader(BaseHandler):
                         break
                 if path not in zf.namelist():
                     raise web.HTTPError(404)
+
+            content_type, _ = mimetypes.guess_type(path)
+            if content_type:
+                self.set_header("Content-Type", content_type)
+
             with zf.open(path) as f:
                 self.write(f.read())
 
