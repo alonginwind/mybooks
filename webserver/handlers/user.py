@@ -321,7 +321,8 @@ class UserMessages(BaseHandler):
             return {"err": "params.invalid", "msg": _(u"ID错误")}
         msg = self.sqlite_session.query(Message).filter(Message.id == data["id"]).first()
         if not msg:
-            return {"err": "params.not_found", "msg": _(u"查无此ID")}
+            # 消息不存在，可能已经被删除了，直接返回成功
+            return {"err": "ok"}
 
         try:
             msg = self.sqlite_session.merge(msg)
