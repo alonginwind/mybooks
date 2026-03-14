@@ -773,6 +773,10 @@ class BookRefer(BaseHandler):
         if provider_key in (douban.KEY, youshu.KEY):
             try:
                 refer_mi = self.plugin_get_book_meta(provider_key, provider_value, mi)
+                # Correct the author if douban detail not return authors
+                if not refer_mi.authors or (len(refer_mi.authors) == 1 and refer_mi.authors[0] in ("佚名", "")):
+                    refer_mi.author_sort = metadata.get("author_sort", None) if metadata else mi.author_sort
+                    refer_mi.authors = metadata.get("authors", []) if metadata else mi.authors
             except RuntimeError as e:
                 return e.args[0]
         else:
