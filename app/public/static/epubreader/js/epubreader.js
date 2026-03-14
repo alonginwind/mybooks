@@ -2409,7 +2409,6 @@ class SettingsPanel extends UIPanel {
 			"Bookerly": "Bookerly",
 		});
 		font.dom.onchange = (e) => {
-			console.log(`Selected font: ${e.target.value}`);
 			reader.emit("styleschanged", {
 				font: e.target.value
 			});
@@ -2442,17 +2441,22 @@ class SettingsPanel extends UIPanel {
 			scrolled: flowModeStr[1]
 		});
 		flow.dom.onchange = (e) => {
-
 			reader.emit("flowchanged", e.target.value);
 
 			if (e.target.value === "scrolled") {
+				spread.setValue("none");
+				spread.dom.disabled = true;
+				minSpreadWidth.dom.disabled = true;
 				reader.emit("spreadchanged", {
 					mod: "none",
 					min: undefined
 				});
 			} else {
+				spread.setValue("auto");
+				spread.dom.disabled = false;
+				minSpreadWidth.dom.disabled = false;
 				reader.emit("spreadchanged", {
-					mod: undefined,
+					mod: "auto",
 					min: undefined
 				});
 			}
@@ -2525,7 +2529,6 @@ class SettingsPanel extends UIPanel {
 		//-- events --//
 
 		reader.on("bookready", (cfg) => {
-
 			language.setValue(cfg.language);
 			theme.setValue(cfg.theme);
 			font.setValue(cfg.styles.font);
@@ -2544,14 +2547,7 @@ class SettingsPanel extends UIPanel {
 		});
 
 		reader.on("layout", (props) => {
-
-			if (props.flow === "scrolled") {
-				spread.setValue("none");
-				spread.dom.disabled = true;
-				minSpreadWidth.dom.disabled = true;
-			} else {
-				spread.dom.disabled = false;
-			}
+			// 不再在layout事件中设置spread的值和状态，因为已经在flow的onchange事件中设置了
 		});
 
 		reader.on("languagechanged", (value) => {
@@ -3012,18 +3008,25 @@ class Reader {
 
 		this.on("flowchanged", (flow) => {
 			this.settings.flow = flow;
+			if (this.rendition) {
+				this.rendition.flow(flow);
+			}
 		});
 
 		this.on("spreadchanged", (spread) => {
 			if (spread.mod !== undefined) {
 				this.settings.spread.mod = spread.mod;
 				// Apply spread mode change to rendition
-				this.rendition.spread(spread.mod, this.settings.spread.min);
+				if (this.rendition) {
+					this.rendition.spread(spread.mod, this.settings.spread.min);
+				}
 			}
 			if (spread.min !== undefined) {
 				this.settings.spread.min = spread.min;
 				// Apply minimum spread width change to rendition
-				this.rendition.spread(this.settings.spread.mod, spread.min);
+				if (this.rendition) {
+					this.rendition.spread(this.settings.spread.mod, spread.min);
+				}
 			}
 		});
 	}
