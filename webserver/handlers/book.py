@@ -598,6 +598,29 @@ class BookRefer(BaseHandler):
             return CalibreMetadataApi.get_cover(cover_url)
         return None
 
+    def plugin_get_book_meta(self, provider_key, provider_value, mi):
+        if provider_key == douban.KEY:
+            mi.douban_id = provider_value
+            api = douban.DoubanBookApi(
+                CONF["douban_apikey"],
+                CONF["douban_baseurl"],
+                copy_image=True,
+                maxCount=CONF["douban_max_count"],
+            )
+            try:
+                return api.get_book(mi)
+            except:
+                raise RuntimeError({"err": "httprequest.douban.failed", "msg": _(u"豆瓣接口查询失败")})
+
+        if provider_key == youshu.KEY:
+            title = re.sub(u"[(（].*", "", mi.title)
+            api = youshu.YoushuApi(copy_image=True)
+            try:
+                return api.get_book(title)
+            except:
+                raise RuntimeError({"err": "httprequest.youshu.failed", "msg": _(u"优书网查询失败")})
+        return mi
+
     def reset_book_meta(self, book_id):
         book = self.get_book(book_id)
         for fmt in ["epub", "mobi", "azw", "azw3", "txt", "pdf"]:
@@ -747,13 +770,19 @@ class BookRefer(BaseHandler):
         if only_meta == "yes" and only_cover == "yes":
             return {"err": "params.conflict", "msg": _(u"参数冲突")}
 
-        refer_mi = self._convert_to_metadata(metadata) if metadata else mi
-        if only_meta != "yes":
+        if provider_key in (douban.KEY, youshu.KEY):
             try:
-                cover_url = metadata.get("cover_url") if metadata else None
-                refer_mi.cover_data = self.plugin_fill_book_cover(provider_key, cover_url)
+                refer_mi = self.plugin_get_book_meta(provider_key, provider_value, mi)
             except RuntimeError as e:
-                logging.error(f"Error filling book metadata from plugin {provider_key}: {e}")
+                return e.args[0]
+        else:
+            refer_mi = self._convert_to_metadata(metadata) if metadata else mi
+            if only_meta != "yes":
+                try:
+                    cover_url = metadata.get("cover_url") if metadata else None
+                    refer_mi.cover_data = self.plugin_fill_book_cover(provider_key, cover_url)
+                except RuntimeError as e:
+                    logging.error(f"Error filling book metadata from plugin {provider_key}: {e}")
 
         if not refer_mi:
             return {"err": "plugin.fail", "msg": _(u"拉取图书信息异常，请重试")}
