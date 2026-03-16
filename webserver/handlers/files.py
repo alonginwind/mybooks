@@ -85,10 +85,10 @@ class ImageHandler(BaseHandler):
 
                 return cover_data, updated
             except Exception as err:
-                import traceback
-                logging.error("Failed to generate cover:")
-                logging.error(traceback.format_exc())
-                raise web.HTTPError(404, "Failed to generate cover: %r" % err)
+                logging.error("Failed to generate cove!!")
+                cover_data = self.default_cover
+                updated = self.build_time
+                return cover_data, updated
 
         try:
             self.set_header("Content-Type", "image/jpeg")
