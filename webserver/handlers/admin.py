@@ -8,6 +8,7 @@ import re
 import shutil
 import ssl
 import subprocess
+import sys
 import tempfile
 import traceback
 import uuid
@@ -209,7 +210,6 @@ TITLE_TEMPLATE="%%s | %(site_title)s"
             logging.error(traceback.format_exc())
             return {"err": "file.permission", "msg": _(u"更新nuxtjs配置文件失败！请确保文件的权限为可写入！")}
 
-        # don't update running environment for now
         args["installed"] = True
         try:
             args.dumpfile()
@@ -219,6 +219,8 @@ TITLE_TEMPLATE="%%s | %(site_title)s"
 
         # ok, it's safe to update current environment
         CONF["installed"] = True
+        if not CONF.get("autoreload", False):
+            sys.exit(0)
         return {"err": "ok", "rsp": args}
 
 

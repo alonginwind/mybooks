@@ -296,6 +296,7 @@ def make_app():
             "ScopedSession": ScopedSession,
             "build_time": fromtimestamp(os.stat(path).st_mtime),
             "default_cover": default_cover,
+            "autoreload": False,
         }
     )
 
