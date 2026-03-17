@@ -54,11 +54,12 @@
 
                             <v-list-item
                                 v-for="link in item.groups"
-                                :key="'link-' + link.href"
-                                :to="isExternalLink(link.href) ? undefined : link.href"
-                                :href="isExternalLink(link.href) ? link.href : undefined"
-                                :target="isExternalLink(link.href) ? '_blank' : undefined"
+                                :key="'link-' + (link.href || link.text)"
+                                :to="!link.action && !isExternalLink(link.href) ? link.href : undefined"
+                                :href="!link.action && isExternalLink(link.href) ? link.href : undefined"
+                                :target="!link.action && isExternalLink(link.href) ? '_blank' : undefined"
                                 class="v-list-item--group-child"
+                                @click="link.action ? handleLinkAction(link.action) : undefined"
                             >
                                 <v-list-item-action class="mt-1 mb-1 mr-2" dense>
                                     <v-icon class="pa-0 ma-0" :color="link.color || ''">{{ link.icon }}</v-icon>
@@ -273,6 +274,41 @@
             </template>
         </v-app-bar>
 
+        <v-dialog v-model="feedbackDialog" max-width="420">
+            <v-card>
+                <v-toolbar dark :color="appBarColor">
+                    <v-icon left color="white">mdi-comment-question-outline</v-icon>
+                    <v-toolbar-title>{{ $t('appHeader.feedbackDialogTitle') }}</v-toolbar-title>
+                    <v-spacer></v-spacer>
+                    <v-btn icon dark @click="feedbackDialog = false">
+                        <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                </v-toolbar>
+                <v-card-text class="text-center pt-6 pb-2">
+                    <v-img
+                        src="/logo/link_gongzhonghao.jpg"
+                        max-width="200"
+                        class="mx-auto rounded elevation-2 mb-5"
+                        contain
+                    ></v-img>
+                    <p class="body-1 font-weight-medium mb-1">{{ $t('appHeader.feedbackScanQrCode') }}</p>
+                    <p class="body-2 grey--text mt-3 mb-0">{{ $t('appHeader.feedbackOrGithub') }}</p>
+                </v-card-text>
+                <v-card-actions class="justify-center pb-5">
+                    <v-btn
+                        outlined
+                        color="primary"
+                        href="https://github.com/PoxenStudio/talebook/issues"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <v-icon left small>mdi-github</v-icon>
+                        {{ $t('appHeader.feedbackGithubIssues') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <v-dialog v-model="ai_enabled" persistent max-width="700" scrollable>
             <v-card class="dialog-border d-flex flex-column" style="height: 600px;">
                 <v-card-title class="primary white--text py-3">
@@ -413,6 +449,7 @@ export default {
         runningTasks: [],
         taskPollingTimer: null,
         expandedGroups: {},
+        feedbackDialog: false,
     };
     },
     computed: {
@@ -456,7 +493,7 @@ export default {
                         { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement", color: "primary"},
                         { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement", color: "primary"},
                         { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks", color: "primary"},
-                        { icon: "sms_failed", href: "https://github.com/PoxenStudio/talebook/issues", text: "appHeader.feedback", color: "primary"},
+                        { icon: "sms_failed", action: "openFeedback", text: "appHeader.feedback", color: "primary"},
                     ],
                 },
             ];
@@ -813,6 +850,11 @@ export default {
         },
         isPathMatch(path) {
             return this.$route.path.indexOf(path) === 0;
+        },
+        handleLinkAction(action) {
+            if (action === 'openFeedback') {
+                this.feedbackDialog = true;
+            }
         },
     },
 };
