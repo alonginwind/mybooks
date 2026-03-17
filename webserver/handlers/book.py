@@ -1641,6 +1641,8 @@ class RecentBook(ListHandler):
 
 
 class SearchBook(ListHandler):
+    CALIBRE_KEYS = ("title:", "authors:", "comments:", "publisher:", "isbn:", "publisher:", "series:", "tags:", "author:")
+
     def _add_books(self, result_ids, ids, seen):
         if not result_ids:
             return
@@ -1694,6 +1696,12 @@ class SearchBook(ListHandler):
         title_search = len(book_title) > 0
         if title_search:
             name = book_title
+        calibre_query = False
+        for key in self.CALIBRE_KEYS:
+            if name.startswith(key):
+                calibre_query = True
+                title_search = False
+                break
 
         title = _(u"搜索：%(name)s") % {"name": name}
         ids = []
@@ -1701,33 +1709,39 @@ class SearchBook(ListHandler):
 
         seg_or_query = None
         # 只有当 seg=1 时才进行分词搜索
-        if seg == 1 and title_search:
+        if seg == 1 and title_search and not calibre_query:
             # 分词搜索：当name长度在2-10之间且jieba可用时
             seg_or_query = self._search_by_segmentation(name, ids, seen)
 
         # 简繁体转换搜索（合并为一次查询）
         start = time.time()
-        converted_names = [name]
+        converted_names = ["( " + name + " )"]
         for profile in ['s2t', 't2s']:
             converted_name = opencc.OpenCC(profile).convert(name)
             if converted_name != name:
-                converted_names.append(converted_name)
+                converted_names.append("( " + converted_name + " )")
         if converted_names:
             try:
-                if title_search:
-                    # 对于精确标题搜索，构建OR查询
-                    query = " OR ".join([f'title:={cn}' for cn in converted_names])
+                if seg == 1:
+                    query = seg_or_query
                 else:
-                    # 主要是comments字段的搜索比较耗时
-                    query = " OR ".join(converted_names)
-                if seg_or_query:
-                    query = f"({query}) OR ({seg_or_query})"
+                    if title_search:
+                        # 对于精确标题搜索，构建OR查询
+                        query = " OR ".join([f'title:={cn}' for cn in converted_names])
+                    else:
+                        # 主要是comments字段的搜索比较耗时
+                        query = " OR ".join(converted_names)
+                    if seg_or_query:
+                        query = f"({query}) OR ({seg_or_query})"
                 logging.info(f"Searching books with query: {query}")
-                ids2 = self.calibre_db_cache.search(query)
+                ids2 = None
+                if query:
+                    ids2 = self.calibre_db_cache.search(query)
                 if ids2:
                     self._add_books(ids2, ids, seen)
             except Exception as e:
                 logging.error("Search book failed: %s" % e)
+                logging.error(traceback.format_exc())
         logging.info(f"[TRACE] search took {time.time() - start:.2f} seconds.")
 
         if exclude_id > 0 and exclude_id in seen:
