@@ -344,7 +344,8 @@ class AdminSettings(BaseHandler):
             "WEBDAV_SYNC_FOLDER",
             "ENABLE_AUDIO_CONVERSION_LOG",
             "ENABLE_OPDS_SERVICE",
-            "META_SELECTED_SOURCES"
+            "META_SELECTED_SOURCES",
+            "PDF_TILE_WITH_FILE_NAME"
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon

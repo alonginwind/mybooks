@@ -85,6 +85,8 @@ settings = {
     "PDF_VIEWER": "/static/pdfjs/web/viewer.html?file=%(pdf_url)s",
     "WEBDAV_SYNC_FOLDER": False,
 
+    "PDF_TILE_WITH_FILE_NAME": False,
+
     "SOCIAL_AUTH_LOGIN_URL"          : '/',
     "SOCIAL_AUTH_LOGIN_REDIRECT_URL" : '/api/done/',
     "SOCIAL_AUTH_USER_MODEL"         : 'webserver.models.Reader',

@@ -24,6 +24,7 @@ from webserver.services import AsyncService
 from webserver.services.book_barn import BookBarnService
 from webserver.services.item_sync import ItemSyncService
 from webserver.constants import COLUMN_CATEGORY, COLUMN_PHY_COUNT, COLUMN_BOOK_TYPE
+from webserver.version import VERSION
 
 CONF = loader.get_settings()
 define("host", default="", type=str, help=_("The host address on which to listen"))
@@ -183,11 +184,32 @@ def configure_amazon_plugin():
 
 def make_app():
     auth_db_path = CONF["user_database"]
-    logging.debug("Init library with [%s]" % options.with_library)
-    logging.debug("Init AuthDB  with [%s]" % auth_db_path)
-    logging.debug("Init Static  with [%s]" % CONF["resource_path"])
-    logging.debug("Init HTML    with [%s]" % CONF["html_path"])
-    logging.debug("Init Nuxtjs  with [%s]" % CONF["nuxt_env_path"])
+    logging.info("Revision:: [%s]" % VERSION)
+    logging.info("Init library with [%s]" % options.with_library)
+    logging.info("Init AuthDB  with [%s]" % auth_db_path)
+    logging.info("Init Static  with [%s]" % CONF["resource_path"])
+    logging.info("Init HTML    with [%s]" % CONF["html_path"])
+    logging.info("Init Nuxtjs  with [%s]" % CONF["nuxt_env_path"])
+    banner_width = 88
+    border_top = "╭" + "─" * banner_width + "╮"
+    border_bottom = "╰" + "─" * banner_width + "╯"
+    banner_lines = [
+        "",
+        border_top,
+        "|" + "    ____                                 _____   __                __    _        ".center(banner_width) + "|",
+        "|" + "   / __ \\  ____    _  __  ___    ____   / ___/  / /_  __  __  ____/ /   (_)  ____ ".center(banner_width) + "|",
+        "|" + "  / /_/ / / __ \\  | |/_/ / _ \\  / __ \\  \\__ \\  / __/ / / / / / __  /   / /  / __ \\".center(banner_width) + "|",
+        "|" + " / ____/ / /_/ / _>  <  /  __/ / / / / ___/ / / /_  / /_/ / / /_/ /   / /  / /_/ /".center(banner_width) + "|",
+        "|" + "/_/      \____/ /_/|_|  \___/ /_/ /_/ /____/  \__/  \__,_/  \__,_/   /_/   \____/ ".center(banner_width) + "|",
+        "|" + "  ______            __          __                    __   ".center(banner_width) + "|",
+        "|" + " /_  __/  ____ _   / /  ___    / /_   ____   ____    / /__ ".center(banner_width) + "|",
+        "|" + "  / /    / __ `/  / /  / _ \  / __ \ / __ \ / __ \  / //_/ ".center(banner_width) + "|",
+        "|" + " / /    / /_/ /  / /  /  __/ / /_/ // /_/ // /_/ / / ,<    ".center(banner_width) + "|",
+        "|" + "/_/     \__,_/  /_/   \___/ /_.___/ \____/ \____/ /_/|_|   ".center(banner_width) + "|",
+        "|" + f"{VERSION}".center(banner_width) + "|",
+        border_bottom,
+    ]
+    logging.info("\n%s", "\n".join(banner_lines))
 
     if options.update_config:
         logging.info("updating configs ...")
@@ -290,7 +312,6 @@ def make_app():
     import threading
     from webserver.handlers.base import BaseHandler
     BaseHandler.db_lock = threading.RLock()
-    logging.info("Database lock initialized")
 
     app_settings = dict(CONF)
     app_settings.update(
@@ -300,7 +321,7 @@ def make_app():
             "ScopedSession": ScopedSession,
             "build_time": fromtimestamp(os.stat(path).st_mtime),
             "default_cover": default_cover,
-            "autoreload": False,
+            "autoreload": VERSION == "v0.0.1"
         }
     )
 
