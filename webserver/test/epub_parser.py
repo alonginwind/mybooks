@@ -6,6 +6,7 @@ import logging
 import re
 import os
 from typing import List, Tuple
+from gettext import gettext as _
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -60,7 +61,7 @@ class EpubBookParser:
     def get_book_author(self) -> str:
         if self.book.get_metadata('DC', 'creator'):
             return self.book.get_metadata("DC", "creator")[0][0]
-        return "Unknown"
+        return _("佚名")
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:
         chapters = []

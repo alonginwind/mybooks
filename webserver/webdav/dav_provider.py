@@ -4,6 +4,7 @@ import re
 import logging
 import time
 import pwd
+from gettext import gettext as _
 from io import BytesIO
 from urllib.parse import unquote
 from wsgidav.dav_provider import DAVProvider, DAVCollection, DAVNonCollection
@@ -247,7 +248,7 @@ class BooksCollection(VirtualCollection):
                     # Convert Metadata object to dict-like structure
                     item = {
                         'id': book_id,
-                        'title': mi.title or 'Unknown',
+                        'title': mi.title or _("未知"),
                         'authors': mi.authors or [],
                         'fmt_epub': None,
                         'fmt_azw3': None,
@@ -749,7 +750,7 @@ class TalebookProvider(DAVProvider):
         """从Metadata对象构建book item字典"""
         item = {
             'id': book_id,
-            'title': mi.title or 'Unknown',
+            'title': mi.title or _("未知"),
             'authors': mi.authors or [],
             'fmt_epub': None,
             'fmt_azw3': None,

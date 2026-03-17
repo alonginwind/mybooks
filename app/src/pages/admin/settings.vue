@@ -438,10 +438,10 @@ export default {
             icon: "info", key: "BOOK_NAMES_FORMAT", label: "settings.book_names_format", type: 'select',
             items: [{ text: this.$t('settings.pinyin_directory'), value: "en" }, { text: this.$t('settings.utf8_directory'), value: "utf8" }]
           },
+          { icon: "", key: "PDF_TILE_WITH_FILE_NAME", label: "settings.pdf_tile_with_file_name", type: 'checkbox' },
           { icon: "info", key: "EPUB_VIEWER", label: "settings.epub_viewer", type: 'select',
             items: [{ text: this.$t('settings.epubjs'), value: "epubjs.html" }, { text: this.$t('settings.creader'), value: "creader.html" }]
           },
-          { icon: "info", key: "avatar_service", label: "settings.avatar_service" },
           { icon: "info", key: "MAX_UPLOAD_SIZE", label: "settings.max_upload_size" },
           { icon: "info", key: "CHUNK_UPLOAD_SIZE", label: "settings.chunk_upload_size" },
           { icon: "lock", key: "cookie_secret", label: "settings.cookie_secret" },
@@ -449,10 +449,10 @@ export default {
           { icon: "info", key: "push_title", label: "settings.push_title" },
           { icon: "info", key: "push_content", label: "settings.push_content" },
           { icon: "info", key: "convert_timeout", label: "settings.convert_timeout" },
-          { icon: "", key: "autoreload", label: "settings.autoreload", type: 'checkbox' },
           { icon: "", key: "ENABLE_PHYSICAL_BOOKS", label: "settings.enable_physical_books", type: 'checkbox' },
           { icon: "", key: "WEBDAV_SYNC_FOLDER", label: "settings.enable_webdav_sync", type: 'checkbox' },
           { icon: "mdi-cloud-print-outline", key: "ENABLE_OPDS_SERVICE", label: "settings.enable_opds_service", type: 'checkbox' },
+          { icon: "", key: "autoreload", label: "settings.autoreload", type: 'checkbox' },
           { icon: "mdi-math-log", key: "ENABLE_AUDIO_CONVERSION_LOG", label: "settings.enable_audio_conversion_log", type: 'checkbox' },
         ]
       },

@@ -1989,11 +1989,13 @@ class BookUpload(BaseHandler):
         if fmt == "txt":
             mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
             mi.authors = [_(u"佚名")]
-
-        if fmt == "pdf":
-            title = mi.title.strip() if mi.title else ""
-            if not title or title.find(_(u"下载工具")) >= 0 or title == "SSReader Print.":
+        elif fmt == "pdf":
+            if CONF["PDF_TILE_WITH_FILE_NAME"]:
                 mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
+            else:
+                title = mi.title.strip() if mi.title else ""
+                if not title or title.find(_(u"下载工具")) >= 0 or title == "SSReader Print.":
+                    mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
             if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
                 mi.authors = [_(u"佚名")]
 

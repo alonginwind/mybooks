@@ -232,7 +232,7 @@ def ACQUISITION_ENTRY(item, db, updated, CFM, CKEYS, prefix):
         title = _("Unknown")
     authors = item[FM["authors"]]
     if not authors:
-        authors = _("Unknown")
+        authors = _("佚名")
     authors = " & ".join([i.replace("|", ",") for i in authors.split(",")])
     extra = []
     rating = item[FM["rating"]] or 0

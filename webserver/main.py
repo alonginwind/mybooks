@@ -125,7 +125,7 @@ def utf8_construct_path_name(book_id, title, author):
     except IndexError:
         author = ""
     if not author:
-        author = safe_filename(_("Unknown"))
+        author = _(u"佚名")
     if author.upper() in WINDOWS_RESERVED_NAMES:
         author += "w"
     return "%s/%s%s" % (author, title, book_id)
