@@ -78,7 +78,7 @@ export class Reader {
 			minSpreadWidth: this.settings.spread.min,
 			width: "100%",
 			height: "100%",
-			snap: true
+			// snap: true
 		});
 
 		const cfi = this.settings.previousLocationCfi;
@@ -453,7 +453,7 @@ export class Reader {
 				bookPath: bookPath,
 				assetsPath: "",
 				arrows: this.isMobile ? "none" : "content", // none | content | toolbar
-				manager: "default", // Change to "default" for mobile too to fix multiple page flip issue
+				manager: this.isMobile ? "default" : "continuous", // Change to "default" for mobile too to fix multiple page flip issue
 				restore: true,
 				history: true,
 				openbook: this.storage.indexedDB ? true : false,
