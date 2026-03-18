@@ -870,7 +870,7 @@ class ListHandler(BaseHandler):
         try:
             size = int(self.get_argument("size"))
         except:
-            size = 60
+            size = int(CONF.get("DEFAULT_PAGE_SIZE", 60))
         delta = min(max(size, 60), 100)
 
         if ids:

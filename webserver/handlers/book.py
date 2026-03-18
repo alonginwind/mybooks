@@ -61,7 +61,7 @@ class Index(BaseHandler):
         """首页显示随机书籍和最近添加的书籍"""
         setting_random_count = CONF.get("MAIN_PAGE_RANDOM_COUNT", 12)
         setting_recent_count = CONF.get("MAIN_PAGE_RECENT_COUNT", 12)
-        cnt_random = min(int(self.get_argument("random", setting_random_count)), 60)
+        cnt_random = min(int(self.get_argument("random", setting_random_count)), setting_random_count)
         cnt_recent = min(int(self.get_argument("recent", setting_recent_count)), 200)
 
         ids = list(self.calibre_db_cache.all_book_ids())
