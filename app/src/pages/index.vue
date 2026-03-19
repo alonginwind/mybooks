@@ -35,7 +35,10 @@
 
     <v-row v-if="random_books.length > 0">
         <v-col cols=12>
-            <p class="ma-0 title">{{ $t('index.randomRecommendation') }}</p>
+            <div class="d-flex align-center">
+                <p class="ma-0 title">{{ $t('index.randomRecommendation') }}</p>
+                <v-icon color="primary" class="ml-1 refresh-icon" @click="refreshBooks('all')">mdi-refresh</v-icon>
+            </div>
         </v-col>
         <v-col cols=4 xs=4 sm=3 md=2 lg=1 v-for="(book,idx) in get_random_books" :key="'rec'+idx+book.id" class="book-card">
             <v-card :to="book.href" class="ma-1">
@@ -193,6 +196,16 @@ export default {
                 this.$router.replace('/categories');
             }
         },
+        refreshBooks() {
+            this.$backend('/index').then( rsp => {
+                if (rsp.err === 'ok') {
+                    this.random_books = rsp.random_books || [];
+                    this.new_books = rsp.new_books || [];
+                }
+            }).catch( error => {
+                console.error('Failed to refresh books:', error);
+            });
+        }
     },
     mounted() {
         this.loadLibraryStats();
@@ -340,6 +353,17 @@ export default {
     margin-top: 30px;
     margin-bottom: 20px;
 }
+
+.refresh-icon {
+    cursor: pointer;
+    transition: transform 0.28s ease, color 0.28s ease;
+}
+
+.refresh-icon:hover {
+    transform: rotate(180deg) scale(1.12);
+    color: #1976d2 !important;
+}
+
 .book-img-container {
     position: relative;
     display: block;
