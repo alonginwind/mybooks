@@ -19,6 +19,11 @@ if [ ! -d "/data/log" ]; then
   cp -rf /prebuilt/log /data/
 fi
 
+if [ ! -d "/data/log/ngix" ]; then
+  mkdir -p /data/log/nginx
+  chown -R talebook:talebook /data/log/nginx
+fi
+
 # 检查目录，拷贝并创建目录
 cd /prebuilt/books/;
 for f in *; do
