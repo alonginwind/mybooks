@@ -155,7 +155,6 @@ export class Reader {
 				location.start.title = title.trim();
 				console.log("Location:", JSON.stringify(location.start));
 				this.emit("chapterChanged", title.trim());
-				const url = new URL(window.location.origin);
 			}
 		});
 
@@ -246,6 +245,15 @@ export class Reader {
 			let contentStyles = {};
 			const themeName = "reader-theme";
 
+			const fontFileMapping = {
+				"Huiwen-HKHei": "HuiwenGangHei",
+				"Huiwen-Fangsong": "HuiwenFangSong",
+				"FZSongKeBenXiuKaiS-R-GB": "FangzhengSongJianKe",
+				"Bookerly": "Bookerly-Regular"
+			};
+			const fileName = fontFileMapping[actualFontName] || actualFontName;
+			const fontUrl = this.buildFontUrl(`${fileName}.ttf`);
+
 			// Helper function to add font-family only if font is specified
 			const addFontFamily = (styles, fontName) => {
 				if (fontName) {
@@ -258,6 +266,12 @@ export class Reader {
 
 			if (theme === "dark") {
 				contentStyles = {
+					"@font-face": {
+						"font-family": actualFontName || "Bookerly",
+						"src": `url(${fontUrl}) format('truetype')`,
+						"font-weight": "normal",
+						"font-style": "normal"
+					},
 					"body": addFontFamily({
 						"background": "#1a1a1a",
 						"color": "#e0e0e0 !important"
@@ -279,6 +293,12 @@ export class Reader {
 				};
 			} else if (theme === "eyecare") {
 				contentStyles = {
+					"@font-face": {
+						"font-family": actualFontName || "Bookerly",
+						"src": `url(${fontUrl}) format('truetype')`,
+						"font-weight": "normal",
+						"font-style": "normal"
+					},
 					"body": addFontFamily({
 						"background": "#f0f4e8",
 						"color": "#2d4a2d !important"
@@ -301,6 +321,12 @@ export class Reader {
 			} else {
 				// Light theme
 				contentStyles = {
+					"@font-face": {
+						"font-family": actualFontName || "Bookerly",
+						"src": `url(${fontUrl}) format('truetype')`,
+						"font-weight": "normal",
+						"font-style": "normal"
+					},
 					"body": addFontFamily({
 						"background": "#fff",
 						"color": "#000 !important"
@@ -331,69 +357,6 @@ export class Reader {
 		} else {
 			applyStylesWithFont("");
 		}
-	}
-
-	// Enhanced method to inject font with better timing
-	injectFontWithRetry(fontName, maxRetries = 3) {
-		if (!fontName || fontName === "default") return;
-
-		let attempts = 0;
-		const tryInject = () => {
-			attempts++;
-			const iframes = document.querySelectorAll('#viewer iframe');
-
-			if (iframes.length === 0 && attempts < maxRetries) {
-				setTimeout(tryInject, 200);
-				return;
-			}
-
-			let injectedCount = 0;
-			iframes.forEach(iframe => {
-				try {
-					const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-					if (iframeDoc && iframeDoc.readyState === 'complete') {
-						// Create or update the font style element
-						let fontStyleElement = iframeDoc.getElementById('injected-font-style');
-						if (!fontStyleElement) {
-							fontStyleElement = iframeDoc.createElement('style');
-							fontStyleElement.id = 'injected-font-style';
-							iframeDoc.head.appendChild(fontStyleElement);
-						}
-
-						const fontFileMapping = {
-							"Huiwen-HKHei": "HuiwenGangHei",
-							"Huiwen-Fangsong": "HuiwenFangSong",
-							"FZSongKeBenXiuKaiS-R-GB": "FangzhengSongJianKe",
-							"Bookerly": "Bookerly-Regular"
-						};
-
-						const fileName = fontFileMapping[fontName] || fontName;
-						const fontUrl = this.buildFontUrl(`${fileName}.ttf`);
-
-						// Inject font-face CSS
-						const fontFaceCSS = `
-							@font-face {
-								font-family: '${fontName}';
-								src: url('${fontUrl}') format('truetype');
-								font-weight: normal;
-								font-style: normal;
-							}
-						`;
-
-						fontStyleElement.textContent = fontFaceCSS;
-						injectedCount++;
-					}
-				} catch (error) {
-					console.warn(`Failed to inject font into iframe:`, error);
-				}
-			});
-
-			if (injectedCount === 0 && attempts < maxRetries) {
-				setTimeout(tryInject, 200);
-			}
-		};
-
-		tryInject();
 	}
 
 	navItemFromCfi(cfi) {
