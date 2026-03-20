@@ -123,23 +123,10 @@ export class Reader {
 
 		this.rendition.on("relocated", (location) => {
 			this.emit("relocated", location);
-			// Re-inject font when page changes
-			const fontName = this.settings.styles.font === "default" ? "" : this.settings.styles.font;
-			if (fontName) {
-				setTimeout(() => {
-					this.injectFontWithRetry(fontName);
-				}, 200);
-			}
 		});
 
 		this.rendition.on("rendered", () => {
-			// Re-inject font when content is rendered
-			const fontName = this.settings.styles.font === "default" ? "" : this.settings.styles.font;
-			if (fontName) {
-				setTimeout(() => {
-					this.injectFontWithRetry(fontName);
-				}, 100);
-			}
+			// styles are applied through themes.register/select in applyStyles
 		});
 
 		this.rendition.on("keyup", this.keyboardHandler.bind(this));
@@ -190,6 +177,7 @@ export class Reader {
 				// Apply styles with new font
 				this.applyStyles();
 			}
+			this.persistSettings();
 		});
 
 		this.on("themechanged", (theme) => {
@@ -198,10 +186,12 @@ export class Reader {
 			this.applyUITheme(theme);
 			// Apply styles with new theme
 			this.applyStyles();
+			this.persistSettings();
 		});
 
 		this.on("languagechanged", (language) => {
 			this.settings.language = language;
+			this.persistSettings();
 		});
 
 		this.on("flowchanged", (flow) => {
@@ -209,6 +199,7 @@ export class Reader {
 			if (this.rendition) {
 				this.rendition.flow(flow);
 			}
+			this.persistSettings();
 		});
 
 		this.on("spreadchanged", (spread) => {
@@ -226,6 +217,7 @@ export class Reader {
 					this.rendition.spread(this.settings.spread.mod, spread.min);
 				}
 			}
+			this.persistSettings();
 		});
 	}
 
@@ -252,6 +244,7 @@ export class Reader {
 		// Load font first if needed, then apply styles
 		const applyStylesWithFont = (actualFontName) => {
 			let contentStyles = {};
+			const themeName = "reader-theme";
 
 			// Helper function to add font-family only if font is specified
 			const addFontFamily = (styles, fontName) => {
@@ -328,10 +321,9 @@ export class Reader {
 					}
 				};
 			}
-			this.rendition.themes.default(contentStyles);
-			if (actualFontName) {
-				this.injectFontWithRetry(actualFontName);
-			}
+			this.rendition.themes.register(themeName, contentStyles);
+			this.rendition.themes.select(themeName);
+			this.rendition.themes.font(actualFontName || "Bookerly");
 		};
 
 		if (fontName) {
@@ -532,8 +524,6 @@ export class Reader {
 	 * Saving the current book settings in local storage.
 	 */
 	saveSettings() {
-
-		this.settings.previousLocationCfi = this.rendition.location.start.cfi;
 		const cfg = Object.assign({}, this.settings);
 		delete cfg.arrows;
 		delete cfg.manager;
@@ -545,13 +535,16 @@ export class Reader {
 		localStorage.setItem(this.entryKey, JSON.stringify(cfg));
 	}
 
+	persistSettings() {
+		if (this.settings && this.settings.restore && localStorage) {
+			this.saveSettings();
+		}
+	}
+
 	//-- event handlers --//
 
 	unload() {
-
-		if (this.settings.restore && localStorage) {
-			this.saveSettings();
-		}
+		this.persistSettings();
 	}
 
 	hashChanged() {
