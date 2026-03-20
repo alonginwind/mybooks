@@ -1,5 +1,8 @@
 const path = require("path")
+const webpack = require("webpack")
 const CopyPlugin = require("copy-webpack-plugin")
+const TerserPlugin = require("terser-webpack-plugin")
+const pkg = require("./package.json")
 
 const config = {
 	mode: "development",
@@ -36,6 +39,10 @@ const config = {
 		outputModule: true
 	},
 	plugins: [
+		new webpack.BannerPlugin({
+			banner: `/*! ${pkg.name} v${pkg.version} */`,
+			raw: true
+		}),
 		new CopyPlugin({
 			patterns: [
 				{
@@ -84,13 +91,24 @@ module.exports = (env, args) => {
 	config.devtool = env.WEBPACK_SERVE ? "eval-source-map" : "source-map"
 
 	if (args.optimizationMinimize) {
-		config.output.filename = "js/[name].min.js"
-		config.output.sourceMapFilename = "js/[name].min.js.map"
+		config.output.filename = `js/[name].min-v${pkg.version}.js`
+		config.output.sourceMapFilename = `js/[name].min-v${pkg.version}.js.map`
 		config.optimization.minimize = true
+		config.optimization.minimizer = [
+			new TerserPlugin({
+				extractComments: false,
+				terserOptions: {
+					format: {
+						comments: true
+					}
+				}
+			})
+		]
 	} else {
 		config.output.filename = "js/[name].js"
 		config.output.sourceMapFilename = "js/[name].js.map"
 		config.optimization.minimize = false
+		config.optimization.minimizer = undefined
 	}
 
 	return config;
