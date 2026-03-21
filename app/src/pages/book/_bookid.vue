@@ -2672,26 +2672,26 @@ export default {
             this.dialog_share_card = true;
 
             try {
-                const CARD_W = 300;
-                const PADDING = 16;
-                const CARD_RADIUS = 24;
+                const CARD_W = 480;
+                const PADDING = 26;
+                const CARD_RADIUS = 38;
                 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
                 const ACCENT = '#e2b870';
                 const TEXT_COLOR = '#f5f0e8';
                 const MUTED_COLOR = '#b0b8c5';
-                const COVER_RADIUS = 10;
+                const COVER_RADIUS = 16;
                 const TEXT_W = CARD_W - 2 * PADDING;
 
                 // Section layout heights
-                const HEADER_H = 22;
-                const HEADER_GAP = 8;
-                const DIVIDER_GAP = 10;
-                const TITLE_LINE_H = 28;
+                const HEADER_H = 35;
+                const HEADER_GAP = 13;
+                const DIVIDER_GAP = 16;
+                const TITLE_LINE_H = 45;
                 const MAX_TITLE_LINES = 2;
-                const TITLE_GAP = 10;
-                const MEDIA_H = 200;
-                const MEDIA_GAP = 12;
-                const DESC_LINE_H = 18;
+                const TITLE_GAP = 16;
+                const MEDIA_H = 320;
+                const MEDIA_GAP = 19;
+                const DESC_LINE_H = 29;
                 const MAX_DESC_LINES = 5;
 
                 // Pre-calculate title and description line counts for dynamic card height
@@ -2702,7 +2702,7 @@ export default {
                     tmpCanvas.width = CARD_W;
                     tmpCanvas.height = 10;
                     const tmpCtx = tmpCanvas.getContext('2d');
-                    tmpCtx.font = `bold 20px ${FONT}`;
+                    tmpCtx.font = `bold 32px ${FONT}`;
                     const chars = Array.from(this.book.title || '');
                     let idx = 0;
                     while (idx < chars.length && titleLineCount < MAX_TITLE_LINES) {
@@ -2727,7 +2727,7 @@ export default {
                     tmpCanvas.width = CARD_W;
                     tmpCanvas.height = 10;
                     const tmpCtx = tmpCanvas.getContext('2d');
-                    tmpCtx.font = `12px ${FONT}`;
+                    tmpCtx.font = `19px ${FONT}`;
                     const chars = Array.from(commentText);
                     let idx = 0;
                     while (idx < chars.length && descLineCount < MAX_DESC_LINES) {
@@ -2825,16 +2825,16 @@ export default {
 
                 // --- Section 1: Header (siteTitle left + date right) ---
                 const siteTitle = localStorage.getItem('sys_title') || 'Talebook';
-                ctx.font = `500 12px ${FONT}`;
+                ctx.font = `500 19px ${FONT}`;
                 ctx.fillStyle = TEXT_COLOR;
-                ctx.fillText(siteTitle, PADDING, curY + Math.round((HEADER_H - 12) / 2));
+                ctx.fillText(siteTitle, PADDING, curY + Math.round((HEADER_H - 19) / 2));
 
                 const now = new Date();
                 const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
-                ctx.font = `10px ${FONT}`;
+                ctx.font = `16px ${FONT}`;
                 ctx.fillStyle = MUTED_COLOR;
                 const dateW = ctx.measureText(dateStr).width;
-                ctx.fillText(dateStr, CARD_W - PADDING - dateW, curY + Math.round((HEADER_H - 10) / 2));
+                ctx.fillText(dateStr, CARD_W - PADDING - dateW, curY + Math.round((HEADER_H - 16) / 2));
 
                 curY += HEADER_H + HEADER_GAP;
 
@@ -2848,7 +2848,7 @@ export default {
                 curY += 1 + DIVIDER_GAP;
 
                 // --- Section 2: Book title (up to MAX_TITLE_LINES lines, centered) ---
-                ctx.font = `bold 20px ${FONT}`;
+                ctx.font = `bold 32px ${FONT}`;
                 ctx.fillStyle = TEXT_COLOR;
                 ctx.textAlign = 'center';
                 fillTruncatedText(this.book.title || '', CARD_W / 2, curY, TEXT_W, TITLE_LINE_H, MAX_TITLE_LINES);
@@ -2898,15 +2898,15 @@ export default {
                     roundedRectPath(ctx, coverX, coverY, coverRenderW, coverRenderH, COVER_RADIUS);
                     ctx.fill();
                     ctx.fillStyle = MUTED_COLOR;
-                    ctx.font = `10px ${FONT}`;
+                    ctx.font = `16px ${FONT}`;
                     ctx.textAlign = 'center';
                     ctx.fillText('📖', coverX + coverRenderW / 2, coverY + coverRenderH / 2);
                     ctx.textAlign = 'left';
                 }
 
                 // QR: centered in right half
-                const QR_SIZE = Math.min(90, HALF_W - 20);
-                const QR_LABEL_H = 14;
+                const QR_SIZE = Math.min(144, HALF_W - 32);
+                const QR_LABEL_H = 22;
                 const qrHalfW = TEXT_W - HALF_W;
                 const qrCenterX = PADDING + HALF_W + Math.round(qrHalfW / 2);
                 const qrX = Math.round(qrCenterX - QR_SIZE / 2);
@@ -2928,10 +2928,10 @@ export default {
                 });
                 ctx.drawImage(qrCanvas, qrX, qrY, QR_SIZE, QR_SIZE);
 
-                ctx.font = `10px ${FONT}`;
+                ctx.font = `16px ${FONT}`;
                 ctx.fillStyle = MUTED_COLOR;
                 ctx.textAlign = 'center';
-                ctx.fillText('扫码阅读', qrCenterX, qrY + QR_SIZE + 6);
+                ctx.fillText('扫码阅读', qrCenterX, qrY + QR_SIZE + 8);
                 ctx.textAlign = 'left';
 
                 curY = mediaY + MEDIA_H;
