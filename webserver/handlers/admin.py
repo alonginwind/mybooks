@@ -10,6 +10,8 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import traceback
 import uuid
 from gettext import gettext as _
@@ -187,6 +189,20 @@ class AdminOwnerMode(BaseHandler):
 
 
 class SettingsSaverLogic:
+    def restart_async(self):
+        def _delayed_restart():
+            try:
+                # 留一点时间给当前请求把响应写回客户端
+                time.sleep(0.3)
+                logging.info("Triggering async restart by exiting current process")
+            except Exception:
+                logging.error(traceback.format_exc())
+            finally:
+                # 退出当前进程，由 supervisor/docker 的 autorestart 拉起新进程
+                os._exit(0)
+
+        threading.Thread(target=_delayed_restart, name="talebook-restart", daemon=True).start()
+
     def update_nuxtjs_env(self):
         # update nuxtjs .env file
         nuxtjs_env = """
@@ -208,7 +224,7 @@ TITLE_TEMPLATE="%%s | %(site_title)s"
             self.update_nuxtjs_env()
         except:
             logging.error(traceback.format_exc())
-            return {"err": "file.permission", "msg": _(u"更新nuxtjs配置文件失败！请确保文件的权限为可写入！")}
+            return {"err": "file.permission", "msg": _(u"更新配置文件失败！请确保文件的权限为可写入！")}
 
         args["installed"] = True
         try:
@@ -219,8 +235,11 @@ TITLE_TEMPLATE="%%s | %(site_title)s"
 
         CONF["installed"] = True
         if CONF.get("autoreload", False):
-            sys.exit(0)
-        return {"err": "ok", "rsp": args}
+            # 异步执行重启命令，避免阻塞当前请求
+            self.restart_async()
+            return {"err": "ok", "msg": _(u"保存成功！可能需要5~10秒钟生效！")}
+        else:
+            return {"err": "ok", "rsp": CONF, "msg": _(u"设置已保存，请重启服务生效！")}
 
 
 class AdminSettings(BaseHandler):

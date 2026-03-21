@@ -367,7 +367,7 @@
         "push_title": "Email Title",
         "push_content": "Email Body",
         "convert_timeout": "Maximum timeout for book conversion (seconds)",
-        "autoreload": "Automatically restart server after updating configuration (Manual restart required for first time)",
+        "autoreload": "Automatically restart server after updating configuration",
         "logo_adjustment_description": "If you need to adjust the logo, please refer to the installation documentation.",
         "ssl_certificate_management": "SSL Certificate Management",
         "social_network_login": "Login via Social Account",

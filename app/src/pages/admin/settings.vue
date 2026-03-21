@@ -594,13 +594,9 @@ export default {
       })
         .then(rsp => {
           if (rsp.err != 'ok') {
-            this.$alert('error', this.$t('settings.save_error'));
+            this.$alert('error', rsp.msg || this.$t('settings.save_error'));
           } else {
-            this.$alert('success', this.$t('settings.save_success'));
-            // Reload system info to update store (e.g. indexPage setting)
-            this.$backend("/user/info").then((rsp) => {
-              this.$store.commit("login", rsp);
-            });
+            this.$alert('success', rsp.msg || this.$t('settings.save_success'));
           }
         });
     },

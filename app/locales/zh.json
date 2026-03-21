@@ -543,7 +543,7 @@
         "push_content": "邮件推送的内容",
         "push_title": "邮件推送的标题",
         "convert_timeout": "书籍转换格式的最大超时时间（秒）",
-        "autoreload": "更新配置后自动重启服务器(首次开启需人工重启)",
+        "autoreload": "更新配置后自动重启服务器",
         "logo_adjustment_description": "若需要调整Logo，请参阅安装文档的说明。",
         "ssl_certificate_management": "SSL证书管理",
         "social_network_login": "社交网络登录",

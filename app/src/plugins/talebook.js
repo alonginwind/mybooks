@@ -42,11 +42,13 @@ export default ({ app }, inject) => {
         if (options !== undefined) {
             Object.assign(args, options);
         }
-        //console.trace();
-        //console.log("request", full_url)
+
         return fetch(full_url, args)
             .then(rsp => {
-                const { res } = app.context;
+                const should_ignore = url.endsWith("/tasks/running") && rsp.status !== 200;
+                if (should_ignore) {
+                    return { err: 'ok' };
+                }
                 var msg = "";
                 if (rsp.status === 413) {
                     msg = "服务器响应了413异常状态码。<br/>可能是上传的文件过大，超过了服务器设置的上传大小。";
