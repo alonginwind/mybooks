@@ -45,7 +45,7 @@ export TALEBOOK_PASSWORD="your_password"
 
 ### 认证方式
 - 脚本通过 `TALEBOOK_USER` / `TALEBOOK_PASSWORD` 环境变量自动调用 `/api/user/sign_in` 完成登录
-- 服务端通过 **Secure Cookie**（`user_id` + `lt`）维持会话，Cookie 由 curl 的 cookie jar 自动管理
+- 服务端通过 **Secure Cookie**（`user_id` + `lt`）维持会话
 - 若响应中出现 `err=user.need_login`，脚本会自动重新登录后重试一次；仍失败则报错退出
 - **必须**在调用前配置 `TALEBOOK_HOST`、`TALEBOOK_USER`、`TALEBOOK_PASSWORD` 三个环境变量，否则脚本直接报错退出
 

@@ -1714,11 +1714,18 @@ class SearchBook(ListHandler):
 
         # 简繁体转换搜索（合并为一次查询）
         start = time.time()
-        converted_names = ["( " + name + " )"]
+
+        if calibre_query:
+            converted_names = ["( " + name + " )"]
+        else:
+            converted_names = [name]
         for profile in ['s2t', 't2s']:
             converted_name = opencc.OpenCC(profile).convert(name)
             if converted_name != name:
-                converted_names.append("( " + converted_name + " )")
+                if calibre_query:
+                    converted_names.append("( " + converted_name + " )")
+                else:
+                    converted_names.append(converted_name)
         if converted_names:
             try:
                 if seg == 1:
