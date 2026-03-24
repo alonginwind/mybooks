@@ -87,6 +87,9 @@ settings = {
     "ALLOW_NEW_USER_MANAGE_BOOK": True,
     "ALLOW_NEW_USER_PUSH_BOOK": True,
 
+    "IMPORT_BY_INOTIFY": False,
+    "IMPORT_CATEGORY_WITH_FOLDER": False,
+
     "PDF_TILE_WITH_FILE_NAME": False,
 
     "SOCIAL_AUTH_LOGIN_URL"          : '/',

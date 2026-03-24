@@ -431,6 +431,19 @@ export default {
           }
         ],
       },
+
+      {
+        show: false,
+        title: "settings.import_and_upload",
+        fields: [
+          { icon: "mdi-import", key: "scan_upload_path", label: "settings.scan_upload_path" },
+          { icon: "info", key: "MAX_UPLOAD_SIZE", label: "settings.max_upload_size" },
+          { icon: "info", key: "CHUNK_UPLOAD_SIZE", label: "settings.chunk_upload_size" },
+          { icon: "mdi-shape-plus", key: "IMPORT_CATEGORY_WITH_FOLDER", label: "settings.category_with_folder", type: 'checkbox'},
+          { icon: "mdi-crosshairs-gps", key: "IMPORT_BY_INOTIFY", label: "settings.auto_importing", type: 'checkbox'},
+        ]
+      },
+
       {
         show: false,
         title: "settings.advanced_settings",
@@ -443,10 +456,7 @@ export default {
           { icon: "info", key: "EPUB_VIEWER", label: "settings.epub_viewer", type: 'select',
             items: [{ text: this.$t('settings.epubjs'), value: "epubjs.html" }, { text: this.$t('settings.creader'), value: "creader.html" }]
           },
-          { icon: "info", key: "MAX_UPLOAD_SIZE", label: "settings.max_upload_size" },
-          { icon: "info", key: "CHUNK_UPLOAD_SIZE", label: "settings.chunk_upload_size" },
           { icon: "lock", key: "cookie_secret", label: "settings.cookie_secret" },
-          { icon: "info", key: "scan_upload_path", label: "settings.scan_upload_path" },
           { icon: "info", key: "push_title", label: "settings.push_title" },
           { icon: "info", key: "push_content", label: "settings.push_content" },
           { icon: "info", key: "convert_timeout", label: "settings.convert_timeout" },

@@ -365,6 +365,8 @@ class AdminSettings(BaseHandler):
             "PDF_TILE_WITH_FILE_NAME",
             "ALLOW_NEW_USER_MANAGE_BOOK",
             "ALLOW_NEW_USER_PUSH_BOOK",
+            "IMPORT_BY_INOTIFY",
+            "IMPORT_CATEGORY_WITH_FOLDER",
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon
