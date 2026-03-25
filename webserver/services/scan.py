@@ -284,7 +284,7 @@ class ScanService(AsyncService):
                 mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
                 mi.authors = [_(u"佚名")]
             elif fmt == "pdf":
-                if CONF["PDF_TILE_WITH_FILE_NAME"]:
+                if CONF.get("PDF_TILE_WITH_FILE_NAME", False):
                     mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
                 else:
                     title_ = mi.title.strip() if mi.title else ""
@@ -399,6 +399,7 @@ class ScanService(AsyncService):
             batch_rows = all_rows[batch_start:batch_end]
 
             logging.info("Processing batch: %d-%d / %d", batch_start + 1, batch_end, total_count)
+            scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
 
             # 处理当前批次
             for row in batch_rows:
@@ -479,7 +480,6 @@ class ScanService(AsyncService):
                         # 如果settings中IMPORT_CATEGORY_WITH_FOLDER开启，则使用当前文件在scan_upload_path目录下的第一级目录名作为书籍的自定义分类
                         # 如果目录名含有特殊字符，如,:等，则跳过分类设置，避免calibre库出问题
                         if CONF.get("IMPORT_CATEGORY_WITH_FOLDER", False):
-                            scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
                             rel = os.path.relpath(os.path.realpath(fpath), scan_upload_path)
                             first_dir = rel.split(os.sep)[0] if os.sep in rel else ""
                             if first_dir and len(first_dir) < 10 and not any(c in first_dir for c in ',:;|/\\\'"\t '):

@@ -353,7 +353,7 @@
         "douban_plugin_description": "If you need to enable the Douban plugin, please refer to the installation documentation. If it fails, try changing the mirror, such as talebook/douban-api-rs.",
         "import_and_upload": "Importing and Uploading",
         "category_with_folder": "Set category with top folder name",
-        "auto_importing":"Monitor importing folder and import automatically",
+        "auto_importing":"Monitor importing folder and import automatically (only process new books, deleting files has no effect)",
         "advanced_settings": "Advanced Configuration",
         "enable_physical_books": "Enable Physical Books",
         "cdn_domain": "CDN Domain",
