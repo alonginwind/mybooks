@@ -15,6 +15,7 @@ class BackgroundTask:
     SERVICE_TYPE_AUDIO = "audio"  # 音频转换
     SERVICE_TYPE_CONVERT = "convert"  # 图书转换
     SERVICE_TYPE_AI_FILL = "ai_fill"  # AI 更新
+    SERVICE_TYPE_TITLE_SORT_UPDATE = "title_sort_update"  # 更新拼音书名
 
     # 任务状态
     STATUS_RUNNING = "running"  # 运行中

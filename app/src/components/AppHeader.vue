@@ -825,6 +825,7 @@ export default {
                 'audio': this.$t('appHeader.taskTypeAudio'),
                 'convert': this.$t('appHeader.taskTypeConvert'),
                 'ai_fill': this.$t('appHeader.taskTypeAIFill'),
+                'title_sort_update': this.$t('appHeader.taskTypeTitleSortUpdate'),
             };
             return typeMap[serviceType] || serviceType;
         },

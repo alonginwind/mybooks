@@ -5,6 +5,7 @@ import time
 from gettext import gettext as _
 
 from webserver.services import AsyncService
+from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver import utils
 
 
@@ -19,6 +20,7 @@ class BatchTitleSortUpdateService(AsyncService):
         self.is_running = False
         self.current_book_id = None
         self.start_time = None
+        self.task_id = None
         AsyncService.__init__(self)
 
     def status(self):
@@ -30,6 +32,7 @@ class BatchTitleSortUpdateService(AsyncService):
             "count_skip": self.count_skip,
             "count_done": self.count_done,
             "count_fail": self.count_fail,
+            "task_id": self.task_id,
         }
 
     def _collect_books_to_update(self, idlist: list) -> list:
@@ -93,6 +96,22 @@ class BatchTitleSortUpdateService(AsyncService):
             self.add_msg(user_id, "success", _(u"更新拼音书名任务已结束，未找到需要更新的书籍"))
             return
 
+        try:
+            task = BackgroundService().update_task(
+                service_type=BackgroundTask.SERVICE_TYPE_TITLE_SORT_UPDATE,
+                service_item=_("更新拼音书名"),
+                progress=0,
+                progress_data={
+                    "total": self.count_total,
+                    "done": 0,
+                    "fail": 0,
+                },
+            )
+            self.task_id = task.id
+        except Exception as e:
+            logging.error("[BatchTitleSort] Failed to create background task: %s", e)
+            self.task_id = None
+
         for book_id, title in books_to_update:
             self.current_book_id = book_id
             ok = self._update_one_book(book_id, title)
@@ -100,7 +119,9 @@ class BatchTitleSortUpdateService(AsyncService):
                 self.count_done += 1
             else:
                 self.count_fail += 1
+            self._update_task_progress()
 
+        self._finish_task()
         msg = _(u"更新拼音书名任务已完成，成功更新%d本书，%d本书更新失败" % (self.count_done, self.count_fail))
         if self.count_fail > 0:
             self.add_msg(user_id, "warning", msg)
@@ -109,3 +130,35 @@ class BatchTitleSortUpdateService(AsyncService):
 
         self.is_running = False
         self.current_book_id = None
+        self.task_id = None
+
+    def _update_task_progress(self):
+        """更新后台任务进度"""
+        if not self.task_id:
+            return
+        try:
+            processed = self.count_done + self.count_fail
+            progress = int(processed * 100 / self.count_total) if self.count_total else 100
+            BackgroundService().update_progress(
+                task_id=self.task_id,
+                progress=progress,
+                progress_data={
+                    "total": self.count_total,
+                    "done": self.count_done,
+                    "fail": self.count_fail,
+                    "current_book_id": self.current_book_id,
+                },
+            )
+        except Exception as e:
+            logging.error("[BatchTitleSort] Failed to update task progress: %s", e)
+
+    def _finish_task(self, failed: bool = False, error_msg: str = ""):
+        if not self.task_id:
+            return
+        try:
+            BackgroundService().complete_task(
+                task_id=self.task_id,
+                error_message=error_msg if failed else None,
+            )
+        except Exception as e:
+            logging.error("[BatchTitleSort] Failed to finish task: %s", e)

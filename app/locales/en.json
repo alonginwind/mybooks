@@ -715,7 +715,9 @@
         "taskTypeAutofill": "Auto-fill Metadata",
         "taskTypeScan": "Batch Import Books",
         "taskTypeAudio": "Audio Conversion",
-        "taskTypeConvert": "Ebook Conversion"
+        "taskTypeConvert": "Ebook Conversion",
+        "taskTypeAIFill": "AI Update Info",
+        "taskTypeTitleSortUpdate": "Update Pinyin Title Sort"
     },
     "bookCards": {
         "browseDetails": "Click to browse details"
