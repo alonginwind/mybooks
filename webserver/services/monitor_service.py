@@ -12,12 +12,12 @@ import threading
 import time
 
 from webserver import loader
-from webserver.services.scan import ScanService
+from webserver.services.scan import ScanService, SCAN_EXT
 
 CONF = loader.get_settings()
 
 # 防抖：最后一次文件事件后等待多长时间（秒）再触发导入
-DEBOUNCE_SECONDS = 30
+DEBOUNCE_SECONDS = 15
 
 # ScanService 繁忙时的轮询间隔（秒）
 POLL_INTERVAL = 10
@@ -46,7 +46,9 @@ class MonitorService:
         self._path_to_wd: dict[str, int] = {}
 
         self._state_lock = threading.Lock()
-        self._pending_dirs: set[str] = set()
+        self._pending_files: set[str] = set()
+
+        # 任务线程运行时新来的文件事件合并到这个集合，避免重复触发多个导入任务
         self._merge_pending: set[str] = set()
         self._last_event_time: float = 0.0
 
@@ -213,42 +215,46 @@ class MonitorService:
                     continue
 
                 if (mask & (CREATE_MASK | CLOSE_WRITE_MASK)) and not is_dir:
-                    self._on_file_event(parent_path)
+                    self._on_file_event(full_path)
 
         logging.info("[Monitor] inotify 监控线程退出")
 
-    def _on_file_event(self, dir_path: str) -> None:
+    def _on_file_event(self, file_path: str) -> None:
+        ext = file_path.rsplit(".", 1)[-1].lower() if "." in file_path else ""
+        if ext not in SCAN_EXT:
+            logging.debug("[Monitor] 忽略非书籍文件: %s", file_path)
+            return
         with self._state_lock:
-            self._pending_dirs.add(dir_path)
+            self._pending_files.add(file_path)
             self._last_event_time = time.monotonic()
-        logging.debug("[Monitor] 文件变更记录: %s", dir_path)
+        logging.debug("[Monitor] 文件变更记录: %s", file_path)
 
     def _scheduler_loop(self) -> None:
         while self._running:
             time.sleep(1)
             with self._state_lock:
-                if not self._pending_dirs:
+                if not self._pending_files:
                     continue
                 if time.monotonic() - self._last_event_time < DEBOUNCE_SECONDS:
                     continue
-                dirs = set(self._pending_dirs)
-                self._pending_dirs.clear()
+                files = set(self._pending_files)
+                self._pending_files.clear()
 
-            logging.info("[Monitor] 准备触发导入，目录: %s", sorted(dirs))
-            self._enqueue_import(dirs)
+            logging.info("[Monitor] 准备触发导入，文件数: %d", len(files))
+            self._enqueue_import(files)
 
         logging.info("[Monitor] 调度线程退出")
 
-    def _enqueue_import(self, dirs: set[str]) -> None:
+    def _enqueue_import(self, files: set[str]) -> None:
         with self._state_lock:
             if self._active_task_thread and self._active_task_thread.is_alive():
-                self._merge_pending.update(dirs)
-                logging.info("[Monitor] 任务线程等待中，新目录合并至队列: %s", sorted(dirs))
+                self._merge_pending.update(files)
+                logging.info("[Monitor] 任务线程等待中，新文件合并至队列: %d 个", len(files))
                 return
 
         t = threading.Thread(
             target=self._run_import_task,
-            args=(dirs,),
+            args=(files,),
             name="MonitorService.import",
             daemon=True,
         )
@@ -256,21 +262,21 @@ class MonitorService:
             self._active_task_thread = t
         t.start()
 
-    def _run_import_task(self, dirs: set[str]) -> None:
+    def _run_import_task(self, files: set[str]) -> None:
         """
-        等待ScanService空闲，轮询期间合并
+        等待ScanService空闲，轮询期间合并新文件
         """
         while True:
             with self._state_lock:
                 if self._merge_pending:
-                    dirs |= self._merge_pending
+                    files |= self._merge_pending
                     self._merge_pending.clear()
 
             if ScanService.is_scanning() or ScanService.is_importing():
                 logging.info(
-                    "[Monitor] ScanService 繁忙，%ds 后重试（当前待导入 %d 个目录）",
+                    "[Monitor] ScanService 繁忙，%ds 后重试（当前待导入 %d 个文件）",
                     POLL_INTERVAL,
-                    len(dirs),
+                    len(files),
                 )
                 time.sleep(POLL_INTERVAL)
                 continue
@@ -279,16 +285,12 @@ class MonitorService:
 
         with self._state_lock:
             if self._merge_pending:
-                dirs |= self._merge_pending
+                files |= self._merge_pending
                 self._merge_pending.clear()
 
-        valid_dirs = sorted({d for d in dirs if os.path.isdir(d)})
-        if not valid_dirs:
-            logging.info("[Monitor] 所有待导入目录均不存在，本次跳过")
-            return
-
-        logging.info("[Monitor] 开始自动扫描导入，目录: %s", valid_dirs)
-        ScanService().do_scan(valid_dirs)
+        logging.info("[Monitor] 开始自动扫描导入，文件数: %d", len(files))
+        user_id = CONF.get("ADMIN_ID", 1)
+        ScanService().do_scan_import_files(files, user_id)
 
 
 def get_monitor_service() -> MonitorService:

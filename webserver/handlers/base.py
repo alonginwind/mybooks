@@ -98,6 +98,8 @@ def is_admin(func):
 class BaseHandler(web.RequestHandler):
     _path_to_env = {}
     _query_fallback_cache = {}
+    _physical_books_count_cache: int = 0
+    _physical_books_count_cache_time: float = 0.0
     site_url = ""
     db_lock = None  # 数据库访问锁，在应用启动时初始化
 
@@ -488,6 +490,21 @@ class BaseHandler(web.RequestHandler):
             # env.globals['gettext'] = _
             BaseHandler._path_to_env[temp_path] = env
         return env
+
+    def get_physical_books_count(self):
+        # 统计实体书数量, 通过自定义栏位CALIBRE_COLUMN_BOOK_TYPE来统计，缓存5分钟
+        now = time.time()
+        if now - BaseHandler._physical_books_count_cache_time < 300:
+            return BaseHandler._physical_books_count_cache
+        from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_PHYSICAL
+        try:
+            result = self.calibre_db_cache.search(f"{CALIBRE_COLUMN_BOOK_TYPE}:={BOOK_TYPE_PHYSICAL}")
+            BaseHandler._physical_books_count_cache = len(result)
+            BaseHandler._physical_books_count_cache_time = now
+            return BaseHandler._physical_books_count_cache
+        except Exception as e:
+            logging.error("get_physical_books_count failed: %s", e)
+            return BaseHandler._physical_books_count_cache
 
     def render_string(self, template_name, **kwargs):
         """使用Jinja2模板引擎"""

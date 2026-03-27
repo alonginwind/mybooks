@@ -89,6 +89,9 @@ ARG GIT_VERSION=""
 
 LABEL Author="horky <horky.chen@gmail.com>"
 LABEL Thanks="Rex <talebook@foxmail.com>, oldiy <oldiy2018@gmail.com>"
+LABEL org.opencontainers.image.title="talebook" \
+      org.opencontainers.image.vendor="PoxenStudio" \
+      org.opencontainers.image.source="https://github.com/PoxenStudio/talebook"
 
 # set default language
 ENV TZ=Asia/Shanghai

@@ -554,3 +554,228 @@ class ScanService(AsyncService):
         if imported:
             logging.info("Starting auto-fill for %d imported books", len(imported))
             AutoFillService().auto_fill_all(imported)
+
+    @AsyncService.register_service
+    def do_scan_import_files(self, filelist, user_id):
+        ScanService.static_is_importing = True
+
+        task_id = None
+        try:
+            service_item = _("扫描并导入文件")
+            task = BackgroundService().update_task(
+                service_type=BackgroundTask.SERVICE_TYPE_SCAN,
+                service_item=service_item,
+                progress=0,
+                progress_data={"stage": "importing", "total": len(filelist), "imported": 0}
+            )
+            task_id = task.id
+        except Exception as e:
+            logging.error(f"[SCAN_IMPORT] Failed to create background task: {e}")
+
+        logging.info("[SCAN_IMPORT] task %d started.", task_id)
+
+        try:
+            self.do_scan_import_internal(filelist, user_id, task_id)
+            if task_id:
+                BackgroundService().complete_task(task_id=task_id)
+            logging.info("[SCAN_IMPORT] Completed")
+        except Exception as err:
+            if task_id:
+                BackgroundService().complete_task(task_id=task_id, error_message=str(err))
+            logging.error(f"[SCAN_IMPORT] Failed: {err}")
+            logging.error(traceback.format_exc())
+
+        ScanService.static_is_importing = False
+        logging.info("[SCAN_IMPORT] task %d completed.", task_id)
+
+
+    def do_scan_import_internal(self, filelist, user_id, task_id=None):
+        from calibre.ebooks.metadata.meta import get_metadata
+
+        import_id = int(time.time())
+        scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
+        total_count = len(filelist)
+        imported = []
+
+        logging.info("[SCAN_IMPORT] Start processing %d files", total_count)
+
+        for index, fpath in enumerate(filelist):
+            logging.info("[SCAN_IMPORT] Processing file %d/%d: %s", index + 1, total_count, fpath)
+            if task_id and total_count > 0:
+                try:
+                    BackgroundService().update_progress(
+                        task_id=task_id,
+                        progress=int(index * 100 / total_count),
+                        progress_data={"stage": "importing", "total": total_count, "imported": len(imported)}
+                    )
+                except Exception as e:
+                    logging.error("[SCAN_IMPORT] Failed to update progress: %s", e)
+
+            if not os.path.isfile(fpath) or not os.path.exists(fpath):
+                logging.warning("[SCAN_IMPORT] Not a valid file, skip: %s", fpath)
+                continue
+
+            fname = os.path.basename(fpath)
+            fmt = fpath.split(".")[-1].lower()
+            if not fmt or fmt not in SCAN_EXT:
+                logging.info("[SCAN_IMPORT] Unsupported format [%s], skip: %s", fmt, fpath)
+                continue
+
+            # Step 1: 检查同路径文件是否已导入
+            same_path_rows = self.session.query(ScanFile).filter(ScanFile.path == fpath).all()
+            already_done = False
+            for r in same_path_rows:
+                if r.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[r.book_id]):
+                    logging.info("[SCAN_IMPORT] Already imported by path: %s", fpath)
+                    already_done = True
+                    break
+            if already_done:
+                continue
+
+            # Step 2: 计算 sha256 哈希
+            sha256 = hashlib.sha256()
+            bad_reason = ScanFile.READY
+            try:
+                with open(fpath, "rb") as f:
+                    for byte_block in iter(lambda: f.read(4096), b""):
+                        sha256.update(byte_block)
+            except FileNotFoundError:
+                logging.error("[SCAN_IMPORT] File not found: %s", fpath)
+                bad_reason = ScanFile.MISSED
+            except PermissionError:
+                logging.error("[SCAN_IMPORT] Permission denied: %s", fpath)
+                bad_reason = ScanFile.PERMISSION
+            except Exception as e:
+                logging.error("[SCAN_IMPORT] Error reading file %s: %s", fpath, e)
+                bad_reason = ScanFile.INVALID
+
+            if bad_reason != ScanFile.READY:
+                # 保留一条记录，方便在导入列表中展示错误状态
+                row = ScanFile(fpath, "", import_id)
+                row.status = bad_reason
+                self.save_or_rollback(row)
+                continue
+
+            hash_val = "sha256:" + sha256.hexdigest()
+
+            # Step 3: 检查同 sha256 文件是否已导入
+            for hash_row in self.session.query(ScanFile).filter(ScanFile.hash == hash_val):
+                if hash_row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[hash_row.book_id]):
+                    logging.info("[SCAN_IMPORT] Already imported by hash: %s", fpath)
+                    already_done = True
+                    break
+            if already_done:
+                continue
+
+            # Step 4: 复用已有记录或创建新的 ScanFile
+            if same_path_rows:
+                row = same_path_rows[0]
+                row.hash = hash_val
+            else:
+                # 删除同 hash 的旧记录（未导入），避免 unique 冲突
+                self.session.query(ScanFile).filter(ScanFile.hash == hash_val).delete(synchronize_session=False)
+                self.session.flush()
+                row = ScanFile(fpath, hash_val, import_id)
+
+            # Step 5: 解析元数据
+            try:
+                with open(fpath, "rb") as stream:
+                    mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
+                    mi.title = utils.super_strip(mi.title)
+                    mi.authors = [utils.super_strip(s) for s in mi.authors]
+            except Exception as e:
+                logging.error("[SCAN_IMPORT] Error reading metadata from %s: %s", fpath, e)
+                row.status = ScanFile.INVALID
+                self.save_or_rollback(row)
+                continue
+
+            if mi.title and mi.title == CALIBRE_ERROR_FLAG:
+                logging.error("[SCAN_IMPORT] Failed to get metadata for %s", fpath)
+                row.status = ScanFile.INVALID
+                row.title = None
+                self.save_or_rollback(row)
+                continue
+
+            if fmt == "txt":
+                mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+                mi.authors = [_(u"佚名")]
+            elif fmt == "pdf":
+                if CONF.get("PDF_TILE_WITH_FILE_NAME", False):
+                    mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+                else:
+                    title_ = mi.title.strip() if mi.title else ""
+                    if not title_ or title_.find(_(u"下载工具")) >= 0 or title_ == "SSReader Print.":
+                        mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+                    else:
+                        mi.title = title_
+                if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
+                    mi.authors = [_(u"佚名")]
+
+            row.title = mi.title
+            row.author = mi.authors[0] if mi.authors else mi.author_sort
+            row.publisher = mi.publisher
+            row.tags = ", ".join(mi.tags)
+
+            # Step 6: 验重并导入
+            try:
+                ids = self.db.books_with_same_title(mi)
+                existed_ebook = False
+                if ids:
+                    row.book_id = 0
+                    for bid in ids:
+                        b = self.db.get_metadata(bid, index_is_id=True)
+                        if b.get(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK) == BOOK_TYPE_PHYSICAL:
+                            continue
+                        existed_ebook = True
+                        row.book_id = bid
+                        if fmt.upper() in b.formats:
+                            row.status = ScanFile.EXIST
+                            break
+                    if existed_ebook and row.status != ScanFile.EXIST:
+                        logging.info("[SCAN_IMPORT] Adding format %s to existing book %d", fmt, row.book_id)
+                        self.db.add_format(row.book_id, fmt.upper(), fpath, True)
+                        row.status = ScanFile.IMPORTED
+                if not existed_ebook:
+                    logging.info("[SCAN_IMPORT] Importing new book [%s] from %s", repr(mi.title), fpath)
+                    row.book_id = self.db.import_book(mi, [fpath])
+                    row.status = ScanFile.IMPORTED
+
+                    item = Item()
+                    item.book_id = row.book_id
+                    item.collector_id = user_id
+                    try:
+                        item.save()
+                        imported.append(row.book_id)
+                    except Exception as err:
+                        logging.error("[SCAN_IMPORT] save link error: %s", err)
+
+                    if CONF.get("IMPORT_CATEGORY_WITH_FOLDER", False):
+                        rel = os.path.relpath(os.path.realpath(fpath), scan_upload_path)
+                        first_dir = rel.split(os.sep)[0] if os.sep in rel else ""
+                        if first_dir and len(first_dir) < 10 and not any(c in first_dir for c in ',:;|/\\\'"\t '):
+                            try:
+                                self.db.new_api.set_field(CALIBRE_COLUMN_CATEGORY, {row.book_id: first_dir})
+                                logging.info("[SCAN_IMPORT] Set category '%s' for book_id=%d", first_dir, row.book_id)
+                            except Exception as cat_err:
+                                logging.warning("[SCAN_IMPORT] Failed to set category for book_id=%d: %s", row.book_id, cat_err)
+            except Exception as err:
+                row.status = ScanFile.INVALID
+                logging.error("[SCAN_IMPORT] Failed to process file %s: %s", fpath, err)
+
+            self.save_or_rollback(row)
+
+        if task_id:
+            try:
+                BackgroundService().update_progress(
+                    task_id=task_id,
+                    progress=100,
+                    progress_data={"stage": "completed", "total": total_count, "imported": len(imported)}
+                )
+            except Exception as e:
+                logging.error(f"[SCAN_IMPORT] Failed to update final progress: {e}")
+
+        logging.info("[SCAN_IMPORT] Done. Total: %d, Imported: %d", total_count, len(imported))
+
+        if imported:
+            logging.info("[SCAN_IMPORT] Starting auto-fill for %d imported books", len(imported))
+            AutoFillService().auto_fill_all(imported)
