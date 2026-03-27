@@ -59,6 +59,12 @@
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.kindleConvert') }}</v-list-item-title>
                             </v-list-item>
+                            <v-list-item @click="show_update_title_sort_dialog">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-sort-alphabetical-ascending</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-title>{{ $t('admin.books.updateTitleSort') }}</v-list-item-title>
+                            </v-list-item>
                         </v-list>
                     </v-menu>
                     <v-btn
@@ -439,6 +445,27 @@
             </v-card>
         </v-dialog>
 
+        <!-- 更新拼音书名确认对话框 -->
+        <v-dialog v-model="update_title_sort_dialog" persistent transition="dialog-bottom-transition" width="500">
+            <v-card>
+                <v-toolbar flat dense dark color="info"> {{ $t('admin.books.reminderTitle') }} </v-toolbar>
+                <v-card-title></v-card-title>
+                <v-card-text>
+                    <p v-if="books_selected.length > 0">
+                        {{ $t('admin.books.updateTitleSortSelectedConfirm', { count: books_selected.length }) }}
+                    </p>
+                    <p v-else>
+                        {{ $t('admin.books.updateTitleSortAllConfirm') }}
+                    </p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn @click="update_title_sort_dialog = false">{{ $t('admin.books.cancel') }}</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn color="info" @click="updateTitleSort">{{ $t('admin.books.execute') }}</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
 
 </v-card>
 </template>
@@ -453,6 +480,7 @@ export default {
         exchange_type_dialog: false,
         clear_rare_tags_dialog: false,
         kindle_convert_dialog: false,
+        update_title_sort_dialog: false,
         adding_book: false,
         books_selected: [],
         tag_input: null,
@@ -650,6 +678,10 @@ export default {
             this.kindle_convert_dialog = true;
         },
 
+        show_update_title_sort_dialog() {
+            this.update_title_sort_dialog = true;
+        },
+
         kindleConvert() {
             this.loading = true;
             this.kindle_convert_dialog = false;
@@ -660,6 +692,30 @@ export default {
             }
 
             this.$backend("/admin/book/kindleconvert", {
+                method: "POST",
+                body: JSON.stringify(body),
+            })
+                .then((rsp) => {
+                    this.handleApiResponse(rsp);
+                    this.books_selected = [];
+                    this.getDataFromApi();
+                    this.$alert("success", rsp.msg);
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+
+        updateTitleSort() {
+            this.loading = true;
+            this.update_title_sort_dialog = false;
+
+            const body = {};
+            if (this.books_selected.length > 0) {
+                body.idlist = this.books_selected.map((book) => book.id);
+            }
+
+            this.$backend("/admin/book/update_title_sort", {
                 method: "POST",
                 body: JSON.stringify(body),
             })
