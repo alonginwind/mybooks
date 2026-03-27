@@ -588,7 +588,6 @@ class ScanService(AsyncService):
         ScanService.static_is_importing = False
         logging.info("[SCAN_IMPORT] task %d completed.", task_id)
 
-
     def do_scan_import_internal(self, filelist, user_id, task_id=None):
         from calibre.ebooks.metadata.meta import get_metadata
 

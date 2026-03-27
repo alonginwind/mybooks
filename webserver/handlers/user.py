@@ -377,7 +377,7 @@ class UserInfo(BaseHandler):
         count_hot_users = self.sqlite_session.query(func.count(Reader.id)).filter(Reader.access_time > last_week).scalar()
 
         audio_book_cnt = AudioUtils.get_audio_books_count()
-        physical_book_cnt = self.get_physical_books_count();
+        physical_book_cnt = self.get_physical_books_count()
 
         return {
             "books": db.count(),

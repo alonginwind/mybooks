@@ -749,7 +749,7 @@ class BookRefer(BaseHandler):
             except Exception as e:
                 logging.error(f"Error parsing metadata JSON: {e}")
                 return {"err": "params.invalid", "msg": _(u"无效的metadata参数")}
-        if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
+        if not self.current_user.can_edit():
             return {"err": "permission", "msg": _(u"无权操作")}
 
         book_id = int(id)
