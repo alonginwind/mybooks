@@ -14,6 +14,7 @@ import time
 import traceback
 import uuid
 from gettext import gettext as _
+from sqlalchemy import func, extract
 
 import tornado
 
@@ -26,7 +27,7 @@ from webserver.services.mail import MailService
 from webserver.services.book_barn import BookBarnClient
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver.handlers.base import BaseHandler, auth, js, is_admin
-from webserver.models import Reader
+from webserver.models import Reader, Item
 from webserver.utils import SimpleBookFormatter
 from webserver.base.trash_manager import TrashManager
 from webserver.version import VERSION
@@ -779,7 +780,7 @@ class AdminBookUpdateTitleSort(BaseHandler):
             idlist = list(self.calibre_db_cache.all_book_ids())
 
         BatchTitleSortUpdateService().update_all(self.current_user.id, idlist)
-        return {"err": "ok", "msg": _(u"更新拼音书名任务已启动，左上角可以查看进度")}
+        return {"err": "ok", "msg": _(u"更新书名信息任务已启动，左上角可以查看进度")}
 
 
 class AdminBookbarnTokenApply(BaseHandler):
@@ -923,6 +924,86 @@ class AdminTrashClear(BaseHandler):
         return {"err": "ok", "msg": _("已清理Calibre回收站及上传目录")}
 
 
+class LibraryStats(BaseHandler):
+    _cache_data = None
+    _cache_time = 0
+
+    def _get_stats(self):
+        # 获取当前月份和年份
+        now = datetime.datetime.now()
+        current_year = now.year
+        current_month = now.month
+
+        all_book_ids = list(self.calibre_db_cache.all_book_ids())
+        total_books = len(all_book_ids)
+        ebook_count = 0
+        physical_count = 0
+        month_ebook_count = 0
+        month_physical_count = 0
+
+        if all_book_ids:
+            physical_count = self.get_physical_books_count()
+            ebook_count = total_books - physical_count
+
+            month_ebook_count = self.sqlite_session.query(Item).filter(
+                Item.book_id.in_(all_book_ids),
+                Item.book_type == 0,
+                extract('year', Item.create_time) == current_year,
+                extract('month', Item.create_time) == current_month
+            ).count()
+
+            # 本月新增实体书数量 (加总book_count)
+            month_physical_books = self.sqlite_session.query(func.sum(Item.book_count)).filter(
+                Item.book_id.in_(all_book_ids),
+                Item.book_type == 1,
+                extract('year', Item.create_time) == current_year,
+                extract('month', Item.create_time) == current_month
+            ).scalar()
+            month_physical_count = month_physical_books if month_physical_books else 0
+
+        return {
+            "total_books": total_books,
+            "ebook_count": ebook_count,
+            "physical_count": physical_count,
+            "month_ebook_count": month_ebook_count,
+            "month_physical_count": month_physical_count,
+        }
+
+    @js
+    def get(self):
+        """获取书库统计信息"""
+        now = datetime.datetime.now()
+        current_year = now.year
+        current_month = now.month
+
+        stats = None
+        # check cache
+        if time.time() - LibraryStats._cache_time < 30 and LibraryStats._cache_data:
+            stats = LibraryStats._cache_data
+        else:
+            try:
+                stats = self._get_stats()
+                LibraryStats._cache_data = stats
+                LibraryStats._cache_time = time.time()
+            except Exception as e:
+                logging.error("Failed to get library stats: %s", e)
+                if LibraryStats._cache_data:
+                    stats = LibraryStats._cache_data
+                else:
+                    # fallback to empty stats
+                    stats = {
+                        "total_books": 0,
+                        "ebook_count": 0,
+                        "physical_count": 0,
+                        "month_ebook_count": 0,
+                        "month_physical_count": 0,
+                    }
+
+        stats["current_year"] = current_year
+        stats["current_month"] = current_month
+        return {"err": "ok", "stats": stats}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -943,4 +1024,5 @@ def routes():
         (r"/api/admin/tasks/running", AdminRunningTasks),
         (r"/api/admin/trash/size", AdminTrashSize),
         (r"/api/admin/trash/clear", AdminTrashClear),
+        (r"/api/library/stats", LibraryStats),
     ]

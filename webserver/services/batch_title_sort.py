@@ -86,20 +86,20 @@ class BatchTitleSortUpdateService(AsyncService):
         self.count_fail = 0
 
         logging.info("[BatchTitleSort] Starting batch title_sort update task")
-        self.add_msg(user_id, "success", _(u"更新拼音书名任务已启动"))
+        self.add_msg(user_id, "success", _(u"更新书名信息任务已启动"))
         books_to_update = self._collect_books_to_update(idlist)
         self.count_total = len(books_to_update)
 
         if self.count_total == 0:
             logging.info("[BatchTitleSort] No books need title_sort update")
             self.is_running = False
-            self.add_msg(user_id, "success", _(u"更新拼音书名任务已结束，未找到需要更新的书籍"))
+            self.add_msg(user_id, "success", _(u"更新书名信息任务已结束，未找到需要更新的书籍"))
             return
 
         try:
             task = BackgroundService().update_task(
                 service_type=BackgroundTask.SERVICE_TYPE_TITLE_SORT_UPDATE,
-                service_item=_("更新拼音书名"),
+                service_item=_("更新书名信息"),
                 progress=0,
                 progress_data={
                     "total": self.count_total,
@@ -122,7 +122,7 @@ class BatchTitleSortUpdateService(AsyncService):
             self._update_task_progress()
 
         self._finish_task()
-        msg = _(u"更新拼音书名任务已完成，成功更新%d本书，%d本书更新失败" % (self.count_done, self.count_fail))
+        msg = _(u"更新书名信息任务已完成，成功更新%d本书，%d本书更新失败" % (self.count_done, self.count_fail))
         if self.count_fail > 0:
             self.add_msg(user_id, "warning", msg)
         else:
