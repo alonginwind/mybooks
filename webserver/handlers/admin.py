@@ -899,7 +899,24 @@ class AdminRunningTasks(BaseHandler):
         # Get all running tasks
         all_tasks = BackgroundService().get_running_tasks()
         running_tasks = [task for task in all_tasks if task["status"] == BackgroundTask.STATUS_RUNNING]
-        return {"err": "ok", "tasks": running_tasks}
+
+        # 一起返回user messages, 可以及时显示到前端
+        messages = self.current_user.messages
+        rsp_messages = []
+        if messages:
+            messages.sort(key=lambda x: x.create_time, reverse=True)
+            for msg in messages:
+                if not msg.unread:
+                    continue
+                m = {
+                    "id": msg.id,
+                    "title": msg.title,
+                    "status": msg.status,
+                    "create_time": msg.create_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "data": msg.data,
+                }
+                rsp_messages.append(m)
+        return {"err": "ok", "tasks": running_tasks, "messages": rsp_messages}
 
 
 class AdminTrashSize(BaseHandler):

@@ -238,7 +238,11 @@
 
                 <v-menu offset-y right :close-on-content-click="false" v-if="messages.length > 0">
                     <template v-slot:activator="{ on }">
-                        <v-btn v-on="on" icon color="yellow"> <v-icon class="blink">notifications</v-icon> </v-btn>
+                        <v-btn v-on="on" icon color="yellow">
+                            <v-badge color="red" class="blink" :content="messages.length > 99 ? '...' : String(messages.length)" overlap>
+                                <v-icon>notifications</v-icon>
+                            </v-badge>
+                        </v-btn>
                     </template>
                     <v-card :width="$vuetify.breakpoint.smAndUp ? 400 : 300">
                         <v-card-title class="py-2">
@@ -802,6 +806,7 @@ export default {
             this.$backend("/admin/tasks/running").then((rsp) => {
                 if (rsp.err == "ok") {
                     this.runningTasks = rsp.tasks || [];
+                    this.messages = rsp.messages || this.messages;
                 }
             }).catch((err) => {
                 console.error("Failed to load running tasks:", err);
@@ -1199,7 +1204,7 @@ export default {
 <style scoped>
 @keyframes blink {
   0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0; }
+  25%, 75% { opacity: 0.0; }
 }
 .blink {
   animation: blink 3s infinite;
