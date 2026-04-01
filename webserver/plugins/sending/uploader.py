@@ -223,3 +223,32 @@ class DangdangUploader(BaseUploader):
 
     def default_port(self):
         return 11111
+
+
+class PureLibroUploader(BaseUploader):
+    def get_upload_url(self, base_url):
+        if not base_url.endswith('/'):
+            base_url += '/'
+        return base_url + 'upload'
+
+    def upload(self, server_url):
+        try:
+            upload_url = self.get_upload_url(server_url)
+            with open(self.file_path, 'rb') as file:
+                files = {
+                    'files[]': (self.filename, file, self.content_type)
+                }
+                data = {
+                    'path': '/'
+                }
+                response = requests.post(upload_url, files=files, data=data, timeout=self.timeout)
+                response.raise_for_status()
+                try:
+                    return {'success': True, 'data': response.json()}
+                except Exception:
+                    return {'success': True, 'data': response.text}
+        except Exception as e:
+            return self.handle_exception(e, server_url)
+
+    def default_port(self):
+        return 80

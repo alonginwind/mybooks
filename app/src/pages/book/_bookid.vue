@@ -1386,6 +1386,8 @@ export default {
             { text: '汉王', value: 'hanwang' },
             { text: '文石Boox', value: 'boox' },
             { text: '当当阅读器', value: 'dangdang' },
+            { text: 'Kindle', value: 'kindle' },
+            { text: 'PureLibro', value: 'purelibro' },
         ],
         // 读书分享卡片
         dialog_share_card: false,
@@ -2587,7 +2589,8 @@ export default {
                 'hanwang': '汉王',
                 'boox':    '文石Boox',
                 'dangdang': '当当阅读器',
-                'kindle':  'Kindle'
+                'kindle':  'Kindle',
+                "purelibro": "PureLibro",
             };
             return typeMap[type] || type;
         },

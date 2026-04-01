@@ -291,6 +291,7 @@ export default {
       { text: this.$t('settings.device_type_boox'), value: 'boox' },
       { text: this.$t('settings.device_type_dangdang'), value: 'dangdang' },
       { text: 'Kindle', value: 'kindle' },
+      { text: 'PureLibro', value: 'purelibro'}
     ]
     this.init()
   },
