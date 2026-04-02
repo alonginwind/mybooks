@@ -167,6 +167,20 @@ class MonitorService:
         except OSError as e:
             logging.warning("[Monitor] 扫描子目录出错: %s", e)
 
+    def _add_watch_and_scan_files(self, root: str) -> None:
+        """添加递归监听，同时扫描目录内已有书籍文件并加入待导入队列。
+
+        解决竞态窗口问题：新目录创建/移入后，在 inotify watch 建立之前就已写入的
+        文件不会产生事件，需主动扫描一次。
+        """
+        self._add_watch_recursive(root)
+        try:
+            for dirpath, _dirnames, filenames in os.walk(root):
+                for fname in filenames:
+                    self._on_file_event(os.path.join(dirpath, fname))
+        except OSError as e:
+            logging.warning("[Monitor] 扫描已有文件出错: %s", e)
+
     def _monitor_loop(self) -> None:
         import inotify_simple
 
@@ -192,6 +206,8 @@ class MonitorService:
                 mask = event.mask
                 wd = event.wd
                 name = event.name or ""
+
+                logging.info("[Monitor] 监控事件: wd=%d mask=%d name=%s", wd, mask, name)
 
                 # IN_IGNORED: 内核自动回收了该 wd（目录删除/卸载后）
                 if mask & IGNORED_MASK:
@@ -225,7 +241,8 @@ class MonitorService:
 
                 if is_dir and (mask & (CREATE_MASK | MOVED_TO_MASK)):
                     if os.path.isdir(full_path):
-                        self._add_watch_recursive(full_path)
+                        # 添加监听的同时扫描已有文件，避免竞态窗口内的文件被漏掉
+                        self._add_watch_and_scan_files(full_path)
                     # MOVED_TO：尝试匹配 MOVED_FROM cookie
                     # 匹配成功 → 目录在监控树内重命名/移动（非新建、非从外部移入）
                     if (mask & MOVED_TO_MASK) and event.cookie:
