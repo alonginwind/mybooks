@@ -256,7 +256,8 @@
             "delete": "Delete",
             "push": "Push",
             "read": "Read Online",
-            "vipquota": "Quota: {count} books"
+            "vipquota": "Quota: {count} books",
+            "set_reading_range": "Set Reading Range"
         }
     },
     "imports": {

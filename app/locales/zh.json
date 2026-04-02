@@ -259,7 +259,8 @@
             "delete": "删除",
             "push": "推送",
             "read": "在线阅读",
-            "vipquota": "额度{count}本"
+            "vipquota": "额度{count}本",
+            "set_reading_range": "设置阅读范围"
         }
     },
     "imports": {

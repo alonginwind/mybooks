@@ -1,6 +1,6 @@
 <template>
     <v-card>
-        <v-card-title> 
+        <v-card-title>
             {{ $t('admin.users.title') }}
             <v-btn color="primary" @click="showAddUserDialog = true" class="ml-4">
                 <v-icon left>mdi-account-plus</v-icon>
@@ -29,6 +29,7 @@
                 <span v-if="item.vipquota"> {{ $t('admin.users.vipquota', { count: item.vipquota }) }} </span>
             </template>
             <template v-slot:item.actions="{ item }">
+                <v-btn small color="#336666">{{ $t('admin.users.set_reading_range') }}</v-btn>
                 <v-menu offset-y right>
                     <template v-slot:activator="{ on }">
                         <v-btn color="primary" small v-on="on">{{ $t('admin.users.actions') }} <v-icon small>more_vert</v-icon></v-btn>
@@ -128,49 +129,49 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="addUserForm" @submit.prevent="addUser">
-                        <v-text-field 
-                            required 
-                            prepend-icon="person" 
-                            v-model="newUser.username"  
-                            :label="$t('admin.users.username')"   
-                            type="text"     
-                            autocomplete="new-username"  
+                        <v-text-field
+                            required
+                            prepend-icon="person"
+                            v-model="newUser.username"
+                            :label="$t('admin.users.username')"
+                            type="text"
+                            autocomplete="new-username"
                             :rules="[rules.user]"
                         ></v-text-field>
-                        <v-text-field 
-                            required 
-                            prepend-icon="lock"   
-                            v-model="newUser.password"  
-                            :label="$t('admin.users.password')"   
-                            type="password" 
-                            autocomplete="new-password"  
-                            :rules="[rules.pass]" 
+                        <v-text-field
+                            required
+                            prepend-icon="lock"
+                            v-model="newUser.password"
+                            :label="$t('admin.users.password')"
+                            type="password"
+                            autocomplete="new-password"
+                            :rules="[rules.pass]"
                         ></v-text-field>
-                        <v-text-field 
-                            required 
-                            prepend-icon="lock"   
-                            v-model="newUser.password2" 
-                            :label="$t('admin.users.confirm_password')" 
-                            type="password" 
-                            autocomplete="new-password2" 
+                        <v-text-field
+                            required
+                            prepend-icon="lock"
+                            v-model="newUser.password2"
+                            :label="$t('admin.users.confirm_password')"
+                            type="password"
+                            autocomplete="new-password2"
                             :rules="[validatePassword]"
                         ></v-text-field>
-                        <v-text-field 
-                            required 
-                            prepend-icon="face"   
-                            v-model="newUser.nickname"  
-                            :label="$t('admin.users.nickname')"   
-                            type="text"     
-                            autocomplete="new-nickname"  
+                        <v-text-field
+                            required
+                            prepend-icon="face"
+                            v-model="newUser.nickname"
+                            :label="$t('admin.users.nickname')"
+                            type="text"
+                            autocomplete="new-nickname"
                             :rules="[rules.nick]"
                         ></v-text-field>
-                        <v-text-field 
-                            required 
-                            prepend-icon="email"  
-                            v-model="newUser.email"     
-                            :label="$t('admin.users.email')"      
-                            type="text"     
-                            autocomplete="new-email"     
+                        <v-text-field
+                            required
+                            prepend-icon="email"
+                            v-model="newUser.email"
+                            :label="$t('admin.users.email')"
+                            type="text"
+                            autocomplete="new-email"
                             :rules="[rules.email]"
                         ></v-text-field>
                     </v-form>

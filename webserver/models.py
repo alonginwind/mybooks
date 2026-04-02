@@ -111,6 +111,9 @@ class Reader(Base, SQLAlchemyMixin):
     extra = Column(MutableDict.as_mutable(JSONType), default={})
     vipquota = Column(Integer, default=0)  # VIP用户的下载配额
     vipexpire = Column(DateTime)  # VIP用户的到期时间
+    read_limit = Column(Integer, default=0)  # 阅读限制，0:不限制, 1:只允许设置的范围(白名单), 2:排除设置的范围(黑名单)
+    limit_categories = Column(String(512), default="")  # 阅读限制的范围，逗号分隔的分类列表
+    limit_tags = Column(String(512), default="")  # 阅读限制的范围，逗号分隔的标签列表
 
     def __str__(self):
         return "<id=%d, username=%s, email=%s, admin:%d>" % (self.id, self.username, self.email, self.admin)

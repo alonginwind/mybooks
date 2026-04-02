@@ -93,13 +93,23 @@ class AsyncService(metaclass=SingletonType):
 
         changed = False
         if 'vipquota' not in columns:
+            changed = True
             self.session.execute(text("""
                 ALTER TABLE readers ADD COLUMN vipquota INTEGER DEFAULT 0
             """))
-            changed = True
-        if 'vipexpire' not in columns:
             self.session.execute(text("""
                 ALTER TABLE readers ADD COLUMN vipexpire DATETIME
+            """))
+
+        if 'read_limit' not in columns:
+            self.session.execute(text("""
+                ALTER TABLE readers ADD COLUMN read_limit INTEGER DEFAULT 0
+            """))
+            self.session.execute(text("""
+                ALTER TABLE readers ADD COLUMN limit_categories STRING(512) DEFAULT ''
+            """))
+            self.session.execute(text("""
+                ALTER TABLE readers ADD COLUMN limit_tags STRING(512) DEFAULT ''
             """))
             changed = True
         return changed
