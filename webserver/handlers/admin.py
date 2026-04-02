@@ -87,6 +87,9 @@ class AdminUsers(BaseHandler):
                 "create_time": user.create_time.strftime("%Y-%m-%d %H:%M:%S") if user.create_time else "N/A",
                 "update_time": user.update_time.strftime("%Y-%m-%d %H:%M:%S") if user.update_time else "N/A",
                 "access_time": user.access_time.strftime("%Y-%m-%d %H:%M:%S") if user.access_time else "N/A",
+                "read_limit": user.read_limit or 0,
+                "limit_categories": user.limit_categories or "",
+                "limit_tags": user.limit_tags or "",
             }
             if enable_vip_quota:
                 d["vipquota"] = user.vipquota or 0
@@ -137,6 +140,16 @@ class AdminUsers(BaseHandler):
             self.sqlite_session.query(Reader).filter(Reader.id == user.id).delete()
             self.sqlite_session.commit()
             return {"err": "ok", "msg": _("删除成功")}
+
+        if "read_limit" in data:
+            rl = int(data["read_limit"])
+            if rl not in (0, 1, 2):
+                return {"err": "params.read_limit.invalid", "msg": _(u"阅读限制参数不对")}
+            user.read_limit = rl
+        if "limit_categories" in data:
+            user.limit_categories = data["limit_categories"]
+        if "limit_tags" in data:
+            user.limit_tags = data["limit_tags"]
 
         p = data.get("permission", "")
         if not isinstance(p, str):

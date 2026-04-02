@@ -257,7 +257,17 @@
             "push": "Push",
             "read": "Read Online",
             "vipquota": "Quota: {count} books",
-            "set_reading_range": "Set Reading Range"
+            "set_reading_range": "Reading Range",
+            "reading_range_dialog_title": "Set Reading Range",
+            "reading_range_all": "Allow reading all books",
+            "reading_range_whitelist": "Only allow books in specified categories/tags",
+            "reading_range_blacklist": "Deny books in specified categories/tags",
+            "reading_range_categories_label": "Categories (allow/deny)",
+            "reading_range_tags_label": "Tags (allow/deny)",
+            "reading_range_tags_hint": "Type to search tags",
+            "reading_range_tags_no_result": "No matching tags found",
+            "reading_range_save": "Save",
+            "reading_range_save_ok": "Reading range saved"
         }
     },
     "imports": {

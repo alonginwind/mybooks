@@ -29,7 +29,7 @@
                 <span v-if="item.vipquota"> {{ $t('admin.users.vipquota', { count: item.vipquota }) }} </span>
             </template>
             <template v-slot:item.actions="{ item }">
-                <v-btn small color="#336666">{{ $t('admin.users.set_reading_range') }}</v-btn>
+                <v-btn small color="#336666" class="white--text" @click="openReadingRangeDialog(item)">{{ $t('admin.users.set_reading_range') }}</v-btn>
                 <v-menu offset-y right>
                     <template v-slot:activator="{ on }">
                         <v-btn color="primary" small v-on="on">{{ $t('admin.users.actions') }} <v-icon small>more_vert</v-icon></v-btn>
@@ -117,6 +117,89 @@
             </template>
         </v-data-table>
 
+        <!-- Reading Range Dialog -->
+        <v-dialog v-model="showReadingRangeDialog" max-width="600px" persistent>
+            <v-card>
+                <v-card-title>
+                    {{ $t('admin.users.reading_range_dialog_title') }}
+                    <v-spacer></v-spacer>
+                    <v-btn icon @click="showReadingRangeDialog = false">
+                        <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <!-- Mode radio group -->
+                    <v-radio-group v-model="readingRange.mode" mandatory>
+                        <v-radio :label="$t('admin.users.reading_range_all')" :value="0"></v-radio>
+                        <v-radio :label="$t('admin.users.reading_range_whitelist')" :value="1"></v-radio>
+                        <v-radio :label="$t('admin.users.reading_range_blacklist')" :value="2"></v-radio>
+                    </v-radio-group>
+
+                    <template v-if="readingRange.mode !== 0">
+                        <!-- Categories multi-select -->
+                        <v-select
+                            v-model="readingRange.selectedCategories"
+                            :items="allCategories"
+                            item-text="name"
+                            item-value="name"
+                            :label="$t('admin.users.reading_range_categories_label')"
+                            multiple
+                            chips
+                            small-chips
+                            deletable-chips
+                            :loading="loadingCategories"
+                            class="mb-2"
+                        ></v-select>
+
+                        <!-- Tag search + chips -->
+                        <div class="mb-1 subtitle-2">{{ $t('admin.users.reading_range_tags_label') }}</div>
+                        <v-text-field
+                            v-model="tagSearchInput"
+                            :label="$t('admin.users.reading_range_tags_hint')"
+                            :loading="loadingTags"
+                            clearable
+                            dense
+                            outlined
+                            @input="onTagSearchInput"
+                            @click:clear="tagSuggestions = []"
+                        ></v-text-field>
+                        <!-- Tag suggestions list -->
+                        <v-list dense class="mb-2" v-if="tagSuggestions.length > 0" style="max-height:160px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;">
+                            <v-list-item
+                                v-for="tag in tagSuggestions"
+                                :key="tag.name"
+                                @click="addTag(tag.name)"
+                                :disabled="readingRange.selectedTags.includes(tag.name)"
+                            >
+                                <v-list-item-title>{{ tag.name }} <span class="grey--text caption">({{ tag.count }})</span></v-list-item-title>
+                                <v-list-item-action>
+                                    <v-icon small color="primary">mdi-plus</v-icon>
+                                </v-list-item-action>
+                            </v-list-item>
+                            <v-list-item v-if="tagSuggestions.length === 0 && tagSearchInput">
+                                <v-list-item-title class="grey--text">{{ $t('admin.users.reading_range_tags_no_result') }}</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                        <!-- Selected tags chips -->
+                        <div v-if="readingRange.selectedTags.length > 0" class="d-flex flex-wrap gap-1 mt-1">
+                            <v-chip
+                                v-for="tag in readingRange.selectedTags"
+                                :key="tag"
+                                close
+                                small
+                                @click:close="removeTag(tag)"
+                            >{{ tag }}</v-chip>
+                        </div>
+                    </template>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="showReadingRangeDialog = false">{{ $t('admin.users.cancel') }}</v-btn>
+                    <v-btn color="primary" @click="saveReadingRange" :loading="savingReadingRange">{{ $t('admin.users.reading_range_save') }}</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <!-- Add User Dialog -->
         <v-dialog v-model="showAddUserDialog" max-width="500px" persistent>
             <v-card>
@@ -200,6 +283,21 @@ export default {
         showAddUserDialog: false,
         addingUser: false,
         addUserError: "",
+        // Reading range dialog
+        showReadingRangeDialog: false,
+        savingReadingRange: false,
+        readingRangeUserId: null,
+        readingRange: {
+            mode: 0,
+            selectedCategories: [],
+            selectedTags: [],
+        },
+        allCategories: [],
+        loadingCategories: false,
+        tagSearchInput: "",
+        tagSuggestions: [],
+        loadingTags: false,
+        tagSearchTimer: null,
         newUser: {
             username: "",
             password: "",
@@ -258,6 +356,83 @@ export default {
         },
     },
     methods: {
+        openReadingRangeDialog(item) {
+            this.readingRangeUserId = item.id;
+            this.readingRange = {
+                mode: item.read_limit || 0,
+                selectedCategories: item.limit_categories ? item.limit_categories.split(',').filter(Boolean) : [],
+                selectedTags: item.limit_tags ? item.limit_tags.split(',').filter(Boolean) : [],
+            };
+            this.tagSearchInput = "";
+            this.tagSuggestions = [];
+            this.showReadingRangeDialog = true;
+            this.fetchCategories();
+        },
+        fetchCategories() {
+            if (this.allCategories.length > 0) return;
+            this.loadingCategories = true;
+            this.$backend("/categories")
+                .then(rsp => {
+                    if (rsp.err === "ok") {
+                        this.allCategories = rsp.categories || [];
+                    }
+                })
+                .finally(() => { this.loadingCategories = false; });
+        },
+        onTagSearchInput(val) {
+            if (this.tagSearchTimer) clearTimeout(this.tagSearchTimer);
+            if (!val || val.trim().length === 0) {
+                this.tagSuggestions = [];
+                return;
+            }
+            this.tagSearchTimer = setTimeout(() => {
+                this.loadingTags = true;
+                this.$backend("/tags/search?q=" + encodeURIComponent(val.trim()) + "&limit=20")
+                    .then(rsp => {
+                        if (rsp.err === "ok") {
+                            this.tagSuggestions = rsp.tags || [];
+                        }
+                    })
+                    .finally(() => { this.loadingTags = false; });
+            }, 300);
+        },
+        addTag(name) {
+            if (!this.readingRange.selectedTags.includes(name)) {
+                this.readingRange.selectedTags.push(name);
+            }
+        },
+        removeTag(name) {
+            this.readingRange.selectedTags = this.readingRange.selectedTags.filter(t => t !== name);
+        },
+        saveReadingRange() {
+            this.savingReadingRange = true;
+            const payload = {
+                id: this.readingRangeUserId,
+                read_limit: this.readingRange.mode,
+                limit_categories: this.readingRange.mode === 0 ? "" : this.readingRange.selectedCategories.join(','),
+                limit_tags: this.readingRange.mode === 0 ? "" : this.readingRange.selectedTags.join(','),
+            };
+            this.$backend("/admin/users", {
+                body: JSON.stringify(payload),
+                method: "POST",
+            })
+            .then(rsp => {
+                if (rsp.err !== "ok") {
+                    this.$alert("error", rsp.msg);
+                } else {
+                    this.$alert("success", this.$t('admin.users.reading_range_save_ok'));
+                    this.showReadingRangeDialog = false;
+                    // Update local item to reflect saved state
+                    const user = this.items.find(u => u.id === this.readingRangeUserId);
+                    if (user) {
+                        user.read_limit = payload.read_limit;
+                        user.limit_categories = payload.limit_categories;
+                        user.limit_tags = payload.limit_tags;
+                    }
+                }
+            })
+            .finally(() => { this.savingReadingRange = false; });
+        },
         validatePassword: function(v) {
             if ( v.length < 6 ) {
                 return '最少6个字符';

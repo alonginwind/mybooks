@@ -376,6 +376,25 @@ class BookCategories(BaseHandler):
             return {"err": "internal", "msg": _(u"获取分类列表失败")}
 
 
+class TagSearch(BaseHandler):
+    @js
+    def get(self):
+        q = (self.get_argument("q", "") or "").strip()
+        limit = min(50, int(self.get_argument("limit", 20)))
+        sql = """SELECT tags.name, count(distinct book) as count
+        FROM tags left join books_tags_link on tags.id = books_tags_link.tag
+        WHERE tags.name LIKE ? ESCAPE '\\'
+        GROUP BY tags.id ORDER BY count DESC LIMIT ?"""
+        try:
+            with self.db_lock:
+                rows = self.calibre_db_cache.backend.conn.get(sql, (q + "%", limit))
+            tags = [{"name": r[0], "count": r[1]} for r in rows]
+            return {"err": "ok", "tags": tags}
+        except Exception as e:
+            logging.error(f"Error searching tags: {e}")
+            return {"err": "internal", "msg": _(u"获取标签列表失败")}
+
+
 class BookConverter(BaseHandler):
     @js
     @auth
@@ -2876,6 +2895,7 @@ def routes():
         (r"/api/book/category", BookCategoryBatch),
         (r"/api/book/([0-9]+)/category", BookCategory),
         (r"/api/categories", BookCategories),
+        (r"/api/tags/search", TagSearch),
         (r"/api/book/([0-9]+)/suggestion", BookSuggestion),
         (r"/api/book/([0-9]+)/separate", BookSperate),
         (r"/api/book/([0-9]+)/savemeta", BookSaveMeta),
