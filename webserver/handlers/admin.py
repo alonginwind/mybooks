@@ -386,6 +386,7 @@ class AdminSettings(BaseHandler):
             "ALLOW_READ_RANGE_SETTING",
             "IMPORT_BY_INOTIFY",
             "IMPORT_CATEGORY_WITH_FOLDER",
+            "UPDATE_CATEGORY_WITH_FOLDER_RENAME",
         ]
 
         current_icon = CONF.get("site_icon", "favicon_0")  # favicon_0 means use current icon

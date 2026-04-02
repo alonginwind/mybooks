@@ -382,6 +382,7 @@ class Item(Base, SQLAlchemyMixin):
     book_type = Column(Integer, default=0, nullable=False)
     book_count = Column(Integer, default=1, nullable=False)
     create_time = Column(DateTime)
+    src_path = Column(String(4096), default="", nullable=False)
 
     def __init__(self):
         super(Item, self).__init__()
@@ -393,6 +394,7 @@ class Item(Base, SQLAlchemyMixin):
         self.book_type = BOOK_TYPE_EBOOK  # 0:电子书, 1:实体书
         self.book_count = 1
         self.create_time = datetime.datetime.now()
+        self.src_path = ""
 
 
 class ScanFile(Base, SQLAlchemyMixin):

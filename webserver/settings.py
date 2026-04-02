@@ -91,6 +91,7 @@ settings = {
     "ALLOW_READ_RANGE_SETTING": False,
     "IMPORT_BY_INOTIFY": False,
     "IMPORT_CATEGORY_WITH_FOLDER": False,
+    "UPDATE_CATEGORY_WITH_FOLDER_RENAME": False,
 
     "PDF_TILE_WITH_FILE_NAME": False,
 

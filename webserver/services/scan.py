@@ -484,6 +484,7 @@ class ScanService(AsyncService):
                         item = Item()
                         item.book_id = row.book_id
                         item.collector_id = user_id
+                        item.src_path = os.path.dirname(fpath)
                         try:
                             item.save()
                             imported.append(row.book_id)
@@ -744,6 +745,7 @@ class ScanService(AsyncService):
                     item = Item()
                     item.book_id = row.book_id
                     item.collector_id = user_id
+                    item.src_path = os.path.dirname(fpath)
                     try:
                         item.save()
                         imported.append(row.book_id)

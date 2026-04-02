@@ -334,13 +334,13 @@ export default {
         show: false,
         title: "settings.user_settings",
         fields: [
-          { icon: "", key: "ALLOW_GUEST_READ", label: "settings.allow_guest_read", type: 'checkbox' },
-          { icon: "", key: "ALLOW_GUEST_DOWNLOAD", label: "settings.allow_guest_download", type: 'checkbox' },
-          { icon: "", key: "ALLOW_GUEST_UPLOAD", label: "settings.allow_guest_upload", type: 'checkbox' },
-          { icon: "", key: "ALLOW_GUEST_PUSH", label: "settings.allow_guest_push", type: 'checkbox' },
-          { icon: "", key: "ALLOW_NEW_USER_MANAGE_BOOK", label: "settings.allow_new_user_manage_book", type: 'checkbox' },
-          { icon: "", key: "ALLOW_NEW_USER_PUSH_BOOK", label: "settings.allow_new_user_push_book", type: 'checkbox' },
-          { icon: "", key: "ALLOW_READ_RANGE_SETTING", label: "settings.allow_read_range_setting", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_GUEST_READ", label: "settings.allow_guest_read", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_GUEST_DOWNLOAD", label: "settings.allow_guest_download", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_GUEST_UPLOAD", label: "settings.allow_guest_upload", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_GUEST_PUSH", label: "settings.allow_guest_push", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_NEW_USER_MANAGE_BOOK", label: "settings.allow_new_user_manage_book", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_NEW_USER_PUSH_BOOK", label: "settings.allow_new_user_push_book", type: 'checkbox' },
+          { icon: "info", key: "ALLOW_READ_RANGE_SETTING", label: "settings.allow_read_range_setting", type: 'checkbox' },
         ],
         groups: [
           {
@@ -442,6 +442,7 @@ export default {
           { icon: "info", key: "MAX_UPLOAD_SIZE", label: "settings.max_upload_size" },
           { icon: "info", key: "CHUNK_UPLOAD_SIZE", label: "settings.chunk_upload_size" },
           { icon: "mdi-shape-plus", key: "IMPORT_CATEGORY_WITH_FOLDER", label: "settings.category_with_folder", type: 'checkbox'},
+          { icon: "info", key: "UPDATE_CATEGORY_WITH_FOLDER_RENAME", label: "settings.update_category_with_folder_rename", type: 'checkbox'},
           { icon: "mdi-crosshairs-gps", key: "IMPORT_BY_INOTIFY", label: "settings.auto_importing", type: 'checkbox'},
         ]
       },
