@@ -480,8 +480,8 @@ export default {
                     expand: this.isPathMatch("/user/"),
                     groups: [
                         { icon: "mdi-account-cog", href: "/user/usersettings", text: "appHeader.user_setting", color: "primary" },
-                        { icon: "mdi-shield-account", href: "/soledbooks", text: "appHeader.soledBooks", color: "primary"},
-                        { icon: "mdi-notebook", href: "/expected", text: "expected.title", color: "primary"},
+                        { icon: "mdi-shield-account", href: "/soledbooks", text: "appHeader.soledBooks", color: "#EDC10A"},
+                        { icon: "mdi-notebook", href: "/expected", text: "expected.title", color: "green"},
                     ],
                 }
             ];
@@ -493,11 +493,11 @@ export default {
                     color: "primary",
                     groups: [
                         { icon: "mdi-cog", href: "/admin/settings", text: "appHeader.systemSettings", color: "primary"},
-                        { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement", color: "primary"},
+                        { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement", color: "#EDC10A"},
                         { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement", color: "primary"},
-                        { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks", color: "primary"},
-                        { icon: "mdi-math-log", href: "/syslog", text: "appHeader.syslog", color: "primary"},
-                        { icon: "sms_failed", action: "openFeedback", text: "appHeader.feedback", color: "primary"},
+                        { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks", color: "green"},
+                        { icon: "mdi-math-log", href: "/syslog", text: "appHeader.syslog", color: "#FB9795"},
+                        { icon: "sms_failed", action: "openFeedback", text: "appHeader.feedback", color: "orange"},
                     ],
                 },
             ];
@@ -524,9 +524,9 @@ export default {
                 { icon: "widgets", href: "/nav", text: "appHeader.tagCategory", count: this.sys.books, color: "primary" },
                 { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags, color: "green"},
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
+                { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", count: this.sys.physicals, color: "orange"},
                 { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},
-                { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", count: this.sys.physicals, color: "primary"},
-                { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "primary"},
+                { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "purple"},
                 { icon: "mdi-check-all", href: "/all", text: "appHeader.allBooks", color: "primary"},
                 { icon: "mdi-star-shooting", href: "/rating", text: "appHeader.rating", color: "orange"},
                 { icon: "mdi-trending-up", href: "/hot", text: "appHeader.hotRanking", color: "orange"},

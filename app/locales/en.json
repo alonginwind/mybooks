@@ -820,7 +820,7 @@
     },
     "syslog": {
         "title": "System Log",
-        "subtitle": "(last 1000 lines)",
+        "subtitle": "(last 1500 lines)",
         "refresh": "Refresh",
         "download": "Download",
         "empty": "(No logs available)",

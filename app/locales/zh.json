@@ -827,7 +827,7 @@
     },
     "syslog": {
         "title": "系统日志",
-        "subtitle": "（最近 1000 行）",
+        "subtitle": "（最近 1500 行）",
         "refresh": "刷新",
         "download": "下载",
         "empty": "（暂无日志）",
