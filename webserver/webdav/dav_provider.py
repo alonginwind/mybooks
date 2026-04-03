@@ -695,8 +695,8 @@ class TalebookProvider(DAVProvider):
             pass
         book_tags = set(mi.tags or [])
         matched = (
-            (limit_cats and book_category in limit_cats) or
-            bool(limit_tags and book_tags & limit_tags)
+            (limit_cats and book_category in limit_cats)
+            or bool(limit_tags and book_tags & limit_tags)
         )
         return matched if read_limit == 1 else not matched
 

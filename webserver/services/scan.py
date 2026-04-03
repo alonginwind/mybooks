@@ -813,8 +813,8 @@ class ScanService(AsyncService):
         affected = [
             item for item in all_items
             if item.src_path and (
-                os.path.realpath(item.src_path) == old_dir_path or
-                os.path.realpath(item.src_path).startswith(old_dir_path + sep)
+                os.path.realpath(item.src_path) == old_dir_path
+                or os.path.realpath(item.src_path).startswith(old_dir_path + sep)
             )
         ]
 

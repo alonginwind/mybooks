@@ -89,14 +89,11 @@ class MonitorService:
         self._add_watch_recursive(watch_path)
 
         self._monitor_thread = threading.Thread(target=self._monitor_loop,
-            name="MonitorService.inotify",
-            daemon=True,
-        )
-        self._scheduler_thread = threading.Thread(
-            target=self._scheduler_loop,
-            name="MonitorService.scheduler",
-            daemon=True,
-        )
+                                                name="MonitorService.inotify",
+                                                daemon=True)
+        self._scheduler_thread = threading.Thread(target=self._scheduler_loop,
+                                                  name="MonitorService.scheduler",
+                                                  daemon=True)
         self._monitor_thread.start()
         self._scheduler_thread.start()
 

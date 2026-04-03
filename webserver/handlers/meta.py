@@ -12,6 +12,7 @@ from webserver import loader, constants
 
 CONF = loader.get_settings()
 
+
 class LanguageNameUtil:
     """工具类，用于转换calibre language code to name and vice versa"""
     languages = {"英语": "eng",

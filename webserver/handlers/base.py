@@ -617,7 +617,6 @@ class BaseHandler(web.RequestHandler):
             else:
                 book.update(maps.get(book["id"], empty_item))
 
-
         if len(soled_books) > 0 and len(books) > 0:
             books = [b for b in books if b["id"] not in soled_books]
 
@@ -655,8 +654,8 @@ class BaseHandler(web.RequestHandler):
         book_tags = set(book.get('tags') or [])
 
         matched = (
-            (limit_categories and book_category in limit_categories) or
-            bool(limit_tags and book_tags & limit_tags)
+            (limit_categories and book_category in limit_categories)
+            or bool(limit_tags and book_tags & limit_tags)
         )
 
         if read_limit == 1:
