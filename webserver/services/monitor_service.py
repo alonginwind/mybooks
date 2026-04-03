@@ -137,7 +137,7 @@ class MonitorService:
                     self._wd_to_path.pop(old_wd, None)
                 self._wd_to_path[wd] = path
                 self._path_to_wd[path] = wd
-            logging.debug("[Monitor] watch+: wd=%d  %s", wd, path)
+            logging.info("[Monitor] watch+: wd=%d  %s", wd, path)
             return wd
         except OSError as e:
             logging.error("[Monitor] Failed to add watch for %s: %s", path, e)
@@ -150,10 +150,10 @@ class MonitorService:
                 self._path_to_wd.pop(path, None)
         try:
             self._inotify.rm_watch(wd)
-        except OSError:
-            pass
+        except OSError as e:
+            logging.info("Failed to remove watch: %s", e)
         if path:
-            logging.debug("[Monitor] watch-: wd=%d  %s", wd, path)
+            logging.info("[Monitor] watch-: wd=%d  %s", wd, path)
 
     def _add_watch_recursive(self, root: str) -> None:
         self._add_watch(root)
@@ -165,7 +165,7 @@ class MonitorService:
         except PermissionError as e:
             logging.warning("[Monitor] No permission to scan directory: %s", e)
         except OSError as e:
-            logging.warning("[Monitor] 扫描子目录出错: %s", e)
+            logging.warning("[Monitor] Failded to scan subfolder: %s", e)
 
     def _add_watch_and_scan_files(self, root: str) -> None:
         """添加递归监听，同时扫描目录内已有书籍文件并加入待导入队列。
@@ -227,6 +227,7 @@ class MonitorService:
 
                 # 被监听的目录自身被删除或移出，清理wd
                 if mask & (DELETE_SELF_MASK | MOVE_SELF_MASK):
+                    logging.info("Watched folder was removed!!")
                     self._remove_wd(wd)
                     is_dir = True
 
@@ -235,7 +236,7 @@ class MonitorService:
 
                 # 目录被移走（MOVED_FROM）：记录旧路径等待匹配 MOVED_TO cookie
                 # 排除非目录的 MOVED_FROM（文件移走不涉及分类更新）
-                if is_dir and (mask & MOVED_FROM_MASK or mask & DELETE_SELF_MASK):
+                if is_dir and (mask & (MOVED_FROM_MASK | DELETE_SELF_MASK)):
                     logging.info("[Monitor] Folder: Moved/DeleteSelf %s", full_path)
                     if (event.cookie and mask & MOVED_FROM_MASK) or mask & DELETE_SELF_MASK:
                         with self._move_lock:
@@ -270,20 +271,25 @@ class MonitorService:
     def _on_file_event(self, file_path: str) -> None:
         ext = file_path.rsplit(".", 1)[-1].lower() if "." in file_path else ""
         if ext not in SCAN_EXT:
-            logging.debug("[Monitor] Ignoring non-book file: %s", file_path)
+            logging.info("[Monitor] Ignoring non-book file: %s", file_path)
             return
         with self._state_lock:
             self._pending_files.add(file_path)
             self._last_event_time = time.monotonic()
-        logging.debug("[Monitor] New file event: %s", file_path)
+        logging.info("[Monitor] New file event: %s", file_path)
 
     def _on_dir_rename(self, old_path: str, new_path: str) -> None:
         """目录在监控树内重命名/移动时调用，按配置更新受影响书籍的分类。"""
         if not CONF.get("UPDATE_CATEGORY_WITH_FOLDER_RENAME", False):
-            logging.debug("[Monitor] UPDATE_CATEGORY_WITH_FOLDER_RENAME 未启用，跳过分类更新")
+            logging.info("[Monitor] Not config updaing with folder renameing, skip category update.")
             return
         scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
         logging.info("[Monitor] Folder renamed: %s -> %s", old_path, new_path)
+
+        # 清理pending_files中新目录下的文件
+        new_path_prefix = new_path.rstrip(os.sep) + os.sep
+        with self._state_lock:
+            self._pending_files = {file_path for file_path in self._pending_files if not file_path.startswith(new_path_prefix)}
         ScanService().do_rename_category(old_path, new_path, scan_upload_path)
 
     def _scheduler_loop(self) -> None:
