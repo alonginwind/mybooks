@@ -585,5 +585,28 @@ class StickyItem(Base, SQLAlchemyMixin):
         self.create_time = datetime.datetime.now()
 
 
+class ExpectedItem(Base, SQLAlchemyMixin):
+    """缺书登记项目"""
+    __tablename__ = "expected_item"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    reader_id = Column(Integer, ForeignKey("readers.id"), nullable=False)
+    title = Column(String(256), nullable=False)  # 书籍标题
+    author = Column(String(128), nullable=True, default="")  # 书籍作者
+    publisher = Column(String(256), nullable=True, default="")  # 出版社
+    create_time = Column(DateTime, default=datetime.datetime.now)
+
+    # 建立关系
+    reader = relationship(Reader, backref="expected_items")
+
+    def __init__(self, reader_id, title, author="", publisher=""):
+        super(ExpectedItem, self).__init__()
+        self.reader_id = reader_id
+        self.title = title
+        self.author = author
+        self.publisher = publisher
+        self.create_time = datetime.datetime.now()
+
+
 def user_syncdb(engine):
     Base.metadata.create_all(engine)

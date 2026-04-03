@@ -830,5 +830,23 @@
         "empty": "（暂无日志）",
         "fetchFailed": "获取日志失败",
         "pageTitle": "系统日志"
+    },
+    "expected": {
+        "pageTitle": "缺书登记",
+        "title": "缺书登记",
+        "add": "添加",
+        "cancel": "取消",
+        "delete": "删除",
+        "addDialogTitle": "添加缺书登记",
+        "fieldTitle": "书名",
+        "fieldAuthor": "作者（选填）",
+        "fieldPublisher": "出版社（选填）",
+        "titleRequired": "书名不能为空",
+        "colTitle": "书名",
+        "colAuthor": "作者",
+        "colPublisher": "出版社",
+        "colCreateTime": "登记日期",
+        "colActions": "操作",
+        "deleteConfirm": "确定要删除《{title}》的缺书登记吗？"
     }
 }

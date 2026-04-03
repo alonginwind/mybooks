@@ -823,5 +823,23 @@
         "empty": "(No logs available)",
         "fetchFailed": "Failed to fetch logs",
         "pageTitle": "System Log"
+    },
+    "expected": {
+        "pageTitle": "Expected Books",
+        "title": "Expected Books",
+        "add": "Add",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "addDialogTitle": "Add Expected Book",
+        "fieldTitle": "Title",
+        "fieldAuthor": "Author (optional)",
+        "fieldPublisher": "Publisher (optional)",
+        "titleRequired": "Title is required",
+        "colTitle": "Title",
+        "colAuthor": "Author",
+        "colPublisher": "Publisher",
+        "colCreateTime": "Date",
+        "colActions": "Actions",
+        "deleteConfirm": "Are you sure you want to delete the record for \u300a{title}\u300b?"
     }
 }

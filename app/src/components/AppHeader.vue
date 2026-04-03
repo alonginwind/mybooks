@@ -481,6 +481,7 @@ export default {
                     groups: [
                         { icon: "mdi-account-cog", href: "/user/usersettings", text: "appHeader.user_setting", color: "primary" },
                         { icon: "mdi-shield-account", href: "/soledbooks", text: "appHeader.soledBooks", color: "primary"},
+                        { icon: "mdi-notebook", href: "/expected", text: "expected.title", color: "primary"},
                     ],
                 }
             ];

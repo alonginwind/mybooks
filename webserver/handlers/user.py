@@ -13,7 +13,7 @@ from webserver import loader
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, auth, js
 from webserver.handlers.audio import AudioUtils
-from webserver.models import Device, Message, Reader, StickyItem
+from webserver.models import Device, ExpectedItem, Message, Reader, StickyItem
 from webserver.version import VERSION
 
 CONF = loader.get_settings()
@@ -711,6 +711,100 @@ class UnpinItem(BaseHandler):
             return {"err": "db.error", "msg": _(u"取消置顶失败")}
 
 
+class UserExpectedItems(BaseHandler):
+    """缺书登记管理"""
+
+    @js
+    @auth
+    def get(self):
+        user_id = self.user_id()
+        items = self.sqlite_session.query(ExpectedItem).filter(
+            ExpectedItem.reader_id == user_id
+        ).order_by(ExpectedItem.create_time.desc()).all()
+        result = []
+        for item in items:
+            result.append({
+                "id": item.id,
+                "title": item.title,
+                "author": item.author or "",
+                "publisher": item.publisher or "",
+                "create_time": item.create_time.strftime("%Y-%m-%d") if item.create_time else "",
+            })
+        return {"err": "ok", "items": result}
+
+    @js
+    @auth
+    def post(self):
+        user_id = self.user_id()
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+        except Exception:
+            return {"err": "params.invalid", "msg": _(u"参数无效")}
+
+        title = data.get("title", "").strip()
+        if not title:
+            return {"err": "params.title.required", "msg": _(u"书名不能为空")}
+        if len(title) > 256:
+            return {"err": "params.title.too_long", "msg": _(u"书名过长")}
+
+        author = data.get("author", "").strip()
+        publisher = data.get("publisher", "").strip()
+
+        item = ExpectedItem(
+            reader_id=user_id,
+            title=title,
+            author=author,
+            publisher=publisher,
+        )
+        self.sqlite_session.add(item)
+        try:
+            self.sqlite_session.commit()
+            return {
+                "err": "ok",
+                "msg": _(u"添加成功"),
+                "item": {
+                    "id": item.id,
+                    "title": item.title,
+                    "author": item.author or "",
+                    "publisher": item.publisher or "",
+                    "create_time": item.create_time.strftime("%Y-%m-%d") if item.create_time else "",
+                }
+            }
+        except Exception as e:
+            logging.error("Add expected item failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _(u"添加失败")}
+
+    @js
+    @auth
+    def delete(self):
+        user_id = self.user_id()
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+        except Exception:
+            return {"err": "params.invalid", "msg": _(u"参数无效")}
+
+        item_id = data.get("id")
+        if not item_id:
+            return {"err": "params.id.required", "msg": _(u"ID不能为空")}
+
+        item = self.sqlite_session.query(ExpectedItem).filter(
+            ExpectedItem.id == item_id,
+            ExpectedItem.reader_id == user_id,
+        ).first()
+        if not item:
+            return {"err": "not_found", "msg": _(u"未找到该登记项")}
+
+        try:
+            self.sqlite_session.delete(item)
+            self.sqlite_session.commit()
+            return {"err": "ok", "msg": _(u"删除成功")}
+        except Exception as e:
+            logging.error("Delete expected item failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _(u"删除失败")}
+
+
 def routes():
     return [
         (r"/api/welcome", Welcome),
@@ -731,4 +825,5 @@ def routes():
         (r"/api/user/pin", PinItem),
         (r"/api/user/unpin", UnpinItem),
         (r"/api/user/devices", UserDevices),
+        (r"/api/user/expected", UserExpectedItems),
     ]
