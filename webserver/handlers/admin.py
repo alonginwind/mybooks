@@ -1057,10 +1057,10 @@ class AdminSyslog(BaseHandler):
                 return {"err": "ok", "lines": []}
             with open(LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
-            return {"err": "ok", "lines": [l.rstrip("\n") for l in lines[-self.MAX_LINES:]]}
+            return {"err": "ok", "lines": [l.rstrip("\n") for l in lines[-self.MAX_LINES:]], "href": self.cdn_url + "/api/admin/syslog/download"}
         except Exception as e:
             logging.error("Failed to read syslog: %s", e)
-            return {"err": "failed", "msg": str(e), "href": self.cdn_url + "/api/admin/syslog/download"}
+            return {"err": "failed", "msg": str(e)}
 
 
 class AdminSyslogDownload(BaseHandler):
