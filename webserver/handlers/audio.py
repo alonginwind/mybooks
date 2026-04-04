@@ -421,9 +421,23 @@ class AudioConversion(BaseHandler):
             if not os.path.exists(epub_path):
                 return {"err": "params.book.epub_missing", "msg": _(u"未找到EPUB文件")}
 
+            # Write the metadata
+            self.save_book_meta(book_id, fmt="epub")
+
             # Create output directory
             output_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
             os.makedirs(output_dir, exist_ok=True)
+
+            # Save the cover image to the output dir
+            try:
+                cover_data = self.calibre_db.cover(book_id, index_is_id=True)
+                if cover_data:
+                    cover_path = os.path.join(output_dir, "cover.jpg")
+                    with open(cover_path, "wb") as f:
+                        f.write(cover_data)
+                    logging.info(f"Saved cover image for book {book_id} to {cover_path}")
+            except Exception as e:
+                logging.error(f"Failed to save cover image for book {book_id}: {e}")
 
             # Create new worker and start conversion
             epub_to_audio_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "epub_to_audio", "main.py")

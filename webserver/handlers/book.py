@@ -1605,6 +1605,7 @@ class SearchBook(ListHandler):
         if not text:
             return text
         text = re.sub(r"\([^)]*\)|（[^）]*）", " ", text)
+        text = text.replace("(", " ").replace(")", " ")
         return text.strip()
 
     def _add_books(self, result_ids, ids, seen):
