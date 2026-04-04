@@ -1598,7 +1598,7 @@ class RecentBook(ListHandler):
 
 
 class SearchBook(ListHandler):
-    CALIBRE_KEYS = ("title:", "authors:", "comments:", "publisher:", "isbn:", "publisher:", "series:", "tags:", "author:")
+    CALIBRE_KEYS = ("title:", "authors:", "comments:", "publisher:", "isbn:", "publisher:", "series:", "tags:", "author:", "py:")
 
     def _clear(self, text):
         # 去除字串中的括号及其内容，以免影响查询
@@ -1666,6 +1666,7 @@ class SearchBook(ListHandler):
             if name.startswith(key):
                 calibre_query = True
                 title_search = False
+                name = name.replace("py:", "title_sort:")
                 break
 
         title = _(u"搜索：%(name)s") % {"name": name}

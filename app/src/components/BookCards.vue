@@ -204,6 +204,10 @@ export default {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    border-radius: 12px;
+}
+.book-list-card .v-card:hover {
+    transform: translateY(-1px);
 }
 .book-list-card .v-card > .row {
     flex: 1;
