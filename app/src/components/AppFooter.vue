@@ -8,7 +8,7 @@
             <p class='mb-0 text-center footer-text' v-html="footer_text"></p>
             <p>
                 <v-btn small text target="_blank" href="https://github.com/PoxenStudio/talebook">Project</v-btn>
-                | <v-btn small text target="_blank" href="https://hub.docker.com/r/poxenstudio/talebook">Docker</v-btn>
+                | <v-btn small text target="_blank" href="/podcast">Podcast</v-btn>
                 | <v-btn small text target="_blank" href="https://mybooks.top">Talebook</v-btn>
                 | <v-btn small text target="_blank" href="/opds-readme"> {{ $t('appHeader.opdsIntroduction') }} </v-btn>
                 | <v-btn small text target="_blank" href="/webdav-readme"> {{ $t('appHeader.webdavIntroduction') }} </v-btn>

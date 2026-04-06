@@ -209,9 +209,9 @@ class PodcastIndex(PodcastBaseHandler):
         else:
             html.append('<div class="token-info">')
             html.append(
-                "<strong>📌 个人订阅</strong>：收藏、待读、在读、已读 等个人订阅需要在用户设置中生成 Podcast Token，"
+                "<strong>📌 个人订阅</strong>：收藏、待读、在读、已读 等个人订阅需要在 &lt;<strong>我的设置</strong>&gt; 中生成 Podcast Token，"
             )
-            html.append(f"然后使用 <code>{site_url}/podcast/TOKEN/</code> 等地址访问。")
+            html.append(f"然后使用 <code>{site_url}/podcast/&lt;TOKEN&gt;/</code> 等地址访问。")
             html.append("</div>")
 
         html.append('<div class="section">')
@@ -225,7 +225,7 @@ class PodcastIndex(PodcastBaseHandler):
         html.append("</div>")
 
         if categories:
-            html.append('<div class="section"><h2>按分类</h2><ul>')
+            html.append('<div class="section"><h2>分类</h2><ul>')
             for cat in sorted(categories.keys()):
                 count = len(categories[cat])
                 url = f"{site_url}/podcast/category/{urllib.parse.quote(cat)}"
@@ -235,7 +235,7 @@ class PodcastIndex(PodcastBaseHandler):
             html.append("</ul></div>")
 
         if tags:
-            html.append('<div class="section"><h2>按标签</h2><ul>')
+            html.append('<div class="section"><h2>标签</h2><ul>')
             for tag in sorted(tags.keys()):
                 count = len(tags[tag])
                 url = f"{site_url}/podcast/tag/{urllib.parse.quote(tag)}"
@@ -245,7 +245,7 @@ class PodcastIndex(PodcastBaseHandler):
             html.append("</ul></div>")
 
         if authors:
-            html.append('<div class="section"><h2>按作者</h2><ul>')
+            html.append('<div class="section"><h2>作者</h2><ul>')
             for author_name in sorted(authors.keys()):
                 count = len(authors[author_name])
                 url = f"{site_url}/podcast/author/{urllib.parse.quote(author_name)}"
@@ -500,7 +500,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
 
         categories = provider.get_categories()
         if categories:
-            html.append('<div class="section"><h2>按分类</h2><ul>')
+            html.append('<div class="section"><h2>分类</h2><ul>')
             for cat in sorted(categories.keys()):
                 count = len(categories[cat])
                 url = f"{site_url}/podcast/category/{urllib.parse.quote(cat)}?token={token}"
@@ -509,7 +509,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
 
         tags = provider.get_tags()
         if tags:
-            html.append('<div class="section"><h2>按标签</h2><ul>')
+            html.append('<div class="section"><h2>标签</h2><ul>')
             for tag in sorted(tags.keys()):
                 count = len(tags[tag])
                 url = f"{site_url}/podcast/tag/{urllib.parse.quote(tag)}?token={token}"
@@ -518,7 +518,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
 
         authors = provider.get_authors()
         if authors:
-            html.append('<div class="section"><h2>按作者</h2><ul>')
+            html.append('<div class="section"><h2>作者</h2><ul>')
             for author_name in sorted(authors.keys()):
                 count = len(authors[author_name])
                 url = f"{site_url}/podcast/author/{urllib.parse.quote(author_name)}?token={token}"
