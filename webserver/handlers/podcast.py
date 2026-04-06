@@ -42,7 +42,7 @@ class PodcastBaseHandler(BaseHandler):
     """Base handler for all podcast endpoints."""
 
     def check_podcast_enabled(self):
-        if not CONF.get(constants.ENABLE_PODCAST_SERVICE, True):
+        if not CONF.get(constants.ENABLE_PODCAST_SERVICE, False):
             raise web.HTTPError(503, reason="Podcast service is not enabled")
 
     def set_rss_headers(self):
