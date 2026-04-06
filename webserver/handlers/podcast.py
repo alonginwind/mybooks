@@ -13,12 +13,11 @@ import os
 import re
 import urllib.parse
 
-from gettext import gettext as _
 from tornado import web
 
 from webserver import loader
 from webserver.handlers.base import BaseHandler
-from webserver.podcast.feed_builder import build_book_feed, build_catalog_feed
+from webserver.podcast.feed_builder import build_book_feed
 from webserver.podcast.podcast_provider import PodcastProvider
 from webserver import constants
 
@@ -137,7 +136,7 @@ class PodcastBaseHandler(BaseHandler):
                     f'<strong>{book_title}</strong> <span class="book-meta">({authors})</span>'
                 )
                 html.append(
-                    f'<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
+                    '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                 )
                 html.append(f'<a class="feed-url" href="{feed_url}">{feed_url}</a>')
                 html.append("</li>")
@@ -195,7 +194,7 @@ class PodcastIndex(PodcastBaseHandler):
                                 f'<strong>{book_title}</strong> <span class="book-meta">({authors_str})</span>'
                             )
                             html.append(
-                                f'<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
+                                '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                             )
                             html.append(
                                 f'<a class="feed-url" href="{feed_url}">{feed_url}</a>'
@@ -481,7 +480,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
                             f'<strong>{book_title}</strong> <span class="book-meta">({authors_str})</span>'
                         )
                         html.append(
-                            f'<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
+                            '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                         )
                         html.append(
                             f'<a class="feed-url" href="{feed_url}">{feed_url}</a>'
