@@ -1,4 +1,4 @@
-<b>Rev: v3.39.1</b><br/>
+<b>Rev: v3.40.0</b><br/>
 <b>日期: 2026-04-07</b><br/>
 <br/>
 <b>1.提供Podcast服务，让Talebook变播客</b><br/>
