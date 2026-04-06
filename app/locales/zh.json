@@ -515,7 +515,7 @@
         "access_code": "访问码",
         "invite_message": "提示语",
         "user_settings": "用户设置",
-        "allow_guest_read": "允许访客在线阅读（无需注册和登录）",
+        "allow_guest_read": "允许访客在线阅读及播放有声书（无需注册和登录）",
         "allow_guest_download": "允许任意下载（访客无需注册和登录）",
         "allow_guest_push": "允许访客推送到阅读设备（访客无需注册和登录）",
         "allow_guest_upload": "允许访客上传书籍（无需注册和登录,请确保清楚开启后的风险）",
