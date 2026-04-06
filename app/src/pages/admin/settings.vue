@@ -986,6 +986,12 @@ export default {
             type: "checkbox",
           },
           {
+            icon: "mdi-podcast",
+            key: "ENABLE_PODCAST_SERVICE",
+            label: "settings.enable_podcast_service",
+            type: "checkbox",
+          },
+          {
             icon: "mdi-restart",
             key: "autoreload",
             label: "settings.autoreload",

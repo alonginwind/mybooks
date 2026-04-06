@@ -119,7 +119,7 @@ class Reader(Base, SQLAlchemyMixin):
     )  # 阅读限制的范围，逗号分隔的分类列表
     limit_tags = Column(String(512), default="")  # 阅读限制的范围，逗号分隔的标签列表
     podcast_token = Column(
-        String(64), default=""
+        String(128), default=""
     )  # Podcast订阅认证token，用于podcast播放器鉴权
 
     def __str__(self):

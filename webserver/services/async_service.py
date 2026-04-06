@@ -26,7 +26,7 @@ class AsyncService(metaclass=SingletonType):
     running = {}  # name -> (thread, queue)
 
     def __init__(self):
-        self.scoped_session = lambda : 'no-session'
+        self.scoped_session = lambda: "no-session"
 
     def setup(self, calibre_db=None, scoped_session=None):
         self.db = calibre_db
@@ -51,71 +51,133 @@ class AsyncService(metaclass=SingletonType):
         return need_sync_item_time
 
     def adjust_item_table(self):
-        result = self.session.execute(text("""
+        result = self.session.execute(
+            text(
+                """
             PRAGMA table_info(items)
-        """)).fetchall()
+        """
+            )
+        ).fetchall()
         columns = [row[1] for row in result]
 
         changed = False
         need_sync_item_time = False
         # Check if the 'sole' column exists, and add it if it doesn't
-        if 'sole' not in columns:
-            self.session.execute(text("""
+        if "sole" not in columns:
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE items ADD COLUMN sole BOOLEAN DEFAULT FALSE
-            """))
+            """
+                )
+            )
             changed = True
 
         # Check if the 'book_type' and 'book_count' columns exists, and add it if it doesn't
-        if 'book_type' not in columns or 'book_count' not in columns or 'create_time' not in columns:
-            if 'book_type' not in columns:
-                self.session.execute(text("""
+        if (
+            "book_type" not in columns
+            or "book_count" not in columns
+            or "create_time" not in columns
+        ):
+            if "book_type" not in columns:
+                self.session.execute(
+                    text(
+                        """
                     ALTER TABLE items ADD COLUMN book_type INTEGER DEFAULT 0
-                """))
+                """
+                    )
+                )
                 changed = True
-            if 'book_count' not in columns:
-                self.session.execute(text("""
+            if "book_count" not in columns:
+                self.session.execute(
+                    text(
+                        """
                     ALTER TABLE items ADD COLUMN book_count INTEGER DEFAULT 0
-                """))
+                """
+                    )
+                )
                 changed = True
-            if 'create_time' not in columns:
-                self.session.execute(text("""
+            if "create_time" not in columns:
+                self.session.execute(
+                    text(
+                        """
                     ALTER TABLE items ADD COLUMN create_time DATETIME
-                """))
+                """
+                    )
+                )
                 need_sync_item_time = True
                 changed = True
-        if 'src_path' not in columns:
-            self.session.execute(text("""
+        if "src_path" not in columns:
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE items ADD COLUMN src_path STRING(4096) DEFAULT ''
-            """))
+            """
+                )
+            )
             changed = True
         return need_sync_item_time, changed
 
     def adjust_reader_table(self):
-        result = self.session.execute(text("""
+        result = self.session.execute(
+            text(
+                """
             PRAGMA table_info(readers)
-        """)).fetchall()
+        """
+            )
+        ).fetchall()
         columns = [row[1] for row in result]
 
         changed = False
-        if 'vipquota' not in columns:
+        if "vipquota" not in columns:
             changed = True
-            self.session.execute(text("""
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE readers ADD COLUMN vipquota INTEGER DEFAULT 0
-            """))
-            self.session.execute(text("""
+            """
+                )
+            )
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE readers ADD COLUMN vipexpire DATETIME
-            """))
+            """
+                )
+            )
 
-        if 'read_limit' not in columns:
-            self.session.execute(text("""
+        if "read_limit" not in columns:
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE readers ADD COLUMN read_limit INTEGER DEFAULT 0
-            """))
-            self.session.execute(text("""
+            """
+                )
+            )
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE readers ADD COLUMN limit_categories STRING(512) DEFAULT ''
-            """))
-            self.session.execute(text("""
+            """
+                )
+            )
+            self.session.execute(
+                text(
+                    """
                 ALTER TABLE readers ADD COLUMN limit_tags STRING(512) DEFAULT ''
-            """))
+            """
+                )
+            )
+            changed = True
+
+        if "podcast_token" not in columns:
+            self.session.execute(
+                text(
+                    """
+                ALTER TABLE readers ADD COLUMN podcast_token STRING(128) DEFAULT ''
+            """
+                )
+            )
             changed = True
         return changed
 
@@ -129,7 +191,9 @@ class AsyncService(metaclass=SingletonType):
         if name in self.running:
             return self.running[name][1]
 
-        logging.info("** Start Thread Service <%s> ** from %s", name, self.__class__.__name__)
+        logging.info(
+            "** Start Thread Service <%s> ** from %s", name, self.__class__.__name__
+        )
         q = Queue()
         t = threading.Thread(target=self.loop, args=(service_func, q))
         t.name = self.__class__.__name__ + "." + service_func.__name__
@@ -144,7 +208,11 @@ class AsyncService(metaclass=SingletonType):
             args, kwargs = q.get()
             # 在子线程中重新生成session
             self.session = AsyncService().scoped_session()
-            logging.info("create new session_id=%s for thread %s", self.session.hash_key, threading.current_thread().name)
+            logging.info(
+                "create new session_id=%s for thread %s",
+                self.session.hash_key,
+                threading.current_thread().name,
+            )
             logging.info("call: func=%s", name)
             try:
                 service_func(self, *args, **kwargs)
@@ -165,7 +233,7 @@ class AsyncService(metaclass=SingletonType):
 
     # 注册服务
     def async_mode(self):
-        ''' for unittest '''
+        """for unittest"""
         return True
 
     @staticmethod
@@ -196,4 +264,5 @@ class AsyncService(metaclass=SingletonType):
             q = ins.start_service(service_func)
             q.put((args, kwargs))
             return None
+
         return func_wrapper
