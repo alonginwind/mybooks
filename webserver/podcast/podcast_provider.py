@@ -128,13 +128,20 @@ class PodcastProvider:
         if not os.path.exists(audio_dir):
             return []
 
+        def _get_sort_key(filename):
+            import re
+
+            m = re.match(r"^(\d+)", filename)
+            return int(m.group(1)) if m else 999999
+
         audio_files = sorted(
             [
                 f
                 for f in os.listdir(audio_dir)
                 if f.endswith((".mp3", ".wav", ".m4a", ".opus"))
                 and os.path.getsize(os.path.join(audio_dir, f)) > 1024
-            ]
+            ],
+            key=_get_sort_key,
         )
 
         if not audio_files:

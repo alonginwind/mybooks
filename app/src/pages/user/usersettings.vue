@@ -9,7 +9,7 @@
     <!-- Tab 1: Basic Info -->
     <v-tabs-items v-model="activeTab">
       <v-tab-item>
-        <v-form ref="form" @submit.prevent="save">
+        <v-form ref="form" @submit.prevent="save" style="padding: 15px">
           <v-row align="start">
             <!-- Avatar -->
             <v-col cols="3">
@@ -189,9 +189,13 @@
                 readonly
               >
                 <template v-slot:prepend>
-                  <v-btn color="primary" small @click="generatePodcastToken">{{
-                    $t("user.generate_token") || "Generate Token"
-                  }}</v-btn>
+                  <v-btn
+                    color="primary"
+                    small
+                    @click="generatePodcastToken"
+                    rounded
+                    >{{ $t("user.generate_token") || "Generate Token" }}</v-btn
+                  >
                 </template>
               </v-text-field>
             </v-col>

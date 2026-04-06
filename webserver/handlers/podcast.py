@@ -159,19 +159,70 @@ class PodcastIndex(PodcastBaseHandler):
         authors = provider.get_authors()
 
         html = []
+
+        token_to_use = None
+        user = self.current_user
+        if user and hasattr(user, "podcast_token") and user.podcast_token:
+            token_to_use = user.podcast_token
+
+        if token_to_use:
+            feed_map = {
+                "favorite": ("我的收藏", provider.get_favorites),
+                "wants": ("我的待读", provider.get_wants),
+                "reading": ("在读", provider.get_reading),
+                "read_done": ("已读", provider.get_read_done),
+            }
+            has_items = False
+            for feed_type, (label, getter) in feed_map.items():
+                book_ids = getter(user.id)
+                if book_ids:
+                    entries = provider.get_catalog_entries(
+                        book_ids, site_url, token=token_to_use
+                    )
+                    if entries:
+                        has_items = True
+                        html.append('<div class="section">')
+                        html.append(f"<h2>{label}</h2>")
+                        html.append("<ul>")
+                        for book in entries:
+                            authors_str = (
+                                ", ".join(book.get("authors", [])) or "未知作者"
+                            )
+                            book_title = book.get("title", "未知书名")
+                            feed_url = book.get("feed_url", "")
+                            html.append("<li>")
+                            html.append(
+                                f'<strong>{book_title}</strong> <span class="book-meta">({authors_str})</span>'
+                            )
+                            html.append(
+                                f'<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
+                            )
+                            html.append(
+                                f'<a class="feed-url" href="{feed_url}">{feed_url}</a>'
+                            )
+                            html.append("</li>")
+                        html.append("</ul>")
+                        html.append("</div>")
+            if not has_items:
+                html.append(
+                    '<div class="token-info">您的个人订阅（收藏、待读、在读、已读）中暂无有声书。</div>'
+                )
+        else:
+            html.append('<div class="token-info">')
+            html.append(
+                "<strong>📌 个人订阅</strong>：收藏、待读、在读、已读 等个人订阅需要在用户设置中生成 Podcast Token，"
+            )
+            html.append(f"然后使用 <code>{site_url}/podcast/TOKEN/</code> 等地址访问。")
+            html.append("</div>")
+
         html.append('<div class="section">')
         html.append("<h2>全部有声书</h2>")
-        html.append(
-            f'<p><a class="feed-url" href="{site_url}/podcast/all">{site_url}/podcast/all</a></p>'
-        )
-        html.append("</div>")
-        html.append('<div class="token-info">')
-        html.append(
-            "<strong>📌 个人订阅</strong>：收藏、待读、在读、已读 等个人订阅需要在用户设置中生成 Podcast Token，"
-        )
-        html.append(
-            f"然后使用 <code>{site_url}/podcast/TOKEN/favorite</code> 等地址订阅。"
-        )
+
+        all_url = f"{site_url}/podcast/all"
+        if token_to_use:
+            all_url += f"?token={token_to_use}"
+
+        html.append(f'<p><a class="feed-url" href="{all_url}">{all_url}</a></p>')
         html.append("</div>")
 
         if categories:
@@ -179,6 +230,8 @@ class PodcastIndex(PodcastBaseHandler):
             for cat in sorted(categories.keys()):
                 count = len(categories[cat])
                 url = f"{site_url}/podcast/category/{urllib.parse.quote(cat)}"
+                if token_to_use:
+                    url += f"?token={token_to_use}"
                 html.append(f'<li><a href="{url}">{cat}</a> ({count}本)</li>')
             html.append("</ul></div>")
 
@@ -187,15 +240,19 @@ class PodcastIndex(PodcastBaseHandler):
             for tag in sorted(tags.keys()):
                 count = len(tags[tag])
                 url = f"{site_url}/podcast/tag/{urllib.parse.quote(tag)}"
+                if token_to_use:
+                    url += f"?token={token_to_use}"
                 html.append(f'<li><a href="{url}">{tag}</a> ({count}本)</li>')
             html.append("</ul></div>")
 
         if authors:
             html.append('<div class="section"><h2>按作者</h2><ul>')
-            for author in sorted(authors.keys()):
-                count = len(authors[author])
-                url = f"{site_url}/podcast/author/{urllib.parse.quote(author)}"
-                html.append(f'<li><a href="{url}">{author}</a> ({count}本)</li>')
+            for author_name in sorted(authors.keys()):
+                count = len(authors[author_name])
+                url = f"{site_url}/podcast/author/{urllib.parse.quote(author_name)}"
+                if token_to_use:
+                    url += f"?token={token_to_use}"
+                html.append(f'<li><a href="{url}">{author_name}</a> ({count}本)</li>')
             html.append("</ul></div>")
 
         title = f'{CONF.get("site_title", "Talebook")} Podcast'
@@ -210,8 +267,16 @@ class PodcastAll(PodcastBaseHandler):
         site_url = self._get_full_site_url()
         provider = _get_provider(self)
 
+        token = None
+        if (
+            self.current_user
+            and hasattr(self.current_user, "podcast_token")
+            and self.current_user.podcast_token
+        ):
+            token = self.current_user.podcast_token
+
         book_ids = provider.get_all_audiobook_ids()
-        entries = provider.get_catalog_entries(book_ids, site_url)
+        entries = provider.get_catalog_entries(book_ids, site_url, token=token)
 
         title = f"{self._get_site_title()} - 全部有声书"
         self.render_book_list(title, "所有有声书合集", entries)
@@ -225,6 +290,14 @@ class PodcastBook(PodcastBaseHandler):
         site_url = self._get_full_site_url()
         provider = _get_provider(self)
 
+        token = None
+        if (
+            self.current_user
+            and hasattr(self.current_user, "podcast_token")
+            and self.current_user.podcast_token
+        ):
+            token = self.current_user.podcast_token
+
         try:
             book_id = int(book_id)
         except ValueError as exc:
@@ -234,7 +307,7 @@ class PodcastBook(PodcastBaseHandler):
         if not book_info:
             raise web.HTTPError(404, reason="Book not found")
 
-        episodes = provider.get_episodes(book_id, site_url)
+        episodes = provider.get_episodes(book_id, site_url, token=token)
         if not episodes:
             raise web.HTTPError(404, reason="No audio files found for this book")
 
@@ -254,6 +327,14 @@ class PodcastCategory(PodcastBaseHandler):
         provider = _get_provider(self)
         name = urllib.parse.unquote(name)
 
+        token = None
+        if (
+            self.current_user
+            and hasattr(self.current_user, "podcast_token")
+            and self.current_user.podcast_token
+        ):
+            token = self.current_user.podcast_token
+
         categories = provider.get_categories()
         book_ids = categories.get(name, [])
         if not book_ids:
@@ -261,7 +342,7 @@ class PodcastCategory(PodcastBaseHandler):
                 404, reason=f"Category '{name}' not found or has no audiobooks"
             )
 
-        entries = provider.get_catalog_entries(book_ids, site_url)
+        entries = provider.get_catalog_entries(book_ids, site_url, token=token)
         title = f"{self._get_site_title()} - 分类：{name}"
         self.render_book_list(title, f"分类「{name}」下的有声书", entries)
 
@@ -275,6 +356,14 @@ class PodcastTag(PodcastBaseHandler):
         provider = _get_provider(self)
         name = urllib.parse.unquote(name)
 
+        token = None
+        if (
+            self.current_user
+            and hasattr(self.current_user, "podcast_token")
+            and self.current_user.podcast_token
+        ):
+            token = self.current_user.podcast_token
+
         tags = provider.get_tags()
         book_ids = tags.get(name, [])
         if not book_ids:
@@ -282,7 +371,7 @@ class PodcastTag(PodcastBaseHandler):
                 404, reason=f"Tag '{name}' not found or has no audiobooks"
             )
 
-        entries = provider.get_catalog_entries(book_ids, site_url)
+        entries = provider.get_catalog_entries(book_ids, site_url, token=token)
         title = f"{self._get_site_title()} - 标签：{name}"
         self.render_book_list(title, f"标签「{name}」下的有声书", entries)
 
@@ -296,6 +385,14 @@ class PodcastAuthor(PodcastBaseHandler):
         provider = _get_provider(self)
         name = urllib.parse.unquote(name)
 
+        token = None
+        if (
+            self.current_user
+            and hasattr(self.current_user, "podcast_token")
+            and self.current_user.podcast_token
+        ):
+            token = self.current_user.podcast_token
+
         authors = provider.get_authors()
         book_ids = authors.get(name, [])
         if not book_ids:
@@ -303,7 +400,7 @@ class PodcastAuthor(PodcastBaseHandler):
                 404, reason=f"Author '{name}' not found or has no audiobooks"
             )
 
-        entries = provider.get_catalog_entries(book_ids, site_url)
+        entries = provider.get_catalog_entries(book_ids, site_url, token=token)
         title = f"{self._get_site_title()} - 作者：{name}"
         self.render_book_list(title, f"作者「{name}」的有声书", entries)
 
@@ -345,10 +442,10 @@ class PodcastTokenBook(PodcastBaseHandler):
         self.write(feed_xml)
 
 
-class PodcastTokenCatalog(PodcastBaseHandler):
-    """User-specific catalog feeds (favorite/wants/reading/read_done)."""
+class PodcastTokenIndex(PodcastBaseHandler):
+    """User-specific root podcast page displaying 4 categories directly under /podcast/<token>."""
 
-    def get(self, token, feed_type):
+    def get(self, token):
         self.check_podcast_enabled()
         user = self._get_user_by_token(token)
         if not user:
@@ -357,23 +454,80 @@ class PodcastTokenCatalog(PodcastBaseHandler):
         site_url = self._get_full_site_url()
         provider = _get_provider(self)
 
+        html = []
         feed_map = {
-            "favorite": ("收藏", provider.get_favorites),
-            "wants": ("待读", provider.get_wants),
+            "favorite": ("我的收藏", provider.get_favorites),
+            "wants": ("我的待读", provider.get_wants),
             "reading": ("在读", provider.get_reading),
             "read_done": ("已读", provider.get_read_done),
         }
 
-        if feed_type not in feed_map:
-            raise web.HTTPError(404, reason=f"Unknown feed type: {feed_type}")
+        has_items = False
+        for feed_type, (label, getter) in feed_map.items():
+            book_ids = getter(user.id)
+            if book_ids:
+                entries = provider.get_catalog_entries(book_ids, site_url, token=token)
+                if entries:
+                    has_items = True
+                    html.append('<div class="section">')
+                    html.append(f"<h2>{label}</h2>")
+                    html.append("<ul>")
+                    for book in entries:
+                        authors_str = ", ".join(book.get("authors", [])) or "未知作者"
+                        book_title = book.get("title", "未知书名")
+                        feed_url = book.get("feed_url", "")
+                        html.append("<li>")
+                        html.append(
+                            f'<strong>{book_title}</strong> <span class="book-meta">({authors_str})</span>'
+                        )
+                        html.append(
+                            f'<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
+                        )
+                        html.append(
+                            f'<a class="feed-url" href="{feed_url}">{feed_url}</a>'
+                        )
+                        html.append("</li>")
+                    html.append("</ul>")
+                    html.append("</div>")
 
-        label, getter = feed_map[feed_type]
-        book_ids = getter(user.id)
-        entries = provider.get_catalog_entries(book_ids, site_url, token=token)
+        if not has_items:
+            html.append("<p>您的个人订阅（收藏、待读、在读、已读）中暂无有声书。</p>")
 
-        title = f"{self._get_site_title()} - {user.name}的{label}"
-        description = f"{user.name} 的{label}有声书"
-        self.render_book_list(title, description, entries)
+        html.append('<div class="section">')
+        html.append("<h2>全部有声书</h2>")
+        all_url = f"{site_url}/podcast/all?token={token}"
+        html.append(f'<p><a class="feed-url" href="{all_url}">{all_url}</a></p>')
+        html.append("</div>")
+
+        categories = provider.get_categories()
+        if categories:
+            html.append('<div class="section"><h2>按分类</h2><ul>')
+            for cat in sorted(categories.keys()):
+                count = len(categories[cat])
+                url = f"{site_url}/podcast/category/{urllib.parse.quote(cat)}?token={token}"
+                html.append(f'<li><a href="{url}">{cat}</a> ({count}本)</li>')
+            html.append("</ul></div>")
+
+        tags = provider.get_tags()
+        if tags:
+            html.append('<div class="section"><h2>按标签</h2><ul>')
+            for tag in sorted(tags.keys()):
+                count = len(tags[tag])
+                url = f"{site_url}/podcast/tag/{urllib.parse.quote(tag)}?token={token}"
+                html.append(f'<li><a href="{url}">{tag}</a> ({count}本)</li>')
+            html.append("</ul></div>")
+
+        authors = provider.get_authors()
+        if authors:
+            html.append('<div class="section"><h2>按作者</h2><ul>')
+            for author_name in sorted(authors.keys()):
+                count = len(authors[author_name])
+                url = f"{site_url}/podcast/author/{urllib.parse.quote(author_name)}?token={token}"
+                html.append(f'<li><a href="{url}">{author_name}</a> ({count}本)</li>')
+            html.append("</ul></div>")
+
+        title = f"{self._get_site_title()} - {user.name} 的个人订阅"
+        self.render_html_page(title, "\n".join(html), show_back=True)
 
 
 class PodcastAudioFile(PodcastBaseHandler):
@@ -470,8 +624,8 @@ def routes():
         # Token-authenticated feeds for user-specific content
         (r"/podcast/([a-zA-Z0-9]+)/book/([0-9]+)", PodcastTokenBook),
         (
-            r"/podcast/([a-zA-Z0-9]+)/(favorite|wants|reading|read_done)",
-            PodcastTokenCatalog,
+            r"/podcast/([a-zA-Z0-9]+)/?",
+            PodcastTokenIndex,
         ),
         # Token-authenticated audio file serving
         (r"/podcast/audio/([0-9]+)/([a-zA-Z0-9]+)/(.+)", PodcastAudioFile),
