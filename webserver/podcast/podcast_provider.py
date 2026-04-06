@@ -9,12 +9,20 @@ to only include books that have audio files.
 
 import logging
 import os
+import time
 from urllib.parse import quote
 
 from webserver import loader
 
 CONF = loader.get_settings()
 AUDIO_OUTPUT_FOLDER = CONF.get("audio_output_folder", "/data/books/audios/")
+
+_aggregate_cache = {
+    "timestamp": 0,
+    "categories": {},
+    "tags": {},
+    "authors": {},
+}
 
 
 class PodcastProvider:
@@ -248,9 +256,59 @@ class PodcastProvider:
                 entries.append(entry)
         return entries
 
-    # ------------------------------------------------------------------
-    # Aggregation: categories
-    # ------------------------------------------------------------------
+    def _refresh_aggregations(self):
+        """Update aggregation cache if older than 3 minutes."""
+        now = time.time()
+        if (
+            now - _aggregate_cache["timestamp"] < 180
+            and _aggregate_cache["timestamp"] > 0
+        ):
+            return
+
+        categories = {}
+        tags = {}
+        authors = {}
+
+        audio_ids = self._get_audio_book_ids()
+        if not audio_ids:
+            return
+
+        for book_id in audio_ids:
+            try:
+                mi = self.cache.get_metadata(
+                    book_id, get_cover=False, get_user_categories=False
+                )
+                if not mi:
+                    continue
+
+                # Category caching
+                cat_val = mi.get("#category")
+                cat_list = []
+                if isinstance(cat_val, (list, tuple)):
+                    cat_list = [str(c) for c in cat_val]
+                elif cat_val:
+                    cat_list = [str(cat_val)]
+                for c in cat_list:
+                    categories.setdefault(c, []).append(book_id)
+
+                # Tags caching
+                if mi.tags:
+                    for t in mi.tags:
+                        if not t or len(t) < 2:
+                            continue
+                        tags.setdefault(t, []).append(book_id)
+
+                # Authors caching
+                if mi.authors:
+                    for a in mi.authors:
+                        authors.setdefault(a, []).append(book_id)
+            except Exception as e:
+                logging.error(f"Error fetching metadata for audiobook {book_id}: {e}")
+
+        _aggregate_cache["categories"] = categories
+        _aggregate_cache["tags"] = tags
+        _aggregate_cache["authors"] = authors
+        _aggregate_cache["timestamp"] = now
 
     def get_categories(self):
         """
@@ -259,23 +317,8 @@ class PodcastProvider:
         Returns:
             dict of {category_name: [book_ids]}
         """
-        audio_ids = self._get_audio_book_ids()
-        result = {}
-        try:
-            if "#category" not in self.cache.field_metadata:
-                return result
-            all_cats = self.cache.get_categories()
-            if "#category" not in all_cats:
-                return result
-            for cat in all_cats["#category"]:
-                name = cat.name if hasattr(cat, "name") else str(cat)
-                ids = self.cache.search(f'#category:"={name}"')
-                filtered = [bid for bid in ids if bid in audio_ids]
-                if filtered:
-                    result[name] = filtered
-        except Exception as e:
-            logging.error(f"Error getting podcast categories: {e}")
-        return result
+        self._refresh_aggregations()
+        return _aggregate_cache["categories"]
 
     def get_tags(self):
         """
@@ -284,19 +327,8 @@ class PodcastProvider:
         Returns:
             dict of {tag_name: [book_ids]}
         """
-        audio_ids = self._get_audio_book_ids()
-        result = {}
-        try:
-            for tag in self.cache.all_field_names("tags"):
-                if not tag or len(tag) < 2:
-                    continue
-                ids = self.cache.search(f'tags:"={tag}"')
-                filtered = [bid for bid in ids if bid in audio_ids]
-                if filtered:
-                    result[tag] = filtered
-        except Exception as e:
-            logging.error(f"Error getting podcast tags: {e}")
-        return result
+        self._refresh_aggregations()
+        return _aggregate_cache["tags"]
 
     def get_authors(self):
         """
@@ -305,17 +337,8 @@ class PodcastProvider:
         Returns:
             dict of {author_name: [book_ids]}
         """
-        audio_ids = self._get_audio_book_ids()
-        result = {}
-        try:
-            for author in self.cache.all_field_names("authors"):
-                ids = self.cache.search(f'authors:"={author}"')
-                filtered = [bid for bid in ids if bid in audio_ids]
-                if filtered:
-                    result[author] = filtered
-        except Exception as e:
-            logging.error(f"Error getting podcast authors: {e}")
-        return result
+        self._refresh_aggregations()
+        return _aggregate_cache["authors"]
 
     # ------------------------------------------------------------------
     # Aggregation: user reading states
