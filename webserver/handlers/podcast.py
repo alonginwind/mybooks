@@ -118,7 +118,7 @@ class PodcastBaseHandler(BaseHandler):
         self.set_header("Content-Type", "text/html; charset=UTF-8")
         self.write("\n".join(html))
 
-    def render_book_list(self, page_title, description, entries):
+    def render_book_list(self, page_title, description, entries, token=None):
         html = []
         if description:
             html.append(f"<p>{description}</p>")
@@ -138,6 +138,8 @@ class PodcastBaseHandler(BaseHandler):
                 html.append(
                     '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                 )
+                if token is not None:
+                    feed_url = feed_url + f"?token={token}"
                 html.append(f'<a class="feed-url" href="{feed_url}">{feed_url}</a>')
                 html.append("</li>")
             html.append("</ul>")
@@ -280,7 +282,7 @@ class PodcastAll(PodcastBaseHandler):
         entries = provider.get_catalog_entries(book_ids, site_url, token=token)
 
         title = f"{self._get_site_title()} - 全部有声书"
-        self.render_book_list(title, "所有有声书合集", entries)
+        self.render_book_list(title, "所有有声书合集", entries, token)
 
 
 class PodcastBook(PodcastBaseHandler):
@@ -312,9 +314,7 @@ class PodcastBook(PodcastBaseHandler):
         if not episodes:
             raise web.HTTPError(404, reason="No audio files found for this book")
 
-        feed_xml = build_book_feed(
-            book_info, episodes, site_url, site_title=self._get_site_title()
-        )
+        feed_xml = build_book_feed(book_info, episodes, site_url, site_title=self._get_site_title(), token=token)
         self.set_rss_headers()
         self.write(feed_xml)
 
@@ -345,7 +345,7 @@ class PodcastCategory(PodcastBaseHandler):
 
         entries = provider.get_catalog_entries(book_ids, site_url, token=token)
         title = f"{self._get_site_title()} - 分类：{name}"
-        self.render_book_list(title, f"分类「{name}」下的有声书", entries)
+        self.render_book_list(title, f"分类「{name}」下的有声书", entries, token)
 
 
 class PodcastTag(PodcastBaseHandler):
@@ -374,7 +374,7 @@ class PodcastTag(PodcastBaseHandler):
 
         entries = provider.get_catalog_entries(book_ids, site_url, token=token)
         title = f"{self._get_site_title()} - 标签：{name}"
-        self.render_book_list(title, f"标签「{name}」下的有声书", entries)
+        self.render_book_list(title, f"标签「{name}」下的有声书", entries, token)
 
 
 class PodcastAuthor(PodcastBaseHandler):
@@ -403,7 +403,7 @@ class PodcastAuthor(PodcastBaseHandler):
 
         entries = provider.get_catalog_entries(book_ids, site_url, token=token)
         title = f"{self._get_site_title()} - 作者：{name}"
-        self.render_book_list(title, f"作者「{name}」的有声书", entries)
+        self.render_book_list(title, f"作者「{name}」的有声书", entries, token)
 
 
 # ------------------------------------------------------------------
@@ -436,9 +436,7 @@ class PodcastTokenBook(PodcastBaseHandler):
         if not episodes:
             raise web.HTTPError(404, reason="No audio files found for this book")
 
-        feed_xml = build_book_feed(
-            book_info, episodes, site_url, site_title=self._get_site_title()
-        )
+        feed_xml = build_book_feed(book_info, episodes, site_url, site_title=self._get_site_title(), token=token)
         self.set_rss_headers()
         self.write(feed_xml)
 
@@ -477,6 +475,9 @@ class PodcastTokenIndex(PodcastBaseHandler):
                         authors_str = ", ".join(book.get("authors", [])) or "未知作者"
                         book_title = book.get("title", "未知书名")
                         feed_url = book.get("feed_url", "")
+                        if token:
+                            feed_url = feed_url + f"?token={token}"
+
                         html.append("<li>")
                         html.append(
                             f'<strong>{book_title}</strong> <span class="book-meta">({authors_str})</span>'

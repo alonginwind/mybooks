@@ -97,10 +97,10 @@ class MonitorService:
         self._monitor_thread.start()
         self._scheduler_thread.start()
 
-        logging.info("[Monitor] 已启动，监听目录: %s", watch_path)
+        logging.info("[Monitor] started，target folder: %s", watch_path)
         logging.info(
-            "[Monitor] 注意: inotify 对 NFS/bind-mount 挂载点内部事件不可见，"
-            "如有此类子目录请留意此限制。"
+            "[Monitor] Noted: inotify 对 NFS/bind-mount 挂载点内部事件不可见，"
+            "如有此类子目录请 留意此限制。"
         )
 
     def stop(self) -> None:

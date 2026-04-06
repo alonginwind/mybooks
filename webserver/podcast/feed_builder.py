@@ -8,6 +8,7 @@ Each audiobook is represented as a podcast channel with chapters as episodes.
 
 import datetime
 import hashlib
+import logging
 import re
 import xml.etree.ElementTree as ET
 
@@ -83,7 +84,7 @@ def _make_guid(book_id, episode_index=None):
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
 
 
-def build_book_feed(book_info, episodes, site_url, site_title="Talebook"):
+def build_book_feed(book_info, episodes, site_url, site_title="Talebook", token=None):
     """
     Build an RSS 2.0 podcast feed for a single audiobook.
 
@@ -95,6 +96,7 @@ def build_book_feed(book_info, episodes, site_url, site_title="Talebook"):
     Returns:
         XML bytes of the RSS 2.0 feed
     """
+    logging.info(f"Build feed for book {book_info['id']} with {len(episodes)} episodes, token:{token if token is not None else 'None'}")
     rss = ET.Element(
         "rss",
         {
@@ -126,6 +128,8 @@ def build_book_feed(book_info, episodes, site_url, site_title="Talebook"):
     # Cover image
     cover_url = book_info.get("cover_url", "")
     if cover_url:
+        if token:
+            cover_url = cover_url + f"?token={token}"
         ET.SubElement(channel, f"{{{ITUNES_NS}}}image", {"href": cover_url})
         image = ET.SubElement(channel, "image")
         ET.SubElement(image, "url").text = cover_url
@@ -155,7 +159,7 @@ def build_book_feed(book_info, episodes, site_url, site_title="Talebook"):
             item,
             "enclosure",
             {
-                "url": ep["url"],
+                "url": ep["url"] if token is None else ep["url"] + f"?token={token}",
                 "length": str(ep.get("size", 0)),
                 "type": "audio/mpeg",
             },
