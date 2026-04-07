@@ -446,6 +446,7 @@ class AdminSettings(BaseHandler):
             "IMPORT_BY_INOTIFY",
             "IMPORT_CATEGORY_WITH_FOLDER",
             "UPDATE_CATEGORY_WITH_FOLDER_RENAME",
+            "LOG_LEVEL_DEBUG",
         ]
 
         current_icon = CONF.get(

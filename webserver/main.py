@@ -554,6 +554,7 @@ def get_upload_size():
 
 def setup_logging():
     logger = logging.getLogger()
+    log_level = logging.DEBUG if CONF.get("LOG_LEVEL_DEBUG", False) else logging.INFO
     if options.log_file_prefix:
         # remove tornado default file handler to avoid duplicate logs
         logger.handlers = [
@@ -562,9 +563,11 @@ def setup_logging():
         file_handler = RotatingFileHandler(
             options.log_file_prefix, maxBytes=5 * 1024 * 1024, backupCount=5
         )
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(log_level)
         file_handler.setFormatter(tornado.log.LogFormatter())
         logger.addHandler(file_handler)
+    logger.setLevel(log_level)
+    logging.debug("**Debug logging is enabled.**")
 
 
 def main():
@@ -572,7 +575,7 @@ def main():
     setup_logging()
 
     # 配置异步 HTTP 客户端的最大连接数
-    AsyncHTTPClient.configure(None, max_clients=100)
+    AsyncHTTPClient.configure(None, max_clients=200)
 
     try:
         app = make_app()
@@ -582,6 +585,7 @@ def main():
         sys.exit(1)
 
     logging.info("Starting server...")
+    logging.debug("Max upload size set to: %d bytes", get_upload_size())
     http_server = tornado.httpserver.HTTPServer(
         app, xheaders=True, max_buffer_size=get_upload_size()
     )

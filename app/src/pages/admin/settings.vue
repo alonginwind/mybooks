@@ -998,6 +998,12 @@ export default {
             type: "checkbox",
           },
           {
+            icon: "mdi-archive-cog-outline",
+            key: "LOG_LEVEL_DEBUG",
+            label: "settings.enable_debug_logging",
+            type: "checkbox",
+          },
+          {
             icon: "mdi-math-log",
             key: "ENABLE_AUDIO_CONVERSION_LOG",
             label: "settings.enable_audio_conversion_log",
