@@ -16,6 +16,8 @@ An enhanced personal books management webserver built on Calibre + Vue, beautifu
 
 ### 项目介绍
 poxenstudio/talebook增加的特性包括:
+* 支持监听导入目录并自动导入新书
+* 支持提供Podcast服务，让书库变播客
 * 支持以WebDAV连接及数据同步
 * 支持推送到支持Wifi传书的设备及Kindle上
 * 支持自定义分类
@@ -113,6 +115,8 @@ WebDAV URL地址: `http://<ip or domain>:<port>/books`
 }
 ```
 
+## 使用Talebook Skill操作书库
+详情见[Talebook Skill](https://clawhub.ai/poxenstudio/talebook)。
 
 ## 常见问题
 
@@ -128,9 +132,6 @@ NAS安装指南：请参考网友们的帖子：[帖子1](https://post.smzdm.com
 ## 贡献者
 [![](https://contrib.rocks/image?repo=PoxenStudio/talebook)](https://github.com/PoxenStudio/talebook/graphs/contributors)
 
-
-## 演示
-[Demo站点（密码 admin/demodemo ）](http://demo.talebook.org)
 
 ## 项目首页
 [PoxenStudio Talebook](https://mybooks.top)
