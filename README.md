@@ -54,11 +54,6 @@ poxenstudio/talebook增加的特性包括:
 ![Talebook](document/gongzhonghao_talebook.jpg)
 
 
-## 版本
-* 待开发
-    1. 支持信息共享及AI协助的功能。是一个大的修改，会分成几步完成。
-    2. 增加文件的加密处理。可以帮助解决私有化部署场景下平台扫描导致的文件无法使用的问题。
-    3. 带水印导出epub (待定)
 ## Docker ![Docker Pulls](https://img.shields.io/docker/pulls/poxenstudio/talebook.svg)
 
 部署比较简单，建议采用docker，镜像地址：[dockerhub](https://hub.docker.com/r/poxenstudio/talebook)
@@ -72,14 +67,11 @@ wget https://raw.githubusercontent.com/PoxenStudio/talebook/master/docker-compos
 docker-compose -f docker-compose.yml  up -d
 ```
 
-
 如果使用原生docker，那么执行命令：
-
 `docker run -d --name talebook -p <本机端口>:80 -v <本机data目录>:/data poxenstudio/talebook`
 
 
 例如
-
 `docker run -d --name talebook -p 8080:80 -v /tmp/demo:/data poxenstudio/talebook`
 
 ## 使用WebDAV连接

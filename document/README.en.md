@@ -59,13 +59,6 @@ WeChat public account: Talebook
 ![Talebook](gongzhonghao_talebook.jpg)
 
 
-## Roadmap
-* In planning
-        1. Information sharing and AI-assisted capabilities (large change, will be delivered incrementally).
-        2. File encryption for private deployments (mitigate file usability issues caused by platform scans).
-        3. EPUB export with watermark (TBD).
-
-
 ## Docker ![Docker Pulls](https://img.shields.io/docker/pulls/poxenstudio/talebook.svg)
 
 Deployment is straightforward. Docker is recommended.
