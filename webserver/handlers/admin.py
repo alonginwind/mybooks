@@ -280,8 +280,9 @@ TITLE_TEMPLATE="%%s | %(site_title)s"
 """
             % CONF
         )
-        logging.info("google_analytics_id is %s" % CONF.get("google_analytics_id", ""))
+
         if len(CONF.get("google_analytics_id", "").strip()) > 0:
+            logging.debug("google_analytics_id is %s" % CONF.get("google_analytics_id", ""))
             nuxtjs_env += "GOOGLE_ANALYTICS_ID=%s\n" % CONF["google_analytics_id"]
 
         with open(CONF["nuxt_env_path"], "w") as f:

@@ -759,6 +759,43 @@
         "taskTypeAIFill": "AI Update Info",
         "taskTypeTitleSortUpdate": "Update Pinyin Title Sort"
     },
+    "language": {
+        "zh": "简体中文",
+        "en": "English"
+    },
+    "device": {
+        "duokan": "Duokan Reader",
+        "ireader": "iReader",
+        "hanwang": "Hanwang Reader",
+        "boox": "Boox Reader",
+        "dangdang": "Dangdang Reader"
+    },
+    "voice": {
+        "xiaobei": "Female | Xiaobei (Liaoning)",
+        "xiaoxiao": "Female | Xiaoxiao",
+        "xiaoyi": "Female | Xiaoyi",
+        "xiaojia": "Female | Xiaojia (Hong Kong)",
+        "yunjian": "Male | Yunjian",
+        "yunxi": "Male | Yunxi",
+        "yunyang": "Male | Yunyang",
+        "yunlong": "Male | Yunlong (Hong Kong)"
+    },
+    "message": {
+        "unclassified": "Unclassified",
+        "willSendFormat": "Will send {format} format",
+        "favorited": "Added to favorites",
+        "unfavorited": "Removed from favorites",
+        "operationFailed": "Operation failed",
+        "networkError": "Network error, please try again later",
+        "addedToWants": "Added to want-to-read list",
+        "removedFromWants": "Removed from want-to-read list",
+        "setToReading": "Set to reading status",
+        "markedAsRead": "Marked as read",
+        "settingSuccess": "Setting successful!",
+        "success": "Success",
+        "audioLoadFailed": "Audio file loading failed",
+        "audioPlayFailed": "Audio playback failed"
+    },
     "bookCards": {
         "browseDetails": "Click to browse details"
     },

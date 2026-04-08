@@ -766,6 +766,43 @@
         "taskTypeAIFill": "AI更新信息",
         "taskTypeTitleSortUpdate": "更新书名排序信息"
     },
+    "language": {
+        "zh": "简体中文",
+        "en": "English"
+    },
+    "device": {
+        "duokan": "多看阅读器",
+        "ireader": "掌阅",
+        "hanwang": "汉王",
+        "boox": "文石Boox",
+        "dangdang": "当当阅读器"
+    },
+    "voice": {
+        "xiaobei": "女声 | 晓北（辽宁）",
+        "xiaoxiao": "女声 | 晓晓",
+        "xiaoyi": "女声 | 晓伊",
+        "xiaojia": "女声 | 晓佳（香港）",
+        "yunjian": "男声 | 云健",
+        "yunxi": "男声 | 云希",
+        "yunyang": "男声 | 云扬",
+        "yunlong": "男声 | 云龙（香港）"
+    },
+    "message": {
+        "unclassified": "未分类",
+        "willSendFormat": "将发送 {format} 格式",
+        "favorited": "已收藏",
+        "unfavorited": "已取消收藏",
+        "operationFailed": "操作失败",
+        "networkError": "网络错误，请稍后重试",
+        "addedToWants": "已添加到待读清单",
+        "removedFromWants": "已从待读清单中移除",
+        "setToReading": "已设置为在读状态",
+        "markedAsRead": "已标记为读完",
+        "settingSuccess": "设置成功！",
+        "success": "设置成功",
+        "audioLoadFailed": "音频文件加载失败",
+        "audioPlayFailed": "音频播放失败"
+    },
     "bookCards": {
         "browseDetails": "点击浏览详情"
     },

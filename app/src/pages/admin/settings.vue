@@ -591,8 +591,8 @@ export default {
             label: "settings.language_switch",
             type: "select",
             items: [
-              { text: "简体中文", value: "zh" },
-              { text: "English", value: "en" },
+              { text: this.$t('language.zh'), value: "zh" },
+              { text: this.$t('language.en'), value: "en" },
             ],
           },
           {

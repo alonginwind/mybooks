@@ -493,7 +493,7 @@
                                     <template v-slot:activator="{ on, attrs }">
                                         <v-chip rounded smallF color="green" class="white--text" v-bind="attrs" v-on="on" :disabled="categories.length === 0">
                                             <v-icon>category</v-icon>
-                                            {{ $t('book.category') }} : {{ book.category || '未分类' }}
+                                            {{ $t('book.category') }} : {{ book.category || $t('message.unclassified') }}
                                             <v-icon color="white" class="ml-1">edit</v-icon>
                                         </v-chip>
                                     </template>
@@ -962,7 +962,7 @@
                 <p class="mb-4">
                     {{ $t('book.selectDevice') }}:
                     <span class="caption grey--text">
-                        (将发送 {{ selectedFormat }} 格式)
+                        ({{ $t('message.willSendFormat', { format: selectedFormat }) }})
                     </span>
                 </p>
                 <v-radio-group v-model="selectedDeviceOption">
@@ -1385,11 +1385,11 @@ export default {
             port: ''
         },
         deviceTypes: [
-            { text: '多看阅读器', value: 'duokan' },
-            { text: '掌阅', value: 'ireader' },
-            { text: '汉王', value: 'hanwang' },
-            { text: '文石Boox', value: 'boox' },
-            { text: '当当阅读器', value: 'dangdang' },
+            { text: this.$t('device.duokan'), value: 'duokan' },
+            { text: this.$t('device.ireader'), value: 'ireader' },
+            { text: this.$t('device.hanwang'), value: 'hanwang' },
+            { text: this.$t('device.boox'), value: 'boox' },
+            { text: this.$t('device.dangdang'), value: 'dangdang' },
             { text: 'Kindle', value: 'kindle' },
             { text: 'PureLibro', value: 'purelibro' },
         ],
@@ -1429,49 +1429,49 @@ export default {
         voice_options: [
             {
                 voice_name: "zh-CN-liaoning-XiaobeiNeural",
-                display_name: "女声 | 晓北（辽宁）",
+                display_name: this.$t('voice.xiaobei'),
                 gender: "female",
                 sample_file: "female/zh-CN-liaoning-XiaobeiNeural.mp3"
             },
             {
                 voice_name: "zh-CN-XiaoxiaoNeural",
-                display_name: "女声 | 晓晓",
+                display_name: this.$t('voice.xiaoxiao'),
                 gender: "female",
                 sample_file: "female/zh-CN-XiaoxiaoNeural.mp3"
             },
             {
                 voice_name: "zh-CN-XiaoyiNeural",
-                display_name: "女声 | 晓伊",
+                display_name: this.$t('voice.xiaoyi'),
                 gender: "female",
                 sample_file: "female/zh-CN-XiaoyiNeural.mp3"
             },
             {
                 voice_name: "zh-HK-HiuGaaiNeural",
-                display_name: "女声 | 晓佳（香港）",
+                display_name: this.$t('voice.xiaojia'),
                 gender: "female",
                 sample_file: "female/zh-HK-HiuGaaiNeural.mp3"
             },
             {
                 voice_name: "zh-CN-YunjianNeural",
-                display_name: "男声 | 云健",
+                display_name: this.$t('voice.yunjian'),
                 gender: "male",
                 sample_file: "male/zh-CN-YunjianNeural.mp3"
             },
             {
                 voice_name: "zh-CN-YunxiNeural",
-                display_name: "男声 | 云希",
+                display_name: this.$t('voice.yunxi'),
                 gender: "male",
                 sample_file: "male/zh-CN-YunxiNeural.mp3"
             },
             {
                 voice_name: "zh-CN-YunyangNeural",
-                display_name: "男声 | 云扬",
+                display_name: this.$t('voice.yunyang'),
                 gender: "male",
                 sample_file: "male/zh-CN-YunyangNeural.mp3"
             },
             {
                 voice_name: "zh-HK-WanLungNeural",
-                display_name: "男声 | 云龙（香港）",
+                display_name: this.$t('voice.yunlong'),
                 gender: "male",
                 sample_file: "male/zh-HK-WanLungNeural.mp3"
             }
@@ -1627,14 +1627,14 @@ export default {
                     this.book.state.favorite_date = newFavoriteStatus ? new Date().toISOString() : null;
 
                     // 显示成功提示
-                    const message = newFavoriteStatus ? '已收藏' : '已取消收藏';
+                    const message = newFavoriteStatus ? this.$t('message.favorited') : this.$t('message.unfavorited');
                     this.$alert('success', message);
                 } else {
-                    this.$alert('error', response.msg || '操作失败');
+                    this.$alert('error', response.msg || this.$t('message.operationFailed'));
                 }
             } catch (error) {
                 console.error('收藏操作失败:', error);
-                this.$alert('error', '网络错误，请稍后重试');
+                this.$alert('error', this.$t('message.networkError'));
             } finally {
                 this.favoriteLoading = false;
             }
@@ -1659,14 +1659,14 @@ export default {
                     this.book.state.wants_date = newWantsStatus ? new Date().toISOString() : null;
 
                     // 显示成功提示
-                    const message = newWantsStatus ? '已添加到待读清单' : '已从待读清单中移除';
+                    const message = newWantsStatus ? this.$t('message.addedToWants') : this.$t('message.removedFromWants');
                     this.$alert('success', message);
                 } else {
-                    this.$alert('error', response.msg || '操作失败');
+                    this.$alert('error', response.msg || this.$t('message.operationFailed'));
                 }
             } catch (error) {
                 console.error('待读操作失败:', error);
-                this.$alert('error', '网络错误，请稍后重试');
+                this.$alert('error', this.$t('message.networkError'));
             } finally {
                 this.wantsLoading = false;
             }
@@ -1683,11 +1683,11 @@ export default {
                 if (!this.book.state || this.book.state.read_state === this.READING_STATE.UNREAD || this.book.state.read_state === this.READING_STATE.FINISHED) {
                     // 未读或已读完 -> 设为在读
                     newReadState = this.READING_STATE.READING;
-                    successMessage = '已设置为在读状态';
+                    successMessage = this.$t('message.setToReading');
                 } else if (this.book.state.read_state === this.READING_STATE.READING) {
                     // 在读 -> 设为读完
                     newReadState = this.READING_STATE.FINISHED;
-                    successMessage = '已标记为读完';
+                    successMessage = this.$t('message.markedAsRead');
                 }
 
                 const response = await this.$backend(`/book/${this.book.id}/readstate`, {
@@ -1709,11 +1709,11 @@ export default {
                     // 显示成功提示
                     this.$alert('success', successMessage);
                 } else {
-                    this.$alert('error', response.msg || '操作失败');
+                    this.$alert('error', response.msg || this.$t('message.operationFailed'));
                 }
             } catch (error) {
                 console.error('设置阅读状态失败:', error);
-                this.$alert('error', '网络错误，请稍后重试');
+                this.$alert('error', this.$t('message.networkError'));
             } finally {
                 this.readingStateLoading = false;
             }
@@ -1850,7 +1850,7 @@ export default {
                 if (rsp.err === "ok") {
                     this.$router.push("/book/" + this.book.id);
                     location.reload();
-                    this.$alert("success", "设置成功！");
+                    this.$alert("success", this.$t('message.settingSuccess'));
                 } else {
                     this.$alert("error", rsp.msg);
                 }
@@ -1938,7 +1938,7 @@ export default {
                 method: "POST",
             }).then((rsp) => {
                 if (rsp.err === "ok") {
-                    this.$alert("success", "设置成功");
+                    this.$alert("success", this.$t('message.success'));
                     this.$router.push("/book/" + this.book.id);
                     location.reload();
                 } else {
@@ -2100,7 +2100,7 @@ export default {
                 method: "POST",
             }).then((rsp) => {
                 if (rsp.err === "ok") {
-                    this.$alert("success", "删除成功");
+                    this.$alert("success", this.$t('message.success'));
                     this.$router.push("/");
                 } else {
                     this.$alert("error", rsp.msg);
@@ -2132,13 +2132,13 @@ export default {
             this.currentAudio.addEventListener('error', () => {
                 this.playing_sample = null;
                 this.currentAudio = null;
-                this.$alert("error", "音频文件加载失败");
+                this.$alert("error", this.$t('message.audioLoadFailed'));
             });
 
             this.currentAudio.play().catch(() => {
                 this.playing_sample = null;
                 this.currentAudio = null;
-                this.$alert("error", "音频播放失败");
+                this.$alert("error", this.$t('message.audioPlayFailed'));
             });
         },
         stop_current_audio() {
@@ -2190,7 +2190,7 @@ export default {
 
             this.currentAudioFile.addEventListener('error', () => {
                 this.stop_audio_file_playback();
-                this.$alert("error", "音频文件加载失败");
+                this.$alert("error", this.$t('message.audioLoadFailed'));
             });
 
             // Start playback
@@ -2199,7 +2199,7 @@ export default {
                 this.audio_paused = false;
             }).catch(() => {
                 this.stop_audio_file_playback();
-                this.$alert("error", "音频播放失败");
+                this.$alert("error", this.$t('message.audioPlayFailed'));
             });
         },
         stop_audio_file_playback() {
@@ -2273,11 +2273,11 @@ export default {
                         this.audios = {count: 0, files: [], status: "unavailable"};
                     }
                 } else {
-                    this.$alert("error", response.msg || "操作失败");
+                    this.$alert("error", response.msg || this.$t('message.operationFailed'));
                 }
             } catch (error) {
                 console.error('Failed to clear conversion:', error);
-                this.$alert("error", "操作失败，请稍后重试");
+                this.$alert("error", this.$t('message.operationFailed'));
             }
         },
         uploadCover() {
@@ -2524,7 +2524,7 @@ export default {
                 }
             } catch (error) {
                 console.error('更新分类失败:', error);
-                this.$alert('error', '网络错误，请稍后重试');
+                this.$alert('error', this.$t('message.networkError'));
             }
         },
 
