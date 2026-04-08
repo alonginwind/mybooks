@@ -13,7 +13,7 @@ import threading
 import time
 import traceback
 import uuid
-from webserver.i18n import _
+from webserver.i18n import _, normalize_language
 from sqlalchemy import func, extract
 
 import tornado
@@ -38,6 +38,7 @@ from webserver.constants import (
     BOOK_TYPE_EBOOK,
     ENABLE_OPDS_SERVICE,
 )
+from webserver.i18n import apply_localized_default_settings
 
 CONF = loader.get_settings()
 USER_UPDATE_TS_MAP = {}
@@ -522,6 +523,7 @@ class AdminInstall(BaseHandler):
         code = self.get_argument("code", "").strip()
         email = self.get_argument("email", "").strip().lower()
         title = self.get_argument("title", "").strip()
+        language = self.get_argument("language", "").strip().lower()
         invite = self.get_argument("invite", "").strip()
         username = self.get_argument("username", "").strip().lower()
         password = self.get_argument("password", "").strip()
@@ -584,11 +586,15 @@ class AdminInstall(BaseHandler):
         # set a random secret
         args["cookie_secret"] = "%s" % uuid.uuid1()
         args["site_title"] = title
+        lang = normalize_language(language)
+        args["site_language"] = lang if lang in ("zh", "en") else "zh"
         if invite == "true" and code:
             args["INVITE_MODE"] = True
             args["INVITE_CODE"] = code
         else:
             args["INVITE_MODE"] = False
+
+        apply_localized_default_settings(args, args["site_language"])
 
         logic = SettingsSaverLogic()
         return logic.save_extra_settings(args)

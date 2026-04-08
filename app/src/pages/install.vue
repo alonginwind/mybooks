@@ -9,6 +9,14 @@
                     <v-form ref="form" @submit.prevent="do_intall">
                         <v-text-field required prepend-icon="home" v-model="title" :label="$t('install.siteTitle')"
                             type="text"></v-text-field>
+                        <v-select
+                            prepend-icon="language"
+                            v-model="language"
+                            :items="languageOptions"
+                            item-text="text"
+                            item-value="value"
+                            :label="$t('install.defaultLanguage')"
+                        ></v-select>
                         <v-text-field required prepend-icon="person" v-model="username" :label="$t('install.adminUsername')" type="text"
                             autocomplete="new-username" :rules="[rules.user]"></v-text-field>
                         <v-text-field required prepend-icon="lock" v-model="password" :label="$t('install.adminPassword')" type="text"
@@ -43,6 +51,7 @@ export default {
         email: "",
         code: "",
         invite: false,
+        language: "zh",
         title: "TaleBook",
         tips: "",
         retry: 20,
@@ -65,6 +74,7 @@ export default {
             return re.test(email) || this.$t('install.invalidEmail');
         };
         this.$store.commit("navbar", false);
+        this.language = this.getDefaultLanguage();
         // 为body添加install-page类名，应用背景图样式
         if (process.client) {
             document.body.classList.add('install-page');
@@ -76,6 +86,18 @@ export default {
             document.body.classList.remove('install-page');
         }    },
     methods: {
+        getDefaultLanguage() {
+            // Prefer current UI locale, then browser locale; support zh/en only.
+            const locale = ((this.$i18n && this.$i18n.locale) || "").toLowerCase();
+            if (locale.startsWith("en")) return "en";
+            if (locale.startsWith("zh")) return "zh";
+
+            if (process.client && navigator.language) {
+                const navLang = String(navigator.language).toLowerCase();
+                if (navLang.startsWith("en")) return "en";
+            }
+            return "zh";
+        },
         check_install: function () {
             fetch("/api/index").then(rsp => {
                 if (rsp.status == 200) {
@@ -115,6 +137,7 @@ export default {
             data.append('code', this.code);
             data.append('invite', this.invite);
             data.append('title', this.title);
+            data.append('language', this.language);
             this.tips = this.$t('install.writingConfig');
             this.$backend('/admin/install', {
                 method: 'POST',
@@ -132,6 +155,14 @@ export default {
                         }, 5000);
                     }
                 });
+        },
+    },
+    computed: {
+        languageOptions() {
+            return [
+                { text: this.$t('install.languageChinese'), value: 'zh' },
+                { text: this.$t('install.languageEnglish'), value: 'en' },
+            ];
         },
     },
 }

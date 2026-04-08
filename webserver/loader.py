@@ -46,7 +46,6 @@ class SettingsLoader(dict):
 
         try:
             import manual
-
             self.update(manual.settings)
         except:
             pass

@@ -2,6 +2,9 @@
     "install": {
         "title": "Install TaleBook",
         "siteTitle": "Site Title",
+        "defaultLanguage": "Default Language",
+        "languageChinese": "Chinese",
+        "languageEnglish": "English",
         "adminUsername": "Admin Username",
         "adminPassword": "Admin Login Password",
         "adminEmail": "Admin Email",
