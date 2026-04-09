@@ -1067,11 +1067,12 @@ class ListHandler(BaseHandler):
     ):
         """Get a list of books."""
         start = self.get_argument_start()
+        max_size = CONF.get("DEFAULT_PAGE_SIZE", 60)
         try:
             size = int(self.get_argument("size"))
         except:
             size = int(CONF.get("DEFAULT_PAGE_SIZE", 60))
-        delta = min(max(size, 60), 100)
+        delta = min(max(size, 60), max_size)
 
         if ids:
             ids = list(ids)
