@@ -274,6 +274,8 @@ class MonitorService:
                             # Try to add watch again
                             logging.info("[Monitor] add watch for %s", full_path)
                             self._add_watch_recursive(full_path)
+                    if not is_dir:
+                        self._on_file_event(full_path)
                     continue
 
                 if (mask & (CREATE_MASK | CLOSE_WRITE_MASK)) and not is_dir:
