@@ -36,7 +36,7 @@ from webserver.services.convert import ConvertService
 from webserver.services.extract import ExtractService
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, ListHandler, auth, js
-from webserver.models import Item, ReadingState, ScanFile
+from webserver.models import Item, ReadingState
 from webserver.plugins.meta import baike, douban, youshu, xhsd
 from webserver.plugins.meta.calibre import CalibreMetadataApi
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
