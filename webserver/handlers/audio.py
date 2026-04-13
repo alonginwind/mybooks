@@ -79,8 +79,7 @@ class AudioBooksCache:
         """判断是否需要更新缓存"""
         current_time = time.time()
         return (
-            cls._need_update
-            or (current_time - cls._last_update_time) > AUDIO_CACHE_EXPIRE_SECONDS
+            cls._need_update or (current_time - cls._last_update_time) > AUDIO_CACHE_EXPIRE_SECONDS
         )
 
     @classmethod

@@ -269,11 +269,11 @@ class BookBarnService(AsyncService):
                 if latest_release is not None:
                     logging.info(f"[BARN]New version available: {latest_release['rev']}, released on {latest_release['date']}")
                     if self.admin_uids is None or len(self.admin_uids) == 0:
-                        admin_uids = self.get_admin_uids()
-                    if len(admin_uids) > 0:
+                        self.get_admin_uids()
+                    if len(self.admin_uids) > 0:
                         message = f"有新版本发布: {latest_release['rev']}，发布日期: {latest_release['date']}，\
                                     更新内容: {latest_release['notes']}，请重新构建容器以获取更新。"
-                        for uid in admin_uids:
+                        for uid in self.admin_uids:
                             self.add_msg(uid, "info", message)
 
             if not CONF.get("ENABLE_BOOKBARN", False) or not CONF.get("ENABLE_RECEIVING_BOOKS", False):
@@ -310,9 +310,9 @@ class BookBarnService(AsyncService):
                 if not token_invalid_message:
                     token_invalid_message = True
                     if self.admin_uids is None or len(self.admin_uids) == 0:
-                        admin_uids = self.get_admin_uids()
-                    if len(admin_uids) > 0:
-                        for uid in admin_uids:
+                        self.get_admin_uids()
+                    if len(self.admin_uids) > 0:
+                        for uid in self.admin_uids:
                             self.add_msg(uid, "error", _(f"[书栈]书栈Token无效, 加入taleboook公众号私信管理员或者更新Token! 错误信息: {err}"))
                 time.sleep(30 * 60)
                 continue
