@@ -648,6 +648,7 @@
         "extended_features": "擴充功能",
         "enable_stamp_feature": "啟用封面加蓋圖章功能",
         "stamp_image_hint": "支援 PNG 格式，圖片尺寸不超過 480x480 像素，檔案大小不超過 128KB。建議使用帶透明背景的 PNG 圖片以獲得更好的效果。",
+        "stamp_image_label": "圖章圖片",
         "stamp_position_label": "圖章位置",
         "stamp_upload_success": "圖章圖片上傳成功",
         "stamp_image_format_error": "只支援 PNG 格式的圖片",

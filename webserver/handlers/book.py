@@ -2767,54 +2767,51 @@ class BookAddStamp(BaseHandler):
         """为书籍封面加盖图章"""
         book_id = int(bid)
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": "Permission denied"}
-        
+            return {"err": "user.no_permission", "msg": _(u"无权限，非管理员或书籍所有者无法操作")}
+
         # 检查功能是否启用
         if not CONF.get("ENABLE_STAMP_FEATURE", False):
-            return {"err": "feature.disabled", "msg": "Stamp feature is not enabled"}
-        
+            return {"err": "feature.disabled", "msg": _("图章功能未启用")}
+
         # 检查图章文件是否存在
         stamp_path = os.path.join(CONF["static_path"], "logo", "stamp.png")
         if not os.path.exists(stamp_path):
-            return {"err": "stamp.not_found", "msg": "Stamp file not found"}
-        
+            return {"err": "stamp.not_found", "msg": _("图章文件不存在，请先在设置中上传图章图片")}
+
         # 获取书籍信息
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "book.not_found", "msg": "Book not found"}
-        
+            return {"err": "book.not_found", "msg": _("书籍不存在")}
+
         # 检查是否有支持的格式
         supported_formats = []
         for f in ["epub", "azw3", "pdf"]:
             fmt_key = f"fmt_{f}"
             if fmt_key in book:
                 supported_formats.append(f)
-        
+
         if not supported_formats:
             return {
                 "err": "format.not_supported",
-                "msg": "No supported format (EPUB, AZW3 or PDF required)",
+                "msg": _("书籍没有支持的格式（需要 EPUB、AZW3 或 PDF）"),
             }
-        
+
         try:
             # 获取当前封面
             cover_data = self.calibre_db.cover(book_id, index_is_id=True)
             if not cover_data:
-                return {"err": "cover.not_found", "msg": "Book cover not found"}
-            
+                return {"err": "cover.not_found", "msg": _("书籍没有封面")}
+
             # 获取图章位置
             stamp_position = CONF.get("STAMP_POSITION", "bottom-right")
-            
+
             # 使用ImageHelper添加图章
             from webserver.utils import ImageHelper
             helper = ImageHelper()
             new_cover_data = helper.add_stamp_to_image(cover_data, stamp_path, stamp_position)
             if not new_cover_data:
-                return {"err": "stamp.failed", "msg": "Failed to add stamp"}
-            
-            # 更新封面到数据库
-            self.calibre_db.set_cover(book_id, new_cover_data)
-            
+                return {"err": "stamp.failed", "msg": _("添加图章失败")}
+
             # 更新元数据到文件
             result = self.save_book_meta(book_id)
             if result.get("err") != "ok":
@@ -2822,15 +2819,21 @@ class BookAddStamp(BaseHandler):
                 logging.warning(f"Failed to save metadata to file: {result.get('msg')}")
                 return {
                     "err": "ok",
-                    "msg": f"Stamp added but failed to save to file: {result.get('msg', '')}",
+                    "msg": _("图章已添加到封面，但保存到文件时部分失败: %s") % result.get("msg", ""),
                 }
-            
-            return {"err": "ok", "msg": "Stamp added to cover successfully"}
-            
+
+            return {"err": "ok", "msg": _("图章已成功添加到封面")}
+
         except Exception as e:
             logging.error(f"Error adding stamp to cover: {e}")
             logging.error(traceback.format_exc())
-            return {"err": "error", "msg": f"Error adding stamp: {str(e)}"}
+            return {"err": "error", "msg": _("添加图章时发生错误: %s") % str(e)}
+
+
+class ClearRareTags(ListHandler):
+    @js
+    @auth
+    def post(self):
         """清理稀少标签, 对少于3本书的标签所对应的书籍重新更新标签"""
         if not self.is_admin():
             return {"err": "user.not_admin", "msg": _(u"无权限")}

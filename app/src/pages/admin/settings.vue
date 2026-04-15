@@ -504,8 +504,9 @@
                 :label="$t('settings.enable_stamp_feature')"
               ></v-checkbox>
               <div v-if="settings['ENABLE_STAMP_FEATURE']" style="margin-top: 16px;">
-                <v-row align="center">
+                <v-row align="top">
                   <v-col cols="12" sm="6">
+                    <p class="mb-2">{{ $t('settings.stamp_image_label') }}</p>
                     <div style="position: relative; width: 200px; height: 200px;">
                       <v-img
                         :src="stampPreviewUrl"
@@ -531,7 +532,7 @@
                         fab
                         small
                         color="primary"
-                        @click="$refs.stampFileInput.click()"
+                        @click="openStampFileDialog"
                         style="margin: 8px;"
                       >
                         <v-icon>mdi-upload</v-icon>
@@ -1448,6 +1449,16 @@ export default {
       // 加载图章预览图片
       const timestamp = new Date().getTime();
       this.stampPreviewUrl = `${this.site_url}/logo/stamp.png?t=${timestamp}`;
+    },
+    openStampFileDialog() {
+      // 处理ref可能是数组的情况（在v-for中）
+      const input = this.$refs.stampFileInput;
+      if (input) {
+        const element = Array.isArray(input) ? input[0] : input;
+        if (element && typeof element.click === 'function') {
+          element.click();
+        }
+      }
     },
   },
 };

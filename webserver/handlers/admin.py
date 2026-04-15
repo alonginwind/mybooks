@@ -1102,41 +1102,42 @@ class AdminStamp(BaseHandler):
     def get(self):
         """获取图章图片"""
         if not self.admin_user:
-            return {"err": "permission.not_admin", "msg": "Not admin user"}
-        
+            return {"err": "permission.not_admin", "msg": _("当前用户非管理员, 无权操作")}
+
         if not CONF.get("ENABLE_STAMP_FEATURE", False):
-            return {"err": "feature.disabled", "msg": "Stamp feature is not enabled"}
+            return {"err": "feature.disabled", "msg": _("图章功能未启用")}
+
+        stamp_path = os.path.join(CONF["static_path"], "logo", "stamp.png")
+        if os.path.exists(stamp_path):
+            return {"err": "ok", "exists": True}
+        return {"err": "ok", "exists": False}
 
     @auth
     def post(self):
         """上传图章图片"""
         if not self.admin_user:
             self.set_status(403)
-            return self.write({"err": "permission.not_admin", "msg": "Not admin user"})
-        
-        if not CONF.get("ENABLE_STAMP_FEATURE", False):
-            self.set_status(403)
-            return self.write({"err": "feature.disabled", "msg": "Stamp feature is not enabled"})
-        
+            return self.write({"err": "permission.not_admin", "msg": _("当前用户非管理员, 无权操作")})
+
         if 'file' not in self.request.files:
             self.set_status(400)
-            return self.write({"err": "params.missing", "msg": "File not found"})
-        
+            return self.write({"err": "params.missing", "msg": _("未找到上传的文件")})
+
         file_info = self.request.files['file'][0]
         filename = file_info['filename']
         content = file_info['body']
-        
+
         # 验证文件格式
         if not filename.lower().endswith('.png'):
             self.set_status(400)
-            return self.write({"err": "file.invalid_format", "msg": "Only PNG format is supported"})
-        
+            return self.write({"err": "file.invalid_format", "msg": _("只支持PNG格式的图片")})
+
         # 验证文件大小
         max_size = 128 * 1024  # 128KB
         if len(content) > max_size:
             self.set_status(400)
-            return self.write({"err": "file.too_large", "msg": "File size must not exceed 128KB"})
-        
+            return self.write({"err": "file.too_large", "msg": _("图片文件大小不能超过128KB")})
+
         # 验证图片尺寸
         try:
             from PIL import Image
@@ -1144,12 +1145,12 @@ class AdminStamp(BaseHandler):
             img = Image.open(io.BytesIO(content))
             if img.width > 480 or img.height > 480:
                 self.set_status(400)
-                return self.write({"err": "file.dimension_too_large", "msg": "Image dimensions must not exceed 480x480 pixels"})
+                return self.write({"err": "file.dimension_too_large", "msg": _("图片尺寸不能超过480x480像素")})
         except Exception as e:
             logging.error(f"Failed to validate image: {e}")
             self.set_status(400)
-            return self.write({"err": "file.invalid", "msg": "Invalid image file"})
-        
+            return self.write({"err": "file.invalid", "msg": _("无效的图片文件")})
+
         # 保存图片
         try:
             logo_dir = os.path.join(CONF["static_path"], "logo")
@@ -1157,12 +1158,17 @@ class AdminStamp(BaseHandler):
             stamp_path = os.path.join(logo_dir, "stamp.png")
             with open(stamp_path, 'wb') as f:
                 f.write(content)
-            
-            self.write({"err": "ok", "msg": "Stamp image uploaded successfully"})
+
+            self.write({"err": "ok", "msg": _("图章图片上传成功")})
         except Exception as e:
             logging.error(f"Failed to save stamp image: {e}")
             self.set_status(500)
-            self.write({"err": "file.save_failed", "msg": f"Failed to save image: {str(e)}"})
+            self.write({"err": "file.save_failed", "msg": _("保存图片失败: %s") % str(e)})
+
+
+class LibraryStats(BaseHandler):
+    _cache_data = None
+    _cache_time = 0
 
     def _get_stats(self):
         # 获取当前月份和年份
