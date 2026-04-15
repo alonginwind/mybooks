@@ -1156,10 +1156,10 @@ class AdminStamp(BaseHandler):
             logo_dir = os.path.join(CONF["static_path"], "logo")
             os.makedirs(logo_dir, exist_ok=True)
             stamp_path = os.path.join(logo_dir, "stamp.png")
-            with open(stamp_path, 'wb') as f:
+            stamp_path_abs = os.path.abspath(stamp_path)
+            with open(stamp_path_abs, 'wb+') as f:
                 f.write(content)
-
-            self.write({"err": "ok", "msg": _("图章图片上传成功")})
+            self.write({"err": "ok", "msg": _("图章图片上传成功"), "data": {"url": self.cdn_url + "/static/logo/stamp.png"}})
         except Exception as e:
             logging.error(f"Failed to save stamp image: {e}")
             self.set_status(500)

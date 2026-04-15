@@ -502,8 +502,9 @@
                 hide-details
                 v-model="settings['ENABLE_STAMP_FEATURE']"
                 :label="$t('settings.enable_stamp_feature')"
+                prepend-icon="mdi-picture-in-picture-bottom-right-outline"
               ></v-checkbox>
-              <div v-if="settings['ENABLE_STAMP_FEATURE']" style="margin-top: 16px;">
+              <div v-if="settings['ENABLE_STAMP_FEATURE']" style="margin-top: 16px; margin-left: 16px;">
                 <v-row align="top">
                   <v-col cols="12" sm="6">
                     <p class="mb-2">{{ $t('settings.stamp_image_label') }}</p>
@@ -548,22 +549,6 @@
                     <p class="text-caption mt-2">
                       {{ $t('settings.stamp_image_hint') }}
                     </p>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <p class="mb-2">{{ $t('settings.stamp_position_label') }}</p>
-                    <div style="display: inline-grid; grid-template-columns: repeat(3, 60px); grid-gap: 8px;">
-                      <v-btn
-                        v-for="pos in stampPositions"
-                        :key="pos.value"
-                        :color="settings['STAMP_POSITION'] === pos.value ? 'primary' : ''"
-                        @click="settings['STAMP_POSITION'] = pos.value"
-                        small
-                        outlined
-                        style="min-width: 60px; height: 60px;"
-                      >
-                        <v-icon small>{{ pos.icon }}</v-icon>
-                      </v-btn>
-                    </div>
                   </v-col>
                 </v-row>
               </div>

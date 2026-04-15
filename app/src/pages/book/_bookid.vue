@@ -282,8 +282,8 @@
                                     <v-icon>mdi-file-sync</v-icon>
                                     {{ $t('book.saveMetaToFile') }}
                                 </v-list-item>
-                                <v-list-item @click="add_stamp_to_cover" :disabled="!hasEpubAzw3OrPDF">
-                                    <v-icon>mdi-watermark</v-icon>
+                                <v-list-item @click="add_stamp_to_cover" :disabled="!hasEpubAzw3OrPDF || !stamp_enabled">
+                                    <v-icon>mdi-picture-in-picture-bottom-right-outline</v-icon>
                                     {{ $t('book.addStampToCover') }}
                                 </v-list-item>
                                 <v-list-item @click="convert_book" :disabled="!hasEBooks">
@@ -1078,6 +1078,49 @@
         </v-card>
     </v-dialog>
 
+    <!-- 图章位置选择对话框 -->
+    <v-dialog v-model="dialog_stamp_position" persistent max-width="500">
+        <v-card>
+            <v-card-title class="headline">
+                <v-icon class="mr-2">mdi-stamp</v-icon>
+                {{ $t('book.selectStampPosition') }}
+            </v-card-title>
+            <v-card-text>
+                <p class="mb-4">{{ $t('book.selectStampPositionDesc') }}</p>
+                <v-row justify="center">
+                    <v-col cols="auto">
+                        <div style="display: inline-grid; grid-template-columns: repeat(3, 60px); grid-gap: 8px;">
+                            <v-btn
+                                v-for="pos in stampPositions"
+                                :key="pos.value"
+                                :color="stamp_selected_position === pos.value ? 'primary' : ''"
+                                @click="stamp_selected_position = pos.value"
+                                small
+                                outlined
+                                style="min-width: 60px; height: 60px;"
+                            >
+                                <v-icon small>{{ pos.icon }}</v-icon>
+                            </v-btn>
+                        </div>
+                    </v-col>
+                </v-row>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text @click="dialog_stamp_position = false">
+                    {{ $t('common.cancel') }}
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    @click="confirmAddStamp"
+                    :disabled="!stamp_selected_position"
+                >
+                    {{ $t('common.ok') }}
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <!-- 发送到邮箱对话框 -->
     <v-dialog v-model="dialog_send_to_email" persistent max-width="500">
         <v-card>
@@ -1462,6 +1505,22 @@ export default {
         email_address: '',
         email_error: '',
         email_size_warning: '',
+        // 图章位置选择对话框
+        dialog_stamp_position: false,
+        stamp_selected_position: '',
+        stamp_enabled: false,
+        stamp_default_position: 'bottom-right',
+        stampPositions: [
+            { value: 'top-left', icon: 'mdi-format-align-top' },
+            { value: 'top-center', icon: 'mdi-format-align-top' },
+            { value: 'top-right', icon: 'mdi-format-align-top' },
+            { value: 'center-left', icon: 'mdi-format-align-middle' },
+            { value: 'center', icon: 'mdi-format-align-middle' },
+            { value: 'center-right', icon: 'mdi-format-align-middle' },
+            { value: 'bottom-left', icon: 'mdi-format-align-bottom' },
+            { value: 'bottom-center', icon: 'mdi-format-align-bottom' },
+            { value: 'bottom-right', icon: 'mdi-format-align-bottom' },
+        ],
         adding_book: false,
         isbn: "",
         continueAdding: false,
@@ -1993,13 +2052,25 @@ export default {
                 return;
             }
 
+            // 设置默认位置（从settings获取，或使用默认值）
+            this.stamp_selected_position = this.stamp_default_position;
+            // 显示位置选择对话框
+            this.dialog_stamp_position = true;
+        },
+        confirmAddStamp() {
+            // 确认添加图章
+            if (!this.stamp_selected_position) {
+                return;
+            }
+
+            this.dialog_stamp_position = false;
+
             this.$backend("/book/" + this.book.id + "/addstamp", {
                 method: "POST",
+                body: JSON.stringify({ position: this.stamp_selected_position }),
             }).then((rsp) => {
                 if (rsp.err === "ok") {
                     this.$alert("success", rsp.msg || this.$t('book.addStampSuccess'));
-                    // 刷新页面以显示新的封面
-                    location.reload();
                 } else {
                     this.$alert("error", rsp.msg || this.$t('book.addStampFailed'));
                 }
@@ -2529,6 +2600,11 @@ export default {
                     }).filter(c => c);
                     // 添加国际化的"清除"选项
                     this.categories.push(this.$t('book.clearCategory'));
+                }
+                // 获取图章默认位置
+                if (settingsResponse?.err === 'ok') {
+                    this.stamp_default_position = settingsResponse.settings.STAMP_POSITION || 'bottom-right';
+                    this.stamp_enabled = settingsResponse.settings?.ENABLE_STAMP_FEATURE;
                 }
             } catch (error) {
                 console.error('Failed to get settings:', error);

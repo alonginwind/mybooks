@@ -2802,18 +2802,17 @@ class BookAddStamp(BaseHandler):
             if not cover_data:
                 return {"err": "cover.not_found", "msg": _("书籍没有封面")}
 
-            # 获取图章位置
-            stamp_position = CONF.get("STAMP_POSITION", "bottom-right")
+            # 获取图章位置（从请求参数或配置中获取）
+            args = tornado.escape.json_decode(self.request.body)
+            stamp_position = args.get("position", CONF.get("STAMP_POSITION", "bottom-right"))
 
-            # 使用ImageHelper添加图章
-            from webserver.utils import ImageHelper
-            helper = ImageHelper()
+            helper = utils.ImageHelper()
             new_cover_data = helper.add_stamp_to_image(cover_data, stamp_path, stamp_position)
             if not new_cover_data:
                 return {"err": "stamp.failed", "msg": _("添加图章失败")}
 
             # 更新元数据到文件
-            result = self.save_book_meta(book_id)
+            result = self.save_book_meta(book_id, fmt=None, cover=new_cover_data)
             if result.get("err") != "ok":
                 # 即使保存到文件失败，封面已经更新到数据库
                 logging.warning(f"Failed to save metadata to file: {result.get('msg')}")

@@ -400,6 +400,8 @@
         "saveMetaSuccess": "元数据已成功同步到书籍文件",
         "saveMetaFailed": "元数据同步失败",
         "addStampToCover": "封面加盖图章",
+        "selectStampPosition": "选择图章位置",
+        "selectStampPositionDesc": "请选择图章在封面上的位置：",
         "addStampSuccess": "图章已成功添加到封面",
         "addStampFailed": "添加图章失败",
         "needEpubOrAzw3": "需要 EPUB 或 AZW3 格式才能同步元数据",

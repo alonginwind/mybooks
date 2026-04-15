@@ -885,7 +885,7 @@ class BaseHandler(web.RequestHandler):
             logging.error(f"Search query '{query}' failed: {e}")
         return existing_books
 
-    def save_book_meta(self, book_id, fmt=None):
+    def save_book_meta(self, book_id, fmt=None, cover=None):
         book = self.get_book(book_id, raise_exception=False)
         if not book:
             return {"err": "book.not_found", "msg": _("书籍不存在")}
@@ -938,7 +938,10 @@ class BaseHandler(web.RequestHandler):
                     if not mi.comments:
                         mi.comments = "<>"
                     # 获取封面数据（cover 方法直接返回字节数据）
-                    cover_data = self.calibre_db.cover(book_id, index_is_id=True)
+                    if cover:
+                        cover_data = cover
+                    else:
+                        cover_data = self.calibre_db.cover(book_id, index_is_id=True)
                     if cover_data:
                         mi.cover_data = ("jpeg", cover_data)
                         logging.info(

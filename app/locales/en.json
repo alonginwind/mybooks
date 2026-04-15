@@ -551,6 +551,8 @@
         "saveMetaSuccess": "Metadata successfully synced to book file",
         "saveMetaFailed": "Failed to sync metadata",
         "addStampToCover": "Add Stamp to Cover",
+        "selectStampPosition": "Select Stamp Position",
+        "selectStampPositionDesc": "Please select the position of the stamp on the cover:",
         "addStampSuccess": "Stamp successfully added to cover",
         "addStampFailed": "Failed to add stamp",
         "needEpubOrAzw3": "EPUB or AZW3 format required to sync metadata",

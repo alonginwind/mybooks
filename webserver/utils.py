@@ -3,6 +3,7 @@
 import datetime
 import logging
 import re
+import traceback
 from webserver.i18n import _
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT
 from webserver.constants import CALIBRE_COLUMN_EXT_LINK, CALIBRE_COLUMN_CATEGORY
@@ -382,6 +383,5 @@ class ImageHelper:
 
         except Exception as e:
             logging.error(f"Error adding stamp to image: {e}")
-            import traceback
             logging.error(traceback.format_exc())
             return None
