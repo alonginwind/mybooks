@@ -13,7 +13,7 @@ CHROME_MOBILE_HEADERS = {
 }
 
 CALIBRE_ERROR_FLAG = "<*ERROR*>"
-SUPPORTED_EBOOK_FORMATS = ["azw3", "epub", "mobi", "pdf", "txt"]
+SUPPORTED_EBOOK_FORMATS = ["azw3", "epub", "mobi", "pdf", "txt", "azw"]
 
 COLUMN_CATEGORY = "category"
 CALIBRE_COLUMN_CATEGORY = "#category"

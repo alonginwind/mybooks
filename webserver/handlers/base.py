@@ -713,6 +713,32 @@ class BaseHandler(web.RequestHandler):
         )
         return books
 
+    def get_all_fmts(self, book):
+        fmts = []
+        for fmt in constants.SUPPORTED_EBOOK_FORMATS:
+            fmt_key = f"fmt_{fmt}"
+            if fmt_key in book and book[fmt_key]:
+                fmts.append(fmt)
+        return fmts
+
+    def delete_book(self, book_id, book_title):
+        result = True
+        try:
+            item = self.sqlite_session.query(Item).filter(Item.book_id == book_id).first()
+            if item:
+                self.sqlite_session.delete(item)
+                self.sqlite_session.commit()
+        except Exception as e:
+            logging.error(f"删除ID为{book_id},名为《{book_title}》的书籍Item记录失败: {e}")
+        try:
+            self.calibre_db.delete_book(book_id)
+            self.add_msg("success", _(u"删除书籍《%s》") % book_title)
+            return {"err": "ok", "msg": _(u"删除成功")}
+        except Exception as e:
+            logging.error(f"删除书籍《{book_title}》失败: {e}")
+            result = False
+        return result
+
     def is_book_in_reading_range(self, book, user) -> bool:
         """Check whether a book is accessible for the given user based on their reading range.
 

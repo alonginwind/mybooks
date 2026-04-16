@@ -497,7 +497,8 @@
         "start": "開始",
         "clear": "清除音訊",
         "restore": "恢復生成",
-        "ok": "確定 "
+        "ok": "確定",
+        "delete": "刪除"
     },
     "settings": {
         "trash_management": "檔案清理",
@@ -904,7 +905,12 @@
         "notPurchased": "您還未購買此音訊，請先購買",
         "dailyLimitExceeded": "今日已下載過此音訊合集，請明天再試",
         "purchaseHint": "購買後解鎖全部章節及下載功能",
-        "downloadFailed": "下載失敗，請稍後重試"
+        "downloadFailed": "下載失敗，請稍後重試",
+        "vipQuotaInsufficient": "配额不足，请在首页关注公众号后台私信充值",
+        "audioDelete": "刪除當前的有聲書",
+        "deleteDescription": "確定要刪除《{title}》的有聲書嗎？。",
+        "deleteSuccess": "刪除成功！",
+        "deleteFailed": "刪除失敗，請稍後重試"
     },
     "syslog": {
         "title": "系統日誌",

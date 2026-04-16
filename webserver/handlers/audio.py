@@ -721,7 +721,7 @@ class AudioDelete(BaseHandler):
 
         try:
             book_id = int(book_id)
-
+            logging.info(f"AudioDelete requested: book_id={book_id}")
             # Check if conversion is running and stop it first
             worker = ConversionWorkerMap.get(book_id)
             if worker:
@@ -734,18 +734,24 @@ class AudioDelete(BaseHandler):
 
             # Delete audio directory
             audio_dir = os.path.join(AUDIO_OUTPUT_FOLDER, str(book_id))
-            if os.path.exists(audio_dir):
-                try:
-                    shutil.rmtree(audio_dir)
-                    # Async update cache after deletion
-                    AudioBooksCache.async_update()
-                    return {"err": "ok", "msg": _("音频文件删除成功")}
-                except OSError as e:
-                    logging.error(f"Error deleting audio directory {audio_dir}: {e}")
-                    return {"err": "server.error", "msg": f"清理音频文件遇到错误: {e}"}
-            else:
+            if not os.path.exists(audio_dir):
                 return {"err": "audio.not_found", "msg": _("未找到要删除的音频文件")}
+            try:
+                logging.info(f"AudioDelete requested, audio path:{audio_dir}")
+                shutil.rmtree(audio_dir)
+                # Async update cache after deletion
+                AudioBooksCache.async_update()
 
+                # 检查当前书籍是否没有任何格式的文件了，如果是，则删除书籍元数据
+                book = self.get_book(book_id, raise_exception=False)
+                if book:
+                    available_fmts = self.get_all_fmts(book)
+                    if not available_fmts:
+                        self.delete_book(book_id, book.get("title", ""))
+                return {"err": "ok", "msg": _("音频文件删除成功")}
+            except OSError as e:
+                logging.error(f"Error deleting audio directory {audio_dir}: {e}")
+                return {"err": "server.error", "msg": f"清理音频文件遇到错误: {e}"}
         except ValueError:
             return {"err": "params.invalid", "msg": _("无效的书籍ID")}
         except Exception as e:

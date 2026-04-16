@@ -650,7 +650,8 @@
         "start": "Start",
         "clear": "Clear",
         "restore": "Restore",
-        "ok": "OK"
+        "ok": "OK",
+        "delete": "Delete"
     },
     "user": {
         "avatar": "Avatar",
@@ -901,7 +902,12 @@
         "notPurchased": "You have not purchased this audio yet, please purchase first",
         "dailyLimitExceeded": "You have already downloaded this audio collection today, please try again tomorrow",
         "purchaseHint": "Purchase to unlock all chapters and download functionality",
-        "downloadFailed": "Download failed, please try again later"
+        "downloadFailed": "Download failed, please try again later",
+        "vipQuotaInsufficient": "Insufficient VIP quota, please recharge first",
+        "audioDelete": "Delete current audio book",
+        "deleteDescription": "Are you sure you want to delete the <{title}> audio book?",
+        "deleteSuccess": "Delete successful!",
+        "deleteFailed": "Delete failed, please try again later"
     },
     "syslog": {
         "title": "System Log",

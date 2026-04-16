@@ -221,6 +221,11 @@
             </v-list>
           </v-menu>
         </div>
+        <div>
+          <v-btn color="error" @click="openDeleteDialog" class="delete-btn" style="margin-top: 10px;">
+            <v-icon>mdi-delete</v-icon>{{ $t('audio.audioDelete') }}
+          </v-btn>
+        </div>
       </div>
     </div>
 
@@ -270,6 +275,29 @@
             :loading="purchaseLoading"
           >
             {{ $t('audio.confirmPurchase') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 删除确认对话框 -->
+    <v-dialog v-model="showDeleteDialog" max-width="400px">
+      <v-card>
+        <v-card-title class="headline">{{ $t('audio.audioDelete') }}</v-card-title>
+        <v-card-text>
+          <p>{{ $t('audio.deleteDescription', { title: book.title }) }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" text @click="showDeleteDialog = false">
+            {{ $t('common.cancel') }}
+          </v-btn>
+          <v-btn
+            color="red"
+            @click="deleteAudio"
+            :loading="deleteLoading"
+          >
+            {{ $t('common.delete') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -357,7 +385,11 @@ export default {
       // 购买相关
       purchaseLoading: false,
       isPaid: false,
-      showPurchaseDialog: false
+      showPurchaseDialog: false,
+
+      // 删除相关
+      deleteLoading: false,
+      showDeleteDialog: false
     };
   },
 
@@ -385,6 +417,12 @@ export default {
     this.initializePlayer();
     this.restorePlaybackPosition();
     this.startProgressSaving();
+    this.escKeyListener = (event) => {
+      if (event.key === 'Escape' || event.keyCode === 27) {
+        this.closePlayer();
+      }
+    };
+    window.addEventListener('keyup', this.escKeyListener);
   },
 
   beforeDestroy() {
@@ -394,6 +432,7 @@ export default {
     if (this.$refs.audioPlayer) {
       this.$refs.audioPlayer.pause();
     }
+    window.removeEventListener('keyup', this.escKeyListener);
   },
 
   methods: {
@@ -786,6 +825,43 @@ export default {
       this.$router.go(-1); // 返回上一页
     },
 
+    openDeleteDialog() {
+      this.showDeleteDialog = true;
+    },
+
+    async deleteAudio() {
+      if (!this.bookId) {
+        return;
+      }
+
+      this.deleteLoading = true;
+
+      try {
+        // 停止播放器
+        if (this.$refs.audioPlayer) {
+          this.$refs.audioPlayer.pause();
+        }
+
+        // 调用删除接口
+        const response = await this.$backend(`/audio/${this.bookId}/delete`, {
+          method: 'POST'
+        });
+
+        if (response.err === 'ok') {
+          this.showDeleteDialog = false;
+          this.$alert('success', this.$t('audio.deleteSuccess'));
+          this.$router.go(-1);
+        } else {
+          this.$alert('error', response.msg || this.$t('audio.deleteFailed'));
+        }
+      } catch (error) {
+        console.error('Delete audio error:', error);
+        this.$alert('error', this.$t('audio.deleteFailed'));
+      } finally {
+        this.deleteLoading = false;
+      }
+    },
+
     async showPurchaseDialogWithVipInfo() {
       try {
         // 获取用户VIP信息
@@ -794,7 +870,7 @@ export default {
           // 使用临时变量存储当前查询的配额值
           this.vipquota = response.vipquota || 0;
           if (this.vipquota === 0) {
-            this.$alert('error', "配额不足，请在首页关注公众号后台私信充值。");
+            this.$alert('error', this.$t('audio.vipQuotaInsufficient'));
           } else {
             this.showPurchaseDialog = true;
           }
@@ -864,6 +940,10 @@ export default {
   font-weight: bold;
   margin-bottom: 8px;
   color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .book-author {
@@ -877,6 +957,7 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 
 .playlist-header {
@@ -886,13 +967,19 @@ export default {
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #404040;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
 }
 
 .playlist-header h3 {
   margin: 0;
   color: #ffffff;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .playlist-controls {
@@ -900,6 +987,7 @@ export default {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
   margin-left: auto;
 }
 
@@ -909,6 +997,28 @@ export default {
   border-color: #666666 !important;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+  color: white !important;
+  border: 1px solid #b71c1c !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+}
+
+.delete-btn:hover {
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%) !important;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.delete-btn:active {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(0);
 }
 
 .download-btn {
@@ -946,6 +1056,7 @@ export default {
 .playlist-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #555555 #2c2c2c;
 }
@@ -971,6 +1082,7 @@ export default {
   border-radius: 8px;
   margin-bottom: 4px;
   transition: all 0.2s;
+  min-width: 0;
 }
 
 .playlist-item:hover {
@@ -1023,6 +1135,7 @@ export default {
 .track-info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .track-title {
@@ -1048,7 +1161,7 @@ export default {
   height: 40%;
   background: #1a1a1a;
   border-top: 1px solid #404040;
-  padding: 20px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
 }

@@ -434,7 +434,7 @@ class BookConverter(BaseHandler):
 
         fmts = []
         paths = []
-        for fmt in ["epub", "azw3", "mobi", "azw", "txt", "pdf"]:
+        for fmt in constants.SUPPORTED_EBOOK_FORMATS:
             book_path = book.get("fmt_%s" % fmt, None)
             if book_path:
                 fmts.append(fmt)
@@ -1444,24 +1444,9 @@ class BookDelete(BaseHandler):
 
         # 删除整本书
         AudioUtils.clear_audio(bid)
-
-        # 对应删除Item
-        try:
-            item = self.sqlite_session.query(Item).filter(Item.book_id == bid).first()
-            if item:
-                self.sqlite_session.delete(item)
-                self.sqlite_session.commit()
-        except Exception as e:
-            logging.error(f"删除书籍《{book['title']}》的Item记录失败: {e}")
-
-        # 删除书籍
-        try:
-            self.calibre_db.delete_book(bid)
-            self.add_msg("success", _(u"删除书籍《%s》") % book["title"])
+        if self.delete_book(bid, book.get("title", "")):
             return {"err": "ok", "msg": _(u"删除成功")}
-        except Exception as e:
-            logging.error(f"删除书籍《{book['title']}》失败: {e}")
-            return {"err": "fail", "msg": _(u"删除失败, 请查看日志。如果一直出错，请联系管理员。")}
+        return {"err": "fail", "msg": _(u"删除失败, 请查看日志。如果一直出错，请联系管理员。")}
 
 
 class BookDeleteFormat(BaseHandler):
