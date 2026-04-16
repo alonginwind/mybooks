@@ -60,3 +60,6 @@ META_SOURCE_BAIDU = "baidu"
 
 # User reading range setting
 ALLOW_READ_RANGE_SETTING = "ALLOW_READ_RANGE_SETTING"
+
+# audio books
+AUDIO_BOOK_IMPORTS = "audiobooks"

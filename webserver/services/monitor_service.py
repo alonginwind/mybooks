@@ -11,7 +11,7 @@ import os
 import threading
 import time
 
-from webserver import loader
+from webserver import loader, constants
 from webserver.services.scan import ScanService, SCAN_EXT
 
 CONF = loader.get_settings()
@@ -224,6 +224,9 @@ class MonitorService:
                 mask = event.mask
                 wd = event.wd
                 name = event.name or ""
+
+                if name == constants.AUDIO_BOOK_IMPORTS:
+                    continue
 
                 logging.info("[Monitor] Event: wd=%d mask=%d name=%s cookie=%d", wd, mask, name, event.cookie)
 

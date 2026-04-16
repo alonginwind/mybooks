@@ -188,19 +188,19 @@
                     large
                     :return-value.sync="item.book_count"
                     @save="save(item, 'book_count')"
-                    save-text="保存"
-                    cancel-text="取消"
+                    :save-text="$t('admin.books.save')"
+                    :cancel-text="$t('admin.books.cancel')"
                 >
                     <span>{{ item.book_count || 0 }}</span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改数量</div>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editCount') }}</div>
                         <v-text-field
                             v-model.number="item.book_count"
-                            label="在库数量"
+                            :label="$t('admin.books.bookCount')"
                             type="number"
                             min="0"
                             max="100"
-                            :rules="[v => v >= 0 && v <= 100 || '数量必须在0-100之间']"
+                            :rules="[v => v >= 0 && v <= 100 || $t('admin.books.bookCountRule')]"
                             counter
                         ></v-text-field>
                     </template>
@@ -208,26 +208,26 @@
                 <span v-else>-</span>
             </template>
             <template v-slot:item.title="{ item }">
-                <v-edit-dialog large :return-value.sync="item.title" @save="save(item, 'title')" save-text="保存" cancel-text="取消">
+                <v-edit-dialog large :return-value.sync="item.title" @save="save(item, 'title')" :save-text="$t('admin.books.save')" :cancel-text="$t('admin.books.cancel')">
                     <span class="three-lines" style="max-width: 200px; min-width: 120px; ">{{ item.title }}</span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改字段</div>
-                        <v-textarea v-model="item.title" label="书名" style="min-width: 400px" counter></v-textarea>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editField') }}</div>
+                        <v-textarea v-model="item.title" :label="$t('admin.books.header.title')" style="min-width: 400px" counter></v-textarea>
                     </template>
                 </v-edit-dialog>
             </template>
 
             <template v-slot:item.author="{ item }">
-                <v-edit-dialog large :return-value.sync="item.author" @save="save(item, 'authors')" save-text="保存" cancel-text="取消">
+                <v-edit-dialog large :return-value.sync="item.author" @save="save(item, 'authors')" :save-text="$t('admin.books.save')" :cancel-text="$t('admin.books.cancel')">
                     <span class="three-lines" style="max-width: 200px" v-if="item.authors">{{ item.authors.join("/") }}</span>
                     <span v-else> - </span>
                     <template v-slot:input>
                         <!-- AUTHORS -->
-                        <div class="mt-4 text-h6">修改字段</div>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editField') }}</div>
                         <v-combobox
                             v-model="item.authors"
                             :items="item.authors"
-                            label="作者"
+                            :label="$t('admin.books.header.author')"
                             :search-input.sync="tag_input"
                             hide-selected
                             multiple
@@ -235,9 +235,9 @@
                         >
                             <template v-slot:no-data>
                                 <v-list-item>
-                                    <span v-if="!tag_input">请输入新的名称</span>
+                                    <span v-if="!tag_input">{{ $t('admin.books.authorInputHint') }}</span>
                                     <div v-else>
-                                        <span class="subheading">添加</span>
+                                        <span class="subheading">{{ $t('admin.books.addAuthor') }}</span>
                                         <v-chip color="green lighten-3" label small rounded> {{ tag_input }} </v-chip>
                                     </div>
                                 </v-list-item>
@@ -255,22 +255,22 @@
             </template>
 
             <template v-slot:item.rating="{ item }">
-                <v-edit-dialog large :return-value.sync="item.rating" @save="save(item, 'rating')" save-text="保存" cancel-text="取消">
-                    <span v-if="item.rating != null">{{ item.rating }} 星</span>
+                <v-edit-dialog large :return-value.sync="item.rating" @save="save(item, 'rating')" :save-text="$t('admin.books.save')" :cancel-text="$t('admin.books.cancel')">
+                    <span v-if="item.rating != null">{{ item.rating }} {{ $t('admin.books.ratingStarSuffix') }}</span>
                     <span v-else> - </span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改评分</div>
-                        <v-rating label="评分" v-model="item.rating" color="yellow accent-4" length="10" dense></v-rating>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editRating') }}</div>
+                        <v-rating :label="$t('admin.books.header.rating')" v-model="item.rating" color="yellow accent-4" length="10" dense></v-rating>
                     </template>
                 </v-edit-dialog>
             </template>
 
             <template v-slot:item.category="{ item }">
-                <v-edit-dialog large :return-value.sync="item.category" @save="save(item, 'category')" save-text="保存" cancel-text="取消">
-                    <span v-if="item.category != null">{{ item.category || '未分类'}}</span>
+                <v-edit-dialog large :return-value.sync="item.category" @save="save(item, 'category')" :save-text="$t('admin.books.save')" :cancel-text="$t('admin.books.cancel')">
+                    <span v-if="item.category != null">{{ item.category || $t('admin.books.uncategorized') }}</span>
                     <span v-else> - </span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改分类</div>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editCategory') }}</div>
                         <v-select :items="categories" v-model="item.category" color="yellow accent-4" dense></v-select>
                     </template>
                 </v-edit-dialog>
@@ -281,29 +281,29 @@
                     large
                     :return-value.sync="item.publisher"
                     @save="save(item, 'publisher')"
-                    save-text="保存"
-                    cancel-text="取消"
+                    :save-text="$t('admin.books.save')"
+                    :cancel-text="$t('admin.books.cancel')"
                 >
                     <span v-if="item.publisher != null" class="three-lines" style="max-width: 110px; min-width: 60px; ">{{ item.publisher }}</span>
                     <span v-else> - </span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改字段</div>
-                        <v-text-field v-model="item.publisher" label="出版社" counter></v-text-field>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editField') }}</div>
+                        <v-text-field v-model="item.publisher" :label="$t('admin.books.header.publisher')" counter></v-text-field>
                     </template>
                 </v-edit-dialog>
             </template>
 
             <template v-slot:item.tags="{ item }">
-                <v-edit-dialog large :return-value.sync="item.tags" @save="save(item, 'tags')" save-text="保存" cancel-text="取消">
+                <v-edit-dialog large :return-value.sync="item.tags" @save="save(item, 'tags')" :save-text="$t('admin.books.save')" :cancel-text="$t('admin.books.cancel')">
                     <span style="width: 200px" class="three-lines" v-if="item.tags">{{ item.tags.join("/") }}</span>
                     <span v-else> - </span>
                     <template v-slot:input>
                         <!-- TAGS -->
-                        <div class="mt-4 text-h6">修改字段</div>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editField') }}</div>
                         <v-combobox
                             v-model="item.tags"
                             :items="item.tags"
-                            label="标签列表"
+                            :label="$t('admin.books.tagsLabel')"
                             :search-input.sync="tag_input"
                             hide-selected
                             multiple
@@ -311,9 +311,9 @@
                         >
                             <template v-slot:no-data>
                                 <v-list-item>
-                                    <span v-if="!tag_input">请输入新的标签名称</span>
+                                    <span v-if="!tag_input">{{ $t('admin.books.tagInputHint') }}</span>
                                     <div v-else>
-                                        <span class="subheading">添加标签</span>
+                                        <span class="subheading">{{ $t('admin.books.addTag') }}</span>
                                         <v-chip color="green lighten-3" label small rounded> {{ tag_input }} </v-chip>
                                     </div>
                                 </v-list-item>
@@ -331,11 +331,11 @@
             </template>
 
             <template v-slot:item.comments="{ item }">
-                <v-edit-dialog large :return-value.sync="item.comments" @save="save(item, 'comments')" save-text="保存" cancel-text="取消">
+                <v-edit-dialog large :return-value.sync="item.comments" @save="save(item, 'comments')" :save-text="$t('admin.books.save')" :cancel-text="$t('admin.books.cancel')">
                     <span :title="item.comments" style="width: 300px" class="three-lines">{{ item.comments.substr(0, 80) }}</span>
                     <template v-slot:input>
-                        <div class="mt-4 text-h6">修改字段</div>
-                        <v-textarea v-model="item.comments" label="简介"></v-textarea>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editField') }}</div>
+                        <v-textarea v-model="item.comments" :label="$t('admin.books.header.comments')"></v-textarea>
                     </template>
                 </v-edit-dialog>
             </template>
@@ -351,12 +351,12 @@
                             v-on="on"
                         >
                             <v-icon :small="!$vuetify.breakpoint.xs" :x-small="$vuetify.breakpoint.xs">more_vert</v-icon>
-                            <span v-if="!$vuetify.breakpoint.xs">操作</span>
+                            <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.actions') }}</span>
                         </v-btn>
                     </template>
                     <v-list dense>
                         <v-list-item @click="delete_book(item)">
-                            <v-list-item-title>删除此书</v-list-item-title>
+                            <v-list-item-title>{{ $t('admin.books.deleteBook') }}</v-list-item-title>
                         </v-list-item>
                     </v-list>
                 </v-menu>
@@ -492,20 +492,6 @@ export default {
         loading: false,
         scraping: false,
         options: { sortBy: ["id"], sortDesc: [true] },
-        headers: [
-            { text: "封面", sortable: false, value: "img", width: "80px" },
-            { text: "ID", sortable: true, value: "id", width: "80px" },
-            { text: "类型", sortable: false, value: "book_type", width: "80px" },
-            { text: "数量", sortable: false, value: "book_count", width: "70px" },
-            { text: "书名", sortable: true, value: "title" },
-            { text: "作者", sortable: true, value: "author", width: "100px" },
-            { text: "分类", sortable: false, value: "category", width: "80px"},
-            { text: "评分", sortable: false, value: "rating", width: "60px" },
-            { text: "出版社", sortable: false, value: "publisher" },
-            { text: "标签", sortable: true, value: "tags", width: "100px" },
-            { text: "简介", sortable: true, value: "comments" },
-            { text: "操作", sortable: false, value: "actions" },
-        ],
         progress: {
             count_total: 0,
             count_processed: 0,
@@ -560,28 +546,44 @@ export default {
             if (this.$vuetify.breakpoint.xs) {
                 // 超小屏幕（手机）：显示封面、ID、书名、作者、分类和操作
                 return [
-                    { text: "封面", sortable: false, value: "img", width: "40px" },
-                    { text: "ID", sortable: true, value: "id", width: "50px" },
-                    { text: "书名", sortable: true, value: "title" },
-                    { text: "作者", sortable: true, value: "author", width: "80px" },
-                    { text: "分类", sortable: false, value: "category", width: "70px" },
-                    { text: "操作", sortable: false, value: "actions", width: "60px" },
+                    { text: this.$t('admin.books.header.cover'), sortable: false, value: "img", width: "40px" },
+                    { text: this.$t('admin.books.header.id'), sortable: true, value: "id", width: "50px" },
+                    { text: this.$t('admin.books.header.title'), sortable: true, value: "title" },
+                    { text: this.$t('admin.books.header.author'), sortable: true, value: "author", width: "80px" },
+                    { text: this.$t('admin.books.header.category'), sortable: false, value: "category", width: "70px" },
+                    { text: this.$t('admin.books.header.actions'), sortable: false, value: "actions", width: "60px" },
                 ];
             } else if (this.$vuetify.breakpoint.sm) {
                 // 小屏幕（平板）：显示核心信息（含分类）
                 return [
-                    { text: "封面", sortable: false, value: "img", width: "70px" },
-                    { text: "ID", sortable: true, value: "id", width: "60px" },
-                    { text: "类型", sortable: false, value: "book_type", width: "70px" },
-                    { text: "书名", sortable: true, value: "title" },
-                    { text: "作者", sortable: true, value: "author", width: "100px" },
-                    { text: "分类", sortable: false, value: "category", width: "80px" },
-                    { text: "操作", sortable: false, value: "actions", width: "80px" },
+                    { text: this.$t('admin.books.header.cover'), sortable: false, value: "img", width: "70px" },
+                    { text: this.$t('admin.books.header.id'), sortable: true, value: "id", width: "60px" },
+                    { text: this.$t('admin.books.header.type'), sortable: false, value: "book_type", width: "70px" },
+                    { text: this.$t('admin.books.header.title'), sortable: true, value: "title" },
+                    { text: this.$t('admin.books.header.author'), sortable: true, value: "author", width: "100px" },
+                    { text: this.$t('admin.books.header.category'), sortable: false, value: "category", width: "80px" },
+                    { text: this.$t('admin.books.header.actions'), sortable: false, value: "actions", width: "80px" },
                 ];
             } else {
                 // 中等屏幕及以上：显示所有列
                 return this.headers;
             }
+        },
+        headers: function() {
+            return [
+                { text: this.$t('admin.books.header.cover'), sortable: false, value: "img", width: "80px" },
+                { text: this.$t('admin.books.header.id'), sortable: true, value: "id", width: "80px" },
+                { text: this.$t('admin.books.header.type'), sortable: false, value: "book_type", width: "80px" },
+                { text: this.$t('admin.books.header.count'), sortable: false, value: "book_count", width: "70px" },
+                { text: this.$t('admin.books.header.title'), sortable: true, value: "title" },
+                { text: this.$t('admin.books.header.author'), sortable: true, value: "author", width: "100px" },
+                { text: this.$t('admin.books.header.category'), sortable: false, value: "category", width: "80px" },
+                { text: this.$t('admin.books.header.rating'), sortable: false, value: "rating", width: "60px" },
+                { text: this.$t('admin.books.header.publisher'), sortable: false, value: "publisher" },
+                { text: this.$t('admin.books.header.tags'), sortable: true, value: "tags", width: "100px" },
+                { text: this.$t('admin.books.header.comments'), sortable: true, value: "comments" },
+                { text: this.$t('admin.books.header.actions'), sortable: false, value: "actions" },
+            ];
         }
     },
     methods: {

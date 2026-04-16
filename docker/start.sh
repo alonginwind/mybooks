@@ -14,6 +14,11 @@ if [ ! -d "/data/books" ]; then
   cp -rf /prebuilt/books /data/
 fi
 
+if [ ! -d "/data/books/imports/audiobooks" ]; then
+  mkdir -p /data/books/imports/audiobooks
+  chown -R talebook:talebook /data/books/imports/audiobooks
+fi
+
 if [ ! -s "/data/books/calibre-webserver.db" ]; then
   cp /prebuilt/books/calibre-webserver.db /data/books/
 fi
