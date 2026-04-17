@@ -135,38 +135,59 @@
 
         <v-app-bar v-if="$store.state.nav" class="px-0" :color="appBarColor" dense dark app fixed clipped-left extension-height="64">
             <template v-if="btn_search && $vuetify.breakpoint.xs" #extension>
-                <v-container fluid>
+                <v-container fluid class="py-2">
                     <v-form @submit.prevent="doSearch">
-                        <v-row>
-                            <v-col cols="12" class="mb-2">
-                                <v-select
-                                    v-model="searchCategory"
-                                    :items="searchCategories"
-                                    :item-text="item => $t(item.label)"
-                                    :item-value="item => item.value"
-                                    dense
-                                    outlined
-                                    rounded
-                                    hide-details
-                                    style="width: 100%;"
-                                ></v-select>
-                            </v-col>
-                            <v-col cols="9">
-                                <v-text-field
-                                    class="ma-0 pa-0"
-                                    hide-details
-                                    single-line
-                                    solo-inverted
-                                    v-model="search"
-                                    ref="mobile_search"
-                                    :loading="ai_thinking"
-                                    :disabled="ai_thinking"
-                                ></v-text-field>
-                            </v-col>
-                            <v-col cols="3">
-                                <v-btn dark rounded @click="doSearch" color="primary" :disabled="ai_thinking">{{ $t('appHeader.search') }}</v-btn>
-                            </v-col>
-                        </v-row>
+                        <v-text-field
+                            flat
+                            solo-inverted
+                            hide-details
+                            @keyup.enter="doSearch"
+                            @focus="isMobileFocused = true"
+                            @blur="isMobileFocused = false"
+                            ref="mobile_search"
+                            v-model="search"
+                            :label="$t('appHeader.search')"
+                            :loading="ai_thinking"
+                            :disabled="ai_thinking"
+                            class="mobile-search-field"
+                        >
+                            <template #prepend-inner>
+                                <v-menu
+                                    v-model="mobileCategoryMenu"
+                                    :close-on-content-click="true"
+                                    :nudge-width="120"
+                                    offset-y
+                                >
+                                    <template #activator="{ on, attrs }">
+                                        <v-btn
+                                            v-bind="attrs"
+                                            v-on="on"
+                                            flat
+                                            class="category-selector"
+                                            :class="isMobileFocused && !$vuetify.theme.dark ? 'black--text' : 'white--text'"
+                                            color="transparent"
+                                            style="padding: 3px 8px; margin-right: 8px;"
+                                            rounded
+                                        >
+                                            {{ $t(searchCategories.find(c => c.value === searchCategory)?.label || 'appHeader.searchAll') }}
+                                        </v-btn>
+                                    </template>
+                                    <v-list>
+                                        <v-list-item
+                                            v-for="category in searchCategories"
+                                            :key="category.value"
+                                            @click="selectCategory(category.value)"
+                                            class="category-item"
+                                        >
+                                            <v-list-item-title>{{ $t(category.label) }}</v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-menu>
+                            </template>
+                            <template #append>
+                                <v-btn dark rounded @click="doSearch" color="primary" :disabled="ai_thinking" small>{{ $t('appHeader.search') }}</v-btn>
+                            </template>
+                        </v-text-field>
                     </v-form>
                 </v-container>
             </template>
@@ -203,7 +224,7 @@
                     :label="$t('appHeader.search')"
                     :loading="ai_thinking"
                     :disabled="ai_thinking"
-                    class="d-none d-sm-flex ml-8"
+                    class="d-none d-sm-flex ml-8 desktop-search-field"
                 >
                     <template #prepend-inner>
                         <v-menu
@@ -217,8 +238,10 @@
                                     v-bind="attrs"
                                     v-on="on"
                                     flat
-                                    :color="isFocused ? 'white' : 'transparent'"
+                                    rounded
+                                    color="transparent"
                                     class="category-selector"
+                                    :class="isFocused && !$vuetify.theme.dark ? 'black--text' : 'white--text'"
                                     style="padding: 3px 8px; margin-right: 8px;"
                                 >
                                     {{ $t(searchCategories.find(c => c.value === searchCategory)?.label || 'appHeader.searchAll') }}
@@ -473,7 +496,9 @@ export default {
             { value: 'comments', label: 'appHeader.searchComments' },
         ],
         categoryMenu: false,
+        mobileCategoryMenu: false,
         isFocused: false,
+        isMobileFocused: false,
         ai_enabled: false,
         ai_thinking: false,
         ai_messages: [],
@@ -1288,6 +1313,21 @@ export default {
 </style>
 
 <style scoped>
+/* Search field highlight styles */
+.desktop-search-field :deep(.v-input__slot),
+.mobile-search-field :deep(.v-input__slot) {
+    border: 2px solid rgba(255, 255, 255, 0.55) !important;
+    border-radius: 24px !important;
+    margin-bottom: 2px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.desktop-search-field.v-input--is-focused :deep(.v-input__slot),
+.mobile-search-field.v-input--is-focused :deep(.v-input__slot) {
+    border-color: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
+}
+
 @keyframes blink {
   0%, 50%, 100% { opacity: 1; }
   25%, 75% { opacity: 0.0; }
