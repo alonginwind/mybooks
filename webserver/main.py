@@ -65,7 +65,6 @@ define(
     help=_("update config when system upgrade"),
 )
 
-
 # Set the maximum memory allocation for Qt image processing to prevent crashes with large images
 os.environ["QT_IMAGEIO_MAXALLOC"] = "400"
 
@@ -80,9 +79,7 @@ def add_meta_in_calibre(calibre_db, key, name, datatype):
         logging.info("No need to create key: [%s] in calibre, already exists." % key)
         return False
     try:
-        calibre_db.create_custom_column(
-            label=key, name=name, datatype=datatype, is_multiple=False
-        )
+        calibre_db.create_custom_column(label=key, name=name, datatype=datatype, is_multiple=False)
     except Exception as e:
         logging.error(f"Error creating custom field: {e}")
         return False
@@ -95,13 +92,8 @@ def config_calibre():
     db = DB(options.with_library)
     if not db:
         return
-    if (
-        "expire_old_trash_after" in db.prefs
-        and db.prefs["expire_old_trash_after"] == 7 * 24 * 3600
-    ):
-        logging.info(
-            "Calibre trash expire time already set to 7 days, no need to update."
-        )
+    if ("expire_old_trash_after" in db.prefs and db.prefs["expire_old_trash_after"] == 7 * 24 * 3600):
+        logging.info("Calibre trash expire time already set to 7 days, no need to update.")
         return
     db.prefs["expire_old_trash_after"] = 7 * 24 * 3600
     logging.info("Set calibre trash expire time to 7 days.")
@@ -228,56 +220,16 @@ def make_app():
     banner_lines = [
         "",
         border_top,
-        "|"
-        + "    ____                                 _____   __                __    _        ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + "   / __ \\  ____    _  __  ___    ____   / ___/  / /_  __  __  ____/ /   (_)  ____ ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + "  / /_/ / / __ \\  | |/_/ / _ \\  / __ \\  \\__ \\  / __/ / / / / / __  /   / /  / __ \\".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + " / ____/ / /_/ / _>  <  /  __/ / / / / ___/ / / /_  / /_/ / / /_/ /   / /  / /_/ /".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + "/_/      \\____/ /_/|_|  \\___/ /_/ /_/ /____/  \\__/  \\__,_/  \\__,_/   /_/   \\____/ ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + "  ______            __          __                    __   ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + " /_  __/  ____ _   / /  ___    / /_   ____   ____    / /__ ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + "  / /    / __ `/  / /  / _ \\  / __ \\ / __ \\ / __ \\  / //_/ ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + " / /    / /_/ /  / /  /  __/ / /_/ // /_/ // /_/ / / ,<    ".center(
-            banner_width
-        )
-        + "|",
-        "|"
-        + "/_/     \\__,_/  /_/   \\___/ /_.___/ \\____/ \\____/ /_/|_|   ".center(
-            banner_width
-        )
-        + "|",
+        "|" + "    ____                                 _____   __                __    _        ".center(banner_width) + "|",
+        "|" + "   / __ \\  ____    _  __  ___    ____   / ___/  / /_  __  __  ____/ /   (_)  ____ ".center(banner_width) + "|",
+        "|" + "  / /_/ / / __ \\  | |/_/ / _ \\  / __ \\  \\__ \\  / __/ / / / / / __  /   / /  / __ \\".center(banner_width) + "|",
+        "|" + " / ____/ / /_/ / _>  <  /  __/ / / / / ___/ / / /_  / /_/ / / /_/ /   / /  / /_/ /".center(banner_width) + "|",
+        "|" + "/_/      \\____/ /_/|_|  \\___/ /_/ /_/ /____/  \\__/  \\__,_/  \\__,_/   /_/   \\____/ ".center(banner_width) + "|",
+        "|" + "  ______            __          __                    __   ".center(banner_width) + "|",
+        "|" + " /_  __/  ____ _   / /  ___    / /_   ____   ____    / /__ ".center(banner_width) + "|",
+        "|" + "  / /    / __ `/  / /  / _ \\  / __ \\ / __ \\ / __ \\  / //_/ ".center(banner_width) + "|",
+        "|" + " / /    / /_/ /  / /  /  __/ / /_/ // /_/ // /_/ / / ,<    ".center(banner_width) + "|",
+        "|" + "/_/     \\__,_/  /_/   \\___/ /_.___/ \\____/ \\____/ /_/|_|   ".center(banner_width) + "|",
         "|" + (" " * 60 + f"{VERSION}").center(banner_width) + "|",
         border_bottom,
     ]
@@ -304,9 +256,7 @@ def make_app():
             cursor.execute("PRAGMA busy_timeout=30000")
             cursor.close()
 
-    ScopedSession = scoped_session(
-        sessionmaker(bind=engine, autoflush=True, autocommit=False)
-    )
+    ScopedSession = scoped_session(sessionmaker(bind=engine, autoflush=True, autocommit=False))
     try:
         models.bind_session(ScopedSession)
         init_social(models.Base, ScopedSession, CONF)
@@ -344,12 +294,8 @@ def make_app():
         except Exception as e:
             logging.warning(f"Failed to disable FTS: {e}")
 
-        added_category = add_meta_in_calibre(
-            cache, COLUMN_CATEGORY, "Book Category", "text"
-        )
-        added_phy_count = add_meta_in_calibre(
-            cache, COLUMN_PHY_COUNT, "Physical Book Count", "int"
-        )
+        added_category = add_meta_in_calibre(cache, COLUMN_CATEGORY, "Book Category", "text")
+        added_phy_count = add_meta_in_calibre(cache, COLUMN_PHY_COUNT, "Physical Book Count", "int")
         added_source = add_meta_in_calibre(cache, COLUMN_BOOK_TYPE, "Book Type", "int")
         _ = add_meta_in_calibre(cache, COLUMN_EXT_LINK, "External Link", "text")
         if added_source or added_category or added_phy_count:
@@ -399,16 +345,14 @@ def make_app():
     BaseHandler.db_lock = threading.RLock()
 
     app_settings = dict(CONF)
-    app_settings.update(
-        {
-            "legacy": book_db,
-            "cache": cache,
-            "ScopedSession": ScopedSession,
-            "build_time": fromtimestamp(os.stat(path).st_mtime),
-            "default_cover": default_cover,
-            "autoreload": VERSION == "v0.0.1",
-        }
-    )
+    app_settings.update({
+        "legacy": book_db,
+        "cache": cache,
+        "ScopedSession": ScopedSession,
+        "build_time": fromtimestamp(os.stat(path).st_mtime),
+        "default_cover": default_cover,
+        "autoreload": VERSION == "v0.0.1",
+    })
 
     logging.info("Now, Running...")
     need_sync_item_time = AsyncService().setup(book_db, ScopedSession)
@@ -436,19 +380,7 @@ def make_app():
     # Assemble routes carefully:
     # WebDAV must come before files.routes() because files has a catch-all (r"/(.*)")
     # We need to get routes from handlers module without files, add webdav, then add files
-    from webserver.handlers import (
-        assistant,
-        mcp,
-        admin,
-        barcode,
-        scan,
-        opds,
-        book,
-        user,
-        meta,
-        audio,
-        files,
-    )
+    from webserver.handlers import assistant, mcp, admin, barcode, scan, opds, book, user, meta, audio, files
 
     app_routes = []
     app_routes += social_routes.SOCIAL_AUTH_ROUTES
@@ -470,9 +402,7 @@ def make_app():
             from webserver.handlers.podcast import routes as podcast_route_func
 
             podcast_routes = podcast_route_func()
-            logging.info(
-                "Podcast service initialized with %d routes", len(podcast_routes)
-            )
+            logging.info("Podcast service initialized with %d routes", len(podcast_routes))
         except Exception as e:
             logging.error(f"Failed to initialize Podcast service: {e}")
             logging.error(traceback.format_exc())
@@ -557,12 +487,8 @@ def setup_logging():
     log_level = logging.DEBUG if CONF.get("LOG_LEVEL_DEBUG", False) else logging.INFO
     if options.log_file_prefix:
         # remove tornado default file handler to avoid duplicate logs
-        logger.handlers = [
-            h for h in logger.handlers if not isinstance(h, logging.FileHandler)
-        ]
-        file_handler = RotatingFileHandler(
-            options.log_file_prefix, maxBytes=5 * 1024 * 1024, backupCount=5
-        )
+        logger.handlers = [h for h in logger.handlers if not isinstance(h, logging.FileHandler)]
+        file_handler = RotatingFileHandler(options.log_file_prefix, maxBytes=5 * 1024 * 1024, backupCount=5)
         file_handler.setLevel(log_level)
         file_handler.setFormatter(tornado.log.LogFormatter())
         logger.addHandler(file_handler)
@@ -586,9 +512,7 @@ def main():
 
     logging.info("Starting server...")
     logging.debug("Max upload size set to: %d bytes", get_upload_size())
-    http_server = tornado.httpserver.HTTPServer(
-        app, xheaders=True, max_buffer_size=get_upload_size()
-    )
+    http_server = tornado.httpserver.HTTPServer(app, xheaders=True, max_buffer_size=get_upload_size())
     http_server.listen(options.port, options.host)
     tornado.ioloop.IOLoop.instance().start()
     from flask.ext.sqlalchemy import _EngineDebuggingSignalEvents
