@@ -189,6 +189,7 @@ class ScanList(BaseHandler):
                     "publisher": s.publisher,
                     "tags": s.tags,
                     "status": s.status,
+                    "import_type": s.import_type if s.import_type is not None else 0,
                     "book_id": s.book_id,
                     "create_time": (
                         s.create_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -434,7 +435,6 @@ class BatchAddRun(BaseHandler):
 
         except Exception as e:
             logging.error(f"BatchAddRun error: {e}")
-            import traceback
             logging.error(traceback.format_exc())
             return {"err": "server.error", "msg": str(e)}
 
@@ -472,6 +472,48 @@ class BatchAddStatus(BaseHandler):
                     logging.error(f"Error closing scanner: {e}")
 
 
+class AudioImportRun(BaseHandler):
+    @js
+    @is_admin
+    def post(self):
+        from webserver.services.audios_import import AudioBookImporter
+
+        if AudioBookImporter.is_running():
+            return {"err": "running", "msg": _("有声书导入任务正在运行中，请稍候")}
+
+        AudioBookImporter().do_import(self.user_id())
+        return {"err": "ok", "msg": _("有声书导入任务已启动")}
+
+
+class AudioImportStatus(BaseHandler):
+    @js
+    @is_admin
+    def get(self):
+        from webserver.services.audios_import import AudioBookImporter
+
+        scanner = None
+        try:
+            scanner = Scanner(self.calibre_db, self.settings["ScopedSession"])
+            summary = scanner.summary()
+            status = AudioBookImporter.get_status()
+            return {
+                "err": "ok",
+                "msg": _("成功"),
+                "status": status,
+                "summary": summary,
+                "audio_importing": AudioBookImporter.is_running(),
+            }
+        except Exception as e:
+            logging.error(f"AudioImportStatus error: {e}")
+            return {"err": "server.error", "msg": str(e)}
+        finally:
+            if scanner:
+                try:
+                    scanner.close()
+                except Exception as e:
+                    logging.error(f"Error closing scanner: {e}")
+
+
 def routes():
     return [
         (r"/api/admin/scan/list", ScanList),
@@ -483,4 +525,6 @@ def routes():
         (r"/api/admin/import/status", ImportStatus),
         (r"/api/admin/batch_add/run", BatchAddRun),
         (r"/api/admin/batch_add/status", BatchAddStatus),
+        (r"/api/admin/audio_import/run", AudioImportRun),
+        (r"/api/admin/audio_import/status", AudioImportStatus),
     ]

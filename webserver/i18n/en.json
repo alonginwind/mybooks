@@ -429,5 +429,8 @@
   "添加图章失败": "Failed to add stamp",
   "图章已添加到封面，但保存到文件时部分失败: %s": "Stamp added to cover, but partially failed to save to file: %s",
   "图章已成功添加到封面": "Stamp added to cover successfully",
-  "添加图章时发生错误: %s": "Error occurred while adding stamp: %s"
+  "添加图章时发生错误: %s": "Error occurred while adding stamp: %s",
+  "导入有声书": "Import Audiobooks",
+  "有声书导入任务已启动": "Audiobook import task started",
+  "有声书导入任务正在运行中，请稍候": "Audiobook import is already running, please wait"
 }

@@ -830,6 +830,7 @@ export default {
                 'autofill': this.$t('appHeader.taskTypeAutofill'),
                 'scan': this.$t('appHeader.taskTypeScan'),
                 'audio': this.$t('appHeader.taskTypeAudio'),
+                'audio_import': this.$t('appHeader.taskTypeAudioImport'),
                 'convert': this.$t('appHeader.taskTypeConvert'),
                 'ai_fill': this.$t('appHeader.taskTypeAIFill'),
                 'title_sort_update': this.$t('appHeader.taskTypeTitleSortUpdate'),

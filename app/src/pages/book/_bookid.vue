@@ -282,7 +282,7 @@
                                     <v-icon>mdi-file-sync</v-icon>
                                     {{ $t('book.saveMetaToFile') }}
                                 </v-list-item>
-                                <v-list-item @click="add_stamp_to_cover" :disabled="!hasEpubAzw3OrPDF || !stamp_enabled">
+                                <v-list-item @click="add_stamp_to_cover" :disabled="!hasEpubAzw3 || !stamp_enabled">
                                     <v-icon>mdi-picture-in-picture-bottom-right-outline</v-icon>
                                     {{ $t('book.addStampToCover') }}
                                 </v-list-item>
@@ -1304,7 +1304,14 @@ export default {
             }
         },
 
-        // 检查是否有 epub、azw3 或 pdf 格式
+        hasEpubAzw3() {
+            if (!this.book || !this.book.files) return false;
+            return this.book.files.some(file => {
+                const format = file.format.toLowerCase();
+                return format === 'epub' || format === 'azw3';
+            });
+        },
+
         hasEpubAzw3OrPDF() {
             if (!this.book || !this.book.files) return false;
             return this.book.files.some(file => {

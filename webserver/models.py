@@ -419,6 +419,7 @@ class ScanFile(Base, SQLAlchemyMixin):
     id = Column(Integer, primary_key=True)
     scan_id = Column(Integer, default=0)
     import_id = Column(Integer, default=0)
+    import_type = Column(Integer, default=0)
 
     name = Column(String(512))
     path = Column(String(1024))

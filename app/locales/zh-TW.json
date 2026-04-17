@@ -316,12 +316,13 @@
     },
     "imports": {
         "title": "匯入圖書",
-        "instructions": "請將需要匯入的書籍放入 {scan_dir} 目錄中。支援的格式為 azw/azw3/epub/mobi/pdf/txt 。",
-        "note": "請注意：已匯入成功的記錄請不要刪除，特別是當開啓了目錄監控功能，以免書籍被再次匯入。",
+        "instructions": "請將需要匯入的書籍放入<strong>{scan_dir}</strong>目錄中。支援的格式為<strong>azw/azw3/epub/mobi/pdf/txt</strong>。<br/>有聲書請放入<strong>{scan_dir}audiobooks/</strong>，音訊檔案為<strong>mp3</strong>格式，封面為<strong>cover.jpg</strong>。",
+        "note": "<strong>請注意：</strong>已匯入成功的記錄請不要刪除，特別是當開啓了目錄監控功能，以免書籍被再次匯入。",
         "calibre": "另外，還可以使用 PC 版 Calibre 軟體管理書籍，但是請注意：使用完 PC 版後，需重啟 Web 版方可生效。",
         "refresh": "重新整理",
         "scan_books": "掃描書籍",
         "batch_add_books": "批次匯入實體書",
+        "import_audiobooks": "匯入有聲書",
         "import_selected": "匯入選中書籍",
         "delete": "刪除",
         "import_all": "匯入全部書籍",
@@ -352,7 +353,13 @@
         "batch_add_processing": "正在處理...",
         "batch_add_no_file": "請選擇 CSV 檔案",
         "ignored_errors_title": "以下目錄在掃描過程中無法存取，已跳過：",
-        "ignored_errors_hint": "這些目錄可能存在權限問題或其他存取異常，請檢查目錄權限後重新掃描。"
+        "ignored_errors_hint": "這些目錄可能存在權限問題或其他存取異常，請檢查目錄權限後重新掃描。",
+        "importTypeEbook": "電子書",
+        "importTypeAudio": "有聲書",
+        "progressScanning": "掃描中",
+        "progressImporting": "匯入中",
+        "progressBatchAdding": "批次新增中",
+        "progressAudioImporting": "有聲書匯入中"
     },
     "book": {
         "edit": {
@@ -812,6 +819,7 @@
         "taskTypeConvert": "格式轉換",
         "taskTypeAIFill": "AI 更新資訊",
         "taskTypeTitleSortUpdate": "更新書名排序資訊",
+        "taskTypeAudioImport": "有聲書匯入",
         "aiConnectionError": "AI連接失敗，請檢查伺服器配置或登入狀態"
     },
     "language": {

@@ -10,9 +10,7 @@ from webserver.models import Message
 
 
 class SingletonType(type):
-
     _instances = {}
-
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(SingletonType, cls).__call__(*args, **kwargs)
@@ -40,7 +38,8 @@ class AsyncService(metaclass=SingletonType):
             try:
                 need_sync_item_time, changed = self.adjust_item_table()
                 reader_changed = self.adjust_reader_table()
-                changed = changed or reader_changed
+                scanfile_changed = self.adjust_scanfile_table()
+                changed = changed or reader_changed or scanfile_changed
                 if changed:
                     self.session.commit()
             except Exception as err:
@@ -181,6 +180,17 @@ class AsyncService(metaclass=SingletonType):
             changed = True
         return changed
 
+    def adjust_scanfile_table(self):
+        result = self.session.execute(text("PRAGMA table_info(scanfiles)")).fetchall()
+        columns = [row[1] for row in result]
+        changed = False
+        if "import_type" not in columns:
+            self.session.execute(
+                text("ALTER TABLE scanfiles ADD COLUMN import_type INTEGER DEFAULT 0")
+            )
+            changed = True
+        return changed
+
     def get_queue(self, service_name) -> Queue:
         if service_name not in self.running:
             return None
@@ -191,9 +201,7 @@ class AsyncService(metaclass=SingletonType):
         if name in self.running:
             return self.running[name][1]
 
-        logging.info(
-            "** Start Thread Service <%s> ** from %s", name, self.__class__.__name__
-        )
+        logging.info("** Start Thread Service <%s> ** from %s", name, self.__class__.__name__)
         q = Queue()
         t = threading.Thread(target=self.loop, args=(service_func, q))
         t.name = self.__class__.__name__ + "." + service_func.__name__
@@ -208,10 +216,9 @@ class AsyncService(metaclass=SingletonType):
             args, kwargs = q.get()
             # 在子线程中重新生成session
             self.session = AsyncService().scoped_session()
-            logging.info(
-                "create new session_id=%s for thread %s",
-                self.session.hash_key,
-                threading.current_thread().name,
+            logging.info("create new session_id=%s for thread %s",
+                         self.session.hash_key,
+                         threading.current_thread().name,
             )
             logging.info("call: func=%s", name)
             try:

@@ -313,12 +313,13 @@
     },
     "imports": {
         "title": "Import Books",
-        "instructions": "Please place the books to be imported in the directory { scan_dir }. Supported formats are azw/azw3/epub/mobi/pdf/txt.",
-        "note": "Note: Do not delete successfully imported records to avoid re-importing the books.",
+        "instructions": "Please place the books to be imported in the directory <strong>{scan_dir}</strong>. Supported formats are <strong>azw3/epub/mobi/pdf/txt</strong>.<br/>Audiobooks should be placed in <strong>{scan_dir}audiobooks/</strong>, with audio files in <strong>mp3</strong> format and cover images as <strong>cover.jpg</strong>.",
+        "note": "<strong>Note:</strong> Do not delete successfully imported records to avoid re-importing the books.",
         "calibre": "Additionally, you can use the PC version of Calibre to manage books. However, please note: After using the PC version, you need to restart the Web version for it to take effect.",
         "refresh": "Refresh",
         "scan_books": "Scan Books",
         "batch_add_books": "Batch Add Hardcopy Books",
+        "import_audiobooks": "Import Audiobooks",
         "import_selected": "Import Selected Books",
         "delete": "Delete",
         "import_all": "Import All Books",
@@ -349,7 +350,13 @@
         "batch_add_processing": "Processing...",
         "batch_add_no_file": "Please select a CSV file",
         "ignored_errors_title": "The following directories could not be accessed during scanning and were skipped:",
-        "ignored_errors_hint": "These directories may have permission issues or other access errors. Please check the directory permissions and scan again."
+        "ignored_errors_hint": "These directories may have permission issues or other access errors. Please check the directory permissions and scan again.",
+        "importTypeEbook": "eBook",
+        "importTypeAudio": "Audiobook",
+        "progressScanning": "Scanning",
+        "progressImporting": "Importing",
+        "progressBatchAdding": "Batch adding",
+        "progressAudioImporting": "Importing audiobooks"
     },
     "settings": {
             "trash_management": "Space cleanup",
@@ -809,6 +816,7 @@
         "taskTypeConvert": "Ebook Conversion",
         "taskTypeAIFill": "AI Update Info",
         "taskTypeTitleSortUpdate": "Update Pinyin Title Sort",
+        "taskTypeAudioImport": "Audiobook Import",
         "aiConnectionError": "AI connection failed, please check server configuration or login status"
     },
     "language": {

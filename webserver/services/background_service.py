@@ -13,6 +13,7 @@ class BackgroundTask:
     SERVICE_TYPE_AUTOFILL = "autofill"  # 图书信息刮削
     SERVICE_TYPE_SCAN = "scan"  # 批量图书导入
     SERVICE_TYPE_AUDIO = "audio"  # 音频转换
+    SERVICE_TYPE_AUDIO_IMPORT = "audio_import"  # 有声书导入
     SERVICE_TYPE_CONVERT = "convert"  # 图书转换
     SERVICE_TYPE_AI_FILL = "ai_fill"  # AI 更新
     SERVICE_TYPE_TITLE_SORT_UPDATE = "title_sort_update"  # 更新拼音书名
@@ -114,6 +115,7 @@ class BackgroundService:
                 BackgroundTask.SERVICE_TYPE_AUTOFILL,
                 BackgroundTask.SERVICE_TYPE_SCAN,
                 BackgroundTask.SERVICE_TYPE_AI_FILL,
+                BackgroundTask.SERVICE_TYPE_AUDIO_IMPORT,
             ]:
                 # 删除该类型的现有运行中任务
                 tasks_to_remove = [

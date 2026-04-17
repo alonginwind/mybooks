@@ -2,9 +2,9 @@
     <v-card>
         <v-card-title> {{ $t('imports.title') }} </v-card-title>
         <v-card-text>
-        {{ $t('imports.instructions', {scan_dir: scan_dir}) }}<br/>
-        {{ $t('imports.note') }}<br/>
-        {{ $t('imports.calibre') }}
+        <div v-html="$t('imports.instructions', {scan_dir: scan_dir})"></div>
+        <div v-html="$t('imports.note')"></div>
+        <div v-html="$t('imports.calibre')"></div>
         </v-card-text>
         <v-card-actions>
             <v-row no-gutters>
@@ -60,6 +60,17 @@
                     <v-btn
                         :disabled="loading"
                         :outlined="$vuetify.breakpoint.xs"
+                        color="purple darken-1"
+                        @click="import_audiobooks"
+                        class="flex-shrink-0"
+                        :icon="$vuetify.breakpoint.xs"
+                    >
+                        <v-icon>mdi-headphones</v-icon>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.import_audiobooks') }}</span>
+                    </v-btn>
+                    <v-btn
+                        :disabled="loading"
+                        :outlined="$vuetify.breakpoint.xs"
                         color="secondary"
                         @click="show_batch_add_dialog"
                         class="flex-shrink-0"
@@ -85,7 +96,7 @@
             </v-row>
         </v-card-actions>
         <v-progress-linear
-            v-if="((scanning || importing || batchAdding) && count_total > 0)"
+            v-if="((scanning || importing || batchAdding || audioImporting) && count_total > 0)"
             :value="progressPercent"
             height="24"
             color="green"
@@ -139,6 +150,11 @@
                 <v-chip small v-else-if="item.status == 'missed'" class="error">{{ $t('imports.status.missed') }}</v-chip>
                 <v-chip small v-else-if="item.status == 'permission'" class="error">{{ $t('imports.status.permission') }}</v-chip>
                 <v-chip small v-else class="info">{{ item.status }}</v-chip>
+            </template>
+            <template v-slot:item.path="{ item }">
+                <v-icon v-if="item.import_type === 2" color="purple">mdi-headphones</v-icon>
+                <v-icon v-else color="green">mdi-file-document</v-icon>
+                <span>{{ item.path }}</span>
             </template>
             <template v-slot:item.title="{ item }">
                 {{ $t('imports.book_title') }}<span v-if="item.book_id == 0"> {{ item.title }} </span>
@@ -206,6 +222,7 @@ export default {
         importing: false,
         scanning: false,
         batchAdding: false,
+        audioImporting: false,
         batchAddDialog: false,
         csvFile: null,
         options: {},
@@ -262,9 +279,10 @@ export default {
             };
         },
         progressPrefix() {
-            if (this.scanning) return "扫描中";
-            if (this.importing) return "导入中";
-            if (this.batchAdding) return "批量添加中";
+            if (this.scanning) return this.$t('imports.progressScanning');
+            if (this.importing) return this.$t('imports.progressImporting');
+            if (this.batchAdding) return this.$t('imports.progressBatchAdding');
+            if (this.audioImporting) return this.$t('imports.progressAudioImporting');
             return "";
         },
     },
@@ -485,6 +503,31 @@ export default {
                     }
                 });
 
+            // Check audio import status
+            this.$backend("/admin/audio_import/status")
+                .then((rsp) => {
+                    if (rsp.err !== "ok") {
+                        return;
+                    }
+                    if (rsp.audio_importing) {
+                        this.audioImporting = true;
+                        this.loading = true;
+                        this.loop_check_status("/admin/audio_import/status", (rsp) => {
+                            this.count_total = rsp.status.total || 0;
+                            this.count_processed = (rsp.status.imported || 0) + (rsp.status.exist || 0);
+                            this.count_done = rsp.summary.done;
+                            this.count_todo = rsp.summary.todo;
+                            this.audioImporting = rsp.audio_importing || false;
+                            if (!rsp.audio_importing) {
+                                this.loading = false;
+                                return false;
+                            }
+                            this.loading = true;
+                            return true;
+                        });
+                    }
+                });
+
             // Check batch add status
             this.$backend("/admin/batch_add/status")
                 .then((rsp) => {
@@ -538,6 +581,31 @@ export default {
                             return true;
                         });
                     }
+                });
+        },
+        import_audiobooks() {
+            this.loading = true;
+            this.$backend("/admin/audio_import/run", { method: "POST" })
+                .then((rsp) => {
+                    if (rsp.err !== "ok") {
+                        this.$alert("error", rsp.msg);
+                        this.loading = false;
+                        return;
+                    }
+                    this.audioImporting = true;
+                    this.loop_check_status("/admin/audio_import/status", (rsp) => {
+                        this.count_total = rsp.status.total || 0;
+                        this.count_processed = (rsp.status.imported || 0) + (rsp.status.exist || 0);
+                        this.count_done = rsp.summary.done;
+                        this.count_todo = rsp.summary.todo;
+                        this.audioImporting = rsp.audio_importing || false;
+                        if (!rsp.audio_importing) {
+                            this.loading = false;
+                            return false;
+                        }
+                        this.loading = true;
+                        return true;
+                    });
                 });
         },
         show_batch_add_dialog() {

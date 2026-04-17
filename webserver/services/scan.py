@@ -14,7 +14,8 @@ from webserver import utils
 from webserver.models import Item, ScanFile
 from webserver.services import AsyncService
 from webserver.services.autofill import AutoFillService
-from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_CATEGORY, CALIBRE_ERROR_FLAG, BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
+from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_CATEGORY, CALIBRE_ERROR_FLAG
+from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver import loader
 
