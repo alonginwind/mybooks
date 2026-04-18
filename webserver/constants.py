@@ -12,6 +12,8 @@ CHROME_MOBILE_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
 }
 
+CUSTOM_COVER_IMAGE = "/data/books/logo/default_cover.jpg"
+
 CALIBRE_ERROR_FLAG = "<*ERROR*>"
 SUPPORTED_EBOOK_FORMATS = ["azw3", "epub", "mobi", "pdf", "txt", "azw"]
 
