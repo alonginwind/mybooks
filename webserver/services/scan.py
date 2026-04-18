@@ -15,7 +15,7 @@ from webserver.models import Item, ScanFile
 from webserver.services import AsyncService
 from webserver.services.autofill import AutoFillService
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_CATEGORY, CALIBRE_ERROR_FLAG
-from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
+from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL, AUDIO_BOOK_IMPORTS
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver import loader
 
@@ -628,6 +628,9 @@ class ScanService(AsyncService):
                 continue
 
             fname = os.path.basename(fpath)
+            if fname == AUDIO_BOOK_IMPORTS:
+                logging.info("[SCAN_IMPORT] Skipping audiobook import file: %s", fpath)
+                continue
             fmt = fpath.split(".")[-1].lower()
             if not fmt or fmt not in SCAN_EXT:
                 logging.info("[SCAN_IMPORT] Unsupported format [%s], skip: %s", fmt, fpath)
