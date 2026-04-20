@@ -134,13 +134,23 @@ class AsyncService(metaclass=SingletonType):
             changed = True
         return changed
 
-    def get_queue(self, service_name) -> Queue:
-        if service_name not in self.running:
-            return None
-        return self.running[service_name][1]
+    def get_queue(self, service_name) -> Queue | None:
+        if service_name in self.running:
+            return self.running[service_name][1]
+
+        matches = [
+            q for key, (_, q) in self.running.items()
+            if key == service_name or key.endswith("." + service_name)
+        ]
+        if len(matches) == 1:
+            return matches[0]
+        return None
+
+    def _service_key(self, service_func) -> str:
+        return f"{service_func.__module__}.{service_func.__qualname__}"
 
     def start_service(self, service_func) -> Queue:
-        name = service_func.__name__
+        name = self._service_key(service_func)
         if name in self.running:
             return self.running[name][1]
 
@@ -154,7 +164,7 @@ class AsyncService(metaclass=SingletonType):
         return q
 
     def loop(self, service_func, q):
-        name = service_func.__name__
+        name = self._service_key(service_func)
         while True:
             args, kwargs = q.get()
             # 在子线程中重新生成session
@@ -189,7 +199,7 @@ class AsyncService(metaclass=SingletonType):
 
     @staticmethod
     def register_function(service_func):
-        name = service_func.__name__
+        name = f"{service_func.__module__}.{service_func.__qualname__}"
 
         def func_wrapper(ins: AsyncService, *args, **kwargs):
             s = AsyncService()
@@ -201,7 +211,7 @@ class AsyncService(metaclass=SingletonType):
 
     @staticmethod
     def register_service(service_func):
-        name = service_func.__name__
+        name = f"{service_func.__module__}.{service_func.__qualname__}"
 
         def func_wrapper(ins: AsyncService, *args, **kwargs):
             s = AsyncService()
