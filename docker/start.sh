@@ -9,6 +9,8 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH
 groupmod -o -g "${PGID}" talebook
 usermod -o -u "${PUID}" talebook
 
+echo "starting...."
+
 # 使用预设的书库和配置
 if [ ! -d "/data/books" ]; then
   cp -rf /prebuilt/books /data/
@@ -59,6 +61,7 @@ if [ "x$permission" != "x$PUID:$PGID" ]; then
     echo "updating '/data/' permission to $PUID:$PGID"
     chown -R talebook:talebook /data
     echo "$PUID:$PGID" > $permission_file
+    echo "permission updated!"
 fi
 
 # 设置系统文件的权限（数量较少）
