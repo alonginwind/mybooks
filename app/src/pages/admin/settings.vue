@@ -971,6 +971,12 @@ export default {
             type: "checkbox",
           },
           {
+            icon: "mdi-delete-circle-outline",
+            key: "REMOVE_IMPORTED_FILE",
+            label: "settings.remove_imported_file",
+            type: "checkbox",
+          },
+          {
             icon: "mdi-shape-plus",
             key: "IMPORT_CATEGORY_WITH_FOLDER",
             label: "settings.category_with_folder",

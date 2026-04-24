@@ -53,6 +53,14 @@ class ScanService(AsyncService):
             ScanService.invalid_folder.add(e.filename)
             logging.error(f"[SCAN]访问目录时发生错误: {e.filename}, 错误码: {e.errno}")
 
+    @staticmethod
+    def _remove_imported_file(fpath):
+        try:
+            os.remove(fpath)
+            logging.info(f"Removed imported file: {fpath}")
+        except Exception as e:
+            logging.error(f"Failed to remove imported file {fpath}: {e}")
+
     def save_or_rollback(self, row, session=None):
         session = session or self.session
         bid = "[ book-id=%s ]" % row.book_id if row.book_id else ""
@@ -485,6 +493,7 @@ class ScanService(AsyncService):
                             logging.info("[IMPORT]import [%s] from %s with format %s", repr(mi.title), fpath, fmt)
                             self.db.add_format(row.book_id, fmt.upper(), fpath, True)
                             row.status = ScanFile.IMPORTED
+
                     if not existed_ebook:
                         # 未找到重复电子书时，导入新书
                         logging.info("[IMPORT]import [%s] from %s [cost:%.3f]", repr(mi.title), fpath, time.time() - start_time)
@@ -518,6 +527,9 @@ class ScanService(AsyncService):
                                     logging.warning("[IMPORT] Failed to set category for book_id=%d: %s", row.book_id, cat_err)
                             else:
                                 logging.warning("[IMPORT] Skipping category setting for file %s due to invalid directory name: '%s'", fpath, first_dir)
+
+                    if CONF.get("REMOVE_IMPORTED_FILE", False) and (not existed_ebook or row.status == ScanFile.EXIST):
+                        self._remove_imported_file(fpath)
                 except Exception as err:
                     row.status = ScanFile.INVALID
                     logging.error("[IMPORT] Failed to process file %s: %s", fpath, err)

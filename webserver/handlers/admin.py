@@ -43,6 +43,7 @@ from webserver.i18n import apply_localized_default_settings
 CONF = loader.get_settings()
 USER_UPDATE_TS_MAP = {}
 ENABLE_VIP_QUOTA_KEY = "ENABLE_VIP_QUOTA"
+IMPORT_BY_INOTIFY = "IMPORT_BY_INOTIFY"
 META_ALL_SOURCES = ["douban", "baidu", "google", "amazon", "xinhua"]
 DEFAULT_META_SOURCES = ["douban", "baidu", "xinhua"]
 LOG_PATH = "/data/log/talebook.log"
@@ -450,6 +451,7 @@ class AdminSettings(BaseHandler):
             "ALLOW_READ_RANGE_SETTING",
             "IMPORT_BY_INOTIFY",
             "IMPORT_CATEGORY_WITH_FOLDER",
+            "REMOVE_IMPORTED_FILE",
             "UPDATE_CATEGORY_WITH_FOLDER_RENAME",
             "LOG_LEVEL_DEBUG",
             "ENABLE_STAMP_FEATURE",
@@ -481,6 +483,9 @@ class AdminSettings(BaseHandler):
             args[ENABLE_VIP_QUOTA_KEY] = current_vip_quota
         if ENABLE_OPDS_SERVICE not in args:
             args[ENABLE_OPDS_SERVICE] = CONF.get(ENABLE_OPDS_SERVICE, True)
+        if args.get(IMPORT_BY_INOTIFY, False):
+            # 如果启用基于 inotify 的文件导入，不能默认删除文件
+            args["REMOVE_IMPORTED_FILE"] = False
 
         args["META_ALL_SOURCES"] = META_ALL_SOURCES
         if "META_SELECTED_SOURCES" not in args:
