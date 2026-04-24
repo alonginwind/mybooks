@@ -817,19 +817,22 @@ class BookRefer(BaseHandler):
         if provider_key in (douban.KEY, youshu.KEY):
             try:
                 refer_mi = self.plugin_get_book_meta(provider_key, provider_value, mi)
+                if not refer_mi:
+                    return {"err": "plugin.no_result", "msg": _(u"未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因")}
                 # Correct the author if douban detail not return authors
                 if not refer_mi.authors or (len(refer_mi.authors) == 1 and refer_mi.authors[0] in ("佚名", "")):
                     refer_mi.author_sort = metadata.get("author_sort", None) if metadata else mi.author_sort
                     refer_mi.authors = metadata.get("authors", []) if metadata else mi.authors
-            except RuntimeError as e:
-                return e.args[0]
+            except Exception as e:
+                logging.error(f"Error fetching book meta from plugin {provider_key}: {e}")
+                return {"err": "plugin.no_result", "msg": _(u"未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因")}
         else:
             refer_mi = self._convert_to_metadata(metadata) if metadata else mi
             if only_meta != "yes":
                 try:
                     cover_url = metadata.get("cover_url") if metadata else None
                     refer_mi.cover_data = self.plugin_fill_book_cover(provider_key, cover_url)
-                except RuntimeError as e:
+                except Exception as e:
                     logging.error(f"Error filling book metadata from plugin {provider_key}: {e}")
 
         if not refer_mi:

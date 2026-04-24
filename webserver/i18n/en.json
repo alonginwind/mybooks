@@ -432,5 +432,6 @@
   "添加图章时发生错误: %s": "Error occurred while adding stamp: %s",
   "导入有声书": "Import Audiobooks",
   "有声书导入任务已启动": "Audiobook import task started",
-  "有声书导入任务正在运行中，请稍候": "Audiobook import is already running, please wait"
+  "有声书导入任务正在运行中，请稍候": "Audiobook import is already running, please wait",
+  "未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因": "Did not find relevant information or access is restricted. If this happens frequently, please try again later or check the logs for the reason"
 }
