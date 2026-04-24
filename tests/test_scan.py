@@ -12,7 +12,7 @@ from tests.test_main import TestWithUserLogin, setUpModule as init, testdir
 from webserver import handlers
 from webserver.models import ScanFile
 from webserver.services import AsyncService
-from webserver.services.scan import ScanService
+from webserver.services.scan_service import ScanService
 
 
 def setUpModule():
