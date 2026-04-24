@@ -28,11 +28,6 @@ class ScanService(AsyncService):
     invalid_folder: set[str] = set()
 
     @staticmethod
-    def is_scanning():
-        # Kept for backward compatibility; scanning is now part of do_import
-        return False
-
-    @staticmethod
     def is_importing():
         return ScanService.static_is_importing
 
@@ -106,21 +101,16 @@ class ScanService(AsyncService):
 
     @AsyncService.register_service
     def do_import(self, paths, user_id):
-        """Scan directories or process file paths and import books in one pass.
-
-        Args:
-            paths: None/'all' to use configured scan_upload_path, a single path string,
-                   or a list of file/directory paths.
-            user_id: ID of the user triggering the import.
-        """
         if ScanService.static_is_importing:
             logging.error("Importing is running, please wait...")
             return
 
         ScanService.invalid_folder.clear()
         ScanService.static_is_importing = True
+        start_time = time.time()
 
         filelist = self._collect_files(paths)
+        logging.info("[IMPORT] Collected %d files in %.3f seconds", len(filelist), time.time() - start_time)
         if not filelist:
             logging.warning("[IMPORT] No valid files found in: %s", paths)
             ScanService.static_is_importing = False
@@ -151,22 +141,46 @@ class ScanService(AsyncService):
             logging.error(traceback.format_exc())
         ScanService.static_is_importing = False
 
-    def do_import_internal(self, filelist, user_id, task_id=None):
-        """Process a list of file paths: compute sha256, check duplicates, read metadata, import.
+    def _compute_hash(self, fpath):
+        """Compute partial sha256 for the file.
+        < 10MB: first 4MB; >= 10MB: first 3MB + last 3MB.
+        Returns (hash_str, None) on success, or (None, bad_reason) on error."""
+        sha256 = hashlib.sha256()
+        _MB = 1024 * 1024
+        try:
+            file_size = os.path.getsize(fpath)
+            with open(fpath, "rb") as f:
+                if file_size < 10 * _MB:
+                    sha256.update(f.read(4 * _MB))
+                else:
+                    sha256.update(f.read(3 * _MB))
+                    f.seek(-3 * _MB, 2)
+                    sha256.update(f.read(3 * _MB))
+            return "sha256:" + sha256.hexdigest(), None
+        except FileNotFoundError:
+            logging.error("[IMPORT] File not found: %s", fpath)
+            return None, ScanFile.MISSED
+        except PermissionError:
+            logging.error("[IMPORT] Permission denied: %s", fpath)
+            return None, ScanFile.PERMISSION
+        except Exception as e:
+            logging.error("[IMPORT] Error reading file %s: %s", fpath, e)
+            return None, ScanFile.INVALID
 
-        Phase 1: Walk filelist, compute sha256 hashes, create/update ScanFile records (READY).
-        Phase 2: For each READY record, read calibre metadata and import into the library.
-        """
+    def do_import_internal(self, filelist, user_id, task_id=None):
+        """Process a list of file paths: compute sha256, check duplicates, read metadata, import."""
         from calibre.ebooks.metadata.meta import get_metadata
+        from calibre.ebooks.metadata.book.base import Metadata
 
         session = self.session
         import_id = int(time.time())
         scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
         total_count = len(filelist)
         imported = []
-        processed_paths: set[str] = set()  # within-run realpath dedup
+        processed_paths: set[str] = set()
         batch_size = 20
 
+        start_time = time.time()
         logging.info("[IMPORT] Start Phase 1 (hash + dedup) for %d files", total_count)
 
         # === Phase 1: compute sha256, dedup, create READY ScanFile records ===
@@ -208,22 +222,7 @@ class ScanService(AsyncService):
             if already_done:
                 continue
 
-            # Compute sha256 hash
-            sha256 = hashlib.sha256()
-            bad_reason = None
-            try:
-                with open(fpath, "rb") as f:
-                    for byte_block in iter(lambda: f.read(4096), b""):
-                        sha256.update(byte_block)
-            except FileNotFoundError:
-                logging.error("[IMPORT] File not found: %s", fpath)
-                bad_reason = ScanFile.MISSED
-            except PermissionError:
-                logging.error("[IMPORT] Permission denied: %s", fpath)
-                bad_reason = ScanFile.PERMISSION
-            except Exception as e:
-                logging.error("[IMPORT] Error reading file %s: %s", fpath, e)
-                bad_reason = ScanFile.INVALID
+            hash_val, bad_reason = self._compute_hash(fpath)
 
             if bad_reason:
                 row = ScanFile(fpath, "", import_id)
@@ -231,7 +230,6 @@ class ScanService(AsyncService):
                 self.save_or_rollback(row, session)
                 continue
 
-            hash_val = "sha256:" + sha256.hexdigest()
             processed_paths.add(real_fpath)
 
             # Check already imported by hash
@@ -276,41 +274,44 @@ class ScanService(AsyncService):
             fname = os.path.basename(fpath)
             fmt = fpath.split(".")[-1].lower()
             start_time = time.time()
+            logging.info("[IMPORT] Processing [%d/%d]: %s", index + 1, total_to_process, fpath)
 
-            # Read metadata
-            try:
-                with open(fpath, "rb") as stream:
-                    mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
-                    mi.title = utils.super_strip(mi.title)
-                    mi.authors = [utils.super_strip(s) for s in mi.authors]
-            except Exception as e:
-                logging.error("[IMPORT] Error reading metadata from %s: %s", fpath, e)
-                row.status = ScanFile.INVALID
-                self.save_or_rollback(row, session)
-                continue
+            # Skip metadata reading when title/author are derived from filename
+            skip_metadata = (fmt == "txt") or (fmt == "pdf" and CONF.get("PDF_TILE_WITH_FILE_NAME", False))
+            if skip_metadata:
+                title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+                mi = Metadata(title, [_(u"佚名")])
+                logging.info("[IMPORT] Skipped metadata read for %s: %s", fmt, repr(title))
+            else:
+                # Read metadata
+                try:
+                    with open(fpath, "rb") as stream:
+                        mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
+                        mi.title = utils.super_strip(mi.title)
+                        mi.authors = [utils.super_strip(s) for s in mi.authors]
+                    logging.info("[IMPORT] Metadata read [%.3fs]: %s", time.time() - start_time, repr(mi.title))
+                except Exception as e:
+                    logging.error("[IMPORT] Error reading metadata from %s: %s", fpath, e)
+                    row.status = ScanFile.INVALID
+                    self.save_or_rollback(row, session)
+                    continue
 
-            if mi.title and mi.title == CALIBRE_ERROR_FLAG:
-                logging.error("[IMPORT] Failed to get metadata for %s", fpath)
-                row.status = ScanFile.INVALID
-                row.title = None
-                self.save_or_rollback(row, session)
-                continue
+                if mi.title and mi.title == CALIBRE_ERROR_FLAG:
+                    logging.error("[IMPORT] Failed to get metadata for %s", fpath)
+                    row.status = ScanFile.INVALID
+                    row.title = None
+                    self.save_or_rollback(row, session)
+                    continue
 
-            # Normalize title/author for specific formats
-            if fmt == "txt":
-                mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
-                mi.authors = [_(u"佚名")]
-            elif fmt == "pdf":
-                if CONF.get("PDF_TILE_WITH_FILE_NAME", False):
-                    mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
-                else:
+                # Normalize title/author for pdf (PDF_TILE_WITH_FILE_NAME=False)
+                if fmt == "pdf":
                     title_ = mi.title.strip() if mi.title else ""
                     if not title_ or title_.find(_(u"下载工具")) >= 0 or title_ == "SSReader Print.":
                         mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
                     else:
                         mi.title = title_
-                if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
-                    mi.authors = [_(u"佚名")]
+                    if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
+                        mi.authors = [_(u"佚名")]
 
             row.title = mi.title
             row.author = mi.authors[0] if mi.authors else mi.author_sort
@@ -343,7 +344,7 @@ class ScanService(AsyncService):
                     mi.title_sort = utils.get_title_sort(mi.title)
                     row.book_id = self.db.import_book(mi, [fpath])
                     row.status = ScanFile.IMPORTED
-                    logging.info("[IMPORT] Imported book_id=%d [cost:%.3f]", row.book_id, time.time() - start_time)
+                    logging.info("[IMPORT] Calibre import done, book_id=%d [%.3fs]", row.book_id, time.time() - start_time)
 
                     item = Item()
                     item.book_id = row.book_id
@@ -375,6 +376,7 @@ class ScanService(AsyncService):
                 logging.error(traceback.format_exc())
 
             self.save_or_rollback(row, session)
+            logging.info("[IMPORT] File done, status=%s [total %.3fs]: %s", row.status, time.time() - start_time, fpath)
 
             # Batch commit every batch_size files
             if (index + 1) % batch_size == 0:
