@@ -38,18 +38,18 @@ class TestScan(TestWithUserLogin):
         return super().setUp()
 
     def test_list(self):
-        d = self.json("/api/admin/scan/list?num=10000")
+        d = self.json("/api/admin/import/list?num=10000")
         self.assertEqual(d['total'], self.RECORDS_COUNT)
 
     # def test_scan(self):
-    #     d = self.json("/api/admin/scan/run", method="POST", body="")
+    #     d = self.json("/api/admin/import/run", method="POST", body="")
     #     self.assertEqual(d["err"], "ok")
 
     #     row = self.session.query(ScanFile).filter(ScanFile.id == self.NEW_ROW_ID).one()
     #     # new.epub & old.epub are imported before, so they should be dropped here
     #     self.assertEqual(row.status, ScanFile.DROP)
 
-    #     d = self.json("/api/admin/scan/list?num=10000")
+    #     d = self.json("/api/admin/import/list?num=10000")
     #     # new.epub has be reset as NEW and same file path, it should be processed again with existed record
     #     self.assertEqual(d['total'], self.RECORDS_COUNT + 4)
 
@@ -60,7 +60,7 @@ class TestScan(TestWithUserLogin):
     #     self.async_service.return_value = True
 
     #     n = threading.active_count() + 1
-    #     d = self.json("/api/admin/scan/run", method="POST", body="")
+    #     d = self.json("/api/admin/import/run", method="POST", body="")
     #     self.assertEqual(d["err"], "ok")
     #     self.assertEqual(n+1, threading.active_count())
 
@@ -76,7 +76,7 @@ class TestScan(TestWithUserLogin):
     #     self.assertEqual(row.status, ScanFile.DROP)
 
     def test_scan_status(self):
-        d = self.json("/api/admin/scan/status")
+        d = self.json("/api/admin/import/status")
         self.assertEqual(d["err"], "ok")
 
     def test_import_status(self):
@@ -101,7 +101,7 @@ class TestScanContinue(TestWithUserLogin):
         self.session.commit()
         return super().setUp()
     # def test_scan(self):
-    #     d = self.json("/api/admin/scan/run", method="POST", body="")
+    #     d = self.json("/api/admin/import/run", method="POST", body="")
     #     self.assertEqual(d["err"], "ok")
 
     #     row = self.session.query(ScanFile).filter(ScanFile.id == self.NEW_ROW_ID).one()

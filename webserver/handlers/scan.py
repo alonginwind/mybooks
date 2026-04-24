@@ -65,9 +65,6 @@ class Scanner:
         self.cached_status = {"total": total, "done": done, "todo": todo}
         return self.cached_status
 
-    def run_scan(self, path_dir):
-        ScanService().do_scan(path_dir)
-
     def delete(self, hashlist):
         query = self.session.query(ScanFile)
         if isinstance(hashlist, (list, tuple)):
@@ -77,28 +74,6 @@ class Scanner:
         count = query.delete()
         self.session.commit()
         return count
-
-    def resume_last_import(self):
-        # TODO
-        return False
-
-    def build_query(self, hashlist):
-        query = self.session.query(ScanFile).filter(
-            ScanFile.status == ScanFile.READY
-        )  # .filter(ScanFile.import_id == 0)
-        if isinstance(hashlist, (list, tuple)):
-            query = query.filter(ScanFile.hash.in_(hashlist))
-        elif isinstance(hashlist, str):
-            query = query.filter(ScanFile.hash == hashlist)
-        return query
-
-    def run_import(self, hashlist):
-        if self.resume_last_import():
-            return 1
-
-        total = self.build_query(hashlist).count()
-        ScanService().do_import(hashlist, self.user_id)
-        return total
 
     def import_status(self):
         import_id = self.session.query(sqlalchemy.func.max(ScanFile.import_id)).scalar()
@@ -142,7 +117,7 @@ class Scanner:
                 logging.error(f"Error closing session: {e}")
 
 
-class ScanList(BaseHandler):
+class ImportList(BaseHandler):
     @js
     @auth
     def get(self):
@@ -211,7 +186,7 @@ class ScanList(BaseHandler):
                 "err": "ok",
                 "items": response,
                 "total": total,
-                "scanning": ScanService.static_is_scanning,
+                "scanning": False,
                 "importing": ScanService.static_is_importing,
                 "summary": summary,
                 "scan_dir": CONF["scan_upload_path"],
@@ -224,40 +199,7 @@ class ScanList(BaseHandler):
                     logging.error(f"Error closing scanner: {e}")
 
 
-class ScanMark(BaseHandler):
-    @js
-    @is_admin
-    def post(self):
-        return {"err": "ok", "msg": _("发送成功")}
-
-
-class ScanRun(BaseHandler):
-    @js
-    @is_admin
-    def post(self):
-        path = CONF["scan_upload_path"]
-        if not path.startswith(SCAN_DIR_PREFIX):
-            return {
-                "err": "params.error",
-                "msg": _("书籍导入目录必须是%s的子目录") % SCAN_DIR_PREFIX,
-            }
-
-        scanner = None
-        try:
-            scanner = Scanner(self.calibre_db, self.settings["ScopedSession"])
-            total = scanner.run_scan(path)
-            if total == 0:
-                return {"err": "empty", "msg": _("目录中没有找到符合要求的书籍文件！")}
-            return {"err": "ok", "msg": _("开始扫描了"), "total": total}
-        finally:
-            if scanner:
-                try:
-                    scanner.close()
-                except Exception as e:
-                    logging.error(f"Error closing scanner: {e}")
-
-
-class ScanDelete(BaseHandler):
+class ImportDelete(BaseHandler):
     @js
     @is_admin
     def post(self):
@@ -281,61 +223,22 @@ class ScanDelete(BaseHandler):
                     logging.error(f"Error closing scanner: {e}")
 
 
-class ScanStatus(BaseHandler):
-    @js
-    @is_admin
-    def get(self):
-        scanner = None
-        try:
-            scanner = Scanner(self.calibre_db, self.settings["ScopedSession"])
-            scan_id, status, failed_path = scanner.scan_status()
-            summary = scanner.summary()
-            return {
-                "err": "ok",
-                "msg": _("成功"),
-                "task": scan_id,
-                "status": status,
-                "summary": summary,
-                "ignored_errors": failed_path,
-                "scanning": ScanService.static_is_scanning,
-                "importing": ScanService.static_is_importing,
-            }
-        finally:
-            if scanner:
-                try:
-                    scanner.close()
-                except Exception as e:
-                    logging.error(f"Error closing scanner: {e}")
-
-
 class ImportRun(BaseHandler):
     @js
     @is_admin
     def post(self):
-        scanner = None
         try:
             req = tornado.escape.json_decode(self.request.body)
-            hashlist = req["hashlist"]
-            if not hashlist:
+            filelist = req.get("filelist", "all")
+            if not filelist:
                 return {"err": "params.error", "msg": _("参数错误")}
-            if hashlist == "all":
-                hashlist = None
-
-            scanner = Scanner(self.calibre_db, self.settings["ScopedSession"], self.user_id())
-            total = scanner.run_import(hashlist)
-            if total == 0:
+            if ScanService.is_importing():
                 return {"err": "empty", "msg": _("没有等待导入书库的书籍！")}
+            ScanService().do_import(filelist, self.user_id())
             return {"err": "ok", "msg": _("扫描成功")}
         except Exception as e:
             logging.error(f"ImportRun error: {e}")
             return {"err": "server.error", "msg": str(e)}
-        finally:
-            # 确保 Scanner 对象被正确清理
-            if scanner:
-                try:
-                    scanner.close()
-                except Exception as e:
-                    logging.error(f"Error closing scanner: {e}")
 
 
 class ImportStatus(BaseHandler):
@@ -351,7 +254,7 @@ class ImportStatus(BaseHandler):
                 "err": "ok", "msg": _("成功"),
                 "status": status,
                 "summary": summary,
-                "scanning": ScanService.static_is_scanning,
+                "scanning": False,
                 "importing": ScanService.static_is_importing
             }
         finally:
@@ -516,11 +419,8 @@ class AudioImportStatus(BaseHandler):
 
 def routes():
     return [
-        (r"/api/admin/scan/list", ScanList),
-        (r"/api/admin/scan/run", ScanRun),
-        (r"/api/admin/scan/status", ScanStatus),
-        (r"/api/admin/scan/delete", ScanDelete),
-        (r"/api/admin/scan/mark", ScanMark),
+        (r"/api/admin/import/list", ImportList),
+        (r"/api/admin/import/delete", ImportDelete),
         (r"/api/admin/import/run", ImportRun),
         (r"/api/admin/import/status", ImportStatus),
         (r"/api/admin/batch_add/run", BatchAddRun),

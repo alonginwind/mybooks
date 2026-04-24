@@ -317,7 +317,7 @@
     "imports": {
         "title": "匯入圖書",
         "instructions": "請將需要匯入的書籍放入<strong>{scan_dir}</strong>目錄中。支援的格式為<strong>azw/azw3/epub/mobi/pdf/txt</strong>。<br/>有聲書請放入<strong>{scan_dir}audiobooks/</strong>，音訊檔案為<strong>mp3</strong>格式，封面為<strong>cover.jpg</strong>。",
-        "note": "<strong>請注意：</strong>已匯入成功的記錄請不要刪除，特別是當開啓了目錄監控功能，以免書籍被再次匯入。",
+        "note": "<strong>請注意：</strong>已匯入成功的記錄請不要刪除，特別是當開啓了目錄監控功能，以免書籍被重複匯入。",
         "calibre": "另外，還可以使用 PC 版 Calibre 軟體管理書籍，但是請注意：使用完 PC 版後，需重啟 Web 版方可生效。",
         "refresh": "重新整理",
         "scan_books": "掃描書籍",

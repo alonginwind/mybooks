@@ -317,7 +317,7 @@
     "imports": {
         "title": "导入图书",
         "instructions": "请将需要导入的书籍放入<strong>{scan_dir}</strong>目录中。 支持的格式为<strong>azw3/epub/mobi/pdf/txt</strong>。<br/>有声书放到<strong>{scan_dir}audiobooks/</strong>，音频文件为<strong>mp3</strong>格式，封面图片为<strong>cover.jpg</strong>。",
-        "note": "<strong>请注意：</strong>已导入成功的记录请不要删除，特別是当开启了导入目录监控，以免书籍被再次导入。",
+        "note": "<strong>请注意：</strong>已导入成功的记录请不要删除，特別是当开启了导入目录监控，以免书籍被重复导入。",
         "calibre": "另外，还可以使用PC版Calibre软件管理书籍，但是请注意：使用完PC版后，需重启Web版方可生效。",
         "refresh": "刷新",
         "scan_books": "扫描书籍",
@@ -325,7 +325,7 @@
         "import_audiobooks": "导入有声书",
         "import_selected": "导入选中书籍",
         "delete": "删除",
-        "import_all": "导入全部书籍",
+        "import_all": "扫描并导入书籍",
         "select_files": "请勾选需要处理的文件（默认情况下导入全部书籍即可。已存在的书籍，即使勾选了也不会重复导入）",
         "selected_count": "共选择了 {count} 个",
         "todo": "待处理 ( {count} )",

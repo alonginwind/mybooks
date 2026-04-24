@@ -11,7 +11,6 @@
                 <v-col cols="12" class="d-flex flex-wrap ga-2 mb-2">
                     <v-btn
                         :disabled="loading"
-                        outlined
                         color="primary"
                         @click="getDataFromApi"
                         class="flex-shrink-0"
@@ -20,22 +19,11 @@
                         <v-icon>mdi-reload</v-icon>
                         <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.refresh') }}</span>
                     </v-btn>
-                    <v-btn
-                        :disabled="loading"
-                        :outlined="$vuetify.breakpoint.xs"
-                        color="primary"
-                        @click="scan_books"
-                        class="flex-shrink-0"
-                        :icon="$vuetify.breakpoint.xs"
-                    >
-                        <v-icon>mdi-file-find</v-icon>
-                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.scan_books') }}</span>
-                    </v-btn>
                     <template v-if="selected.length > 0">
                         <v-btn
                             :disabled="loading"
                             :outlined="$vuetify.breakpoint.xs"
-                            color="secondary"
+                            color="#2d6d4b"
                             @click="import_books"
                             class="flex-shrink-0"
                             :icon="$vuetify.breakpoint.xs"
@@ -48,7 +36,7 @@
                         <v-btn
                             :disabled="loading"
                             :outlined="$vuetify.breakpoint.xs"
-                            color="secondary"
+                            color="#2d6d4b"
                             @click="import_books"
                             class="flex-shrink-0"
                             :icon="$vuetify.breakpoint.xs"
@@ -305,7 +293,7 @@ export default {
             if (itemsPerPage != undefined) {
                 data.append("num", itemsPerPage);
             }
-            this.$backend("/admin/scan/list?" + data.toString())
+            this.$backend("/admin/import/list?" + data.toString())
                 .then((rsp) => {
                     if (rsp.err != "ok") {
                         this.items = [];
@@ -348,46 +336,18 @@ export default {
                     })
             }, 2000);
         },
-        scan_books() {
-            this.loading = true;
-            this.$backend("/admin/scan/run", {
-                method: "POST",
-            }).then((rsp) => {
-                    if (rsp.err !== "ok") {
-                        this.$alert("error", rsp.msg);
-                        this.loading = false;
-                        return;
-                    }
-
-                    this.loop_check_status("/admin/scan/status", (rsp) => {
-                        this.scan = rsp.status;
-                        this.count_processed = rsp.status.total - rsp.status.new;
-                        this.count_done = rsp.summary.done;
-                        this.count_todo = rsp.summary.todo;
-                        this.count_total = rsp.status.total;
-                        this.scanning = rsp.scanning;
-                        this.importing = rsp.importing;
-                        if (!rsp.scanning) {
-                            this.loading = false;
-                            return false;
-                        }
-                        this.loading = true;
-                        return true;
-                    });
-                })
-        },
         import_books() {
             this.loading = true;
-            var hashlist = "all";
+            var filelist = "all";
             if (this.selected.length > 0) {
-                hashlist = this.selected.map((v) => {
-                        return v.hash;
+                filelist = this.selected.map((v) => {
+                        return v.path;
                     });
             }
             this.$backend("/admin/import/run", {
                 method: "POST",
                 body: JSON.stringify({
-                    hashlist: hashlist,
+                    filelist: filelist,
                 }),
             })
                 .then((rsp) => {
@@ -405,7 +365,6 @@ export default {
                         this.count_total = rsp.status.ready + rsp.status.imported;
                         this.count_processed = rsp.status.imported;
 
-                        this.scanning = rsp.scanning;
                         this.importing = rsp.importing;
                         if (!rsp.importing || this.import.ready === 0) {
                             this.loading = false;
@@ -419,7 +378,7 @@ export default {
         },
         delete_record() {
             this.loading = true;
-            this.$backend("/admin/scan/delete", {
+            this.$backend("/admin/import/delete", {
                 method: "POST",
                 body: JSON.stringify({
                     hashlist: this.selected.map((v) => {
@@ -438,61 +397,15 @@ export default {
                     this.loading = false;
                 });
         },
-        mark_as(status) {
-            this.loading = true;
-            this.$backend("/admin/scan/mark", {
-                method: "POST",
-                body: JSON.stringify({ hashlist: this.selected, status: status }),
-            })
-                .then((rsp) => {
-                    if (rsp.err !== "ok") {
-                        this.$alert("error", rsp.msg);
-                    }
-                })
-                .finally(() => {
-                    this.loading = false;
-                });
-            this.items.map((v) => {
-                if (this.selected.indexOf(v.hash)) {
-                    v.status = status;
-                }
-            });
-        },
         checkCurrentState() {
-            // Check scan status first
-            this.$backend("/admin/scan/status")
+            // Check importing status first
+            this.$backend("/admin/import/status")
                 .then((rsp) => {
                     if (rsp.err !== "ok") {
                         return;
                     }
-                    // If scanning is in progress
-                    if (rsp.status && rsp.scanning) {
-                        this.loading = true;
-                        this.loop_check_status("/admin/scan/status", (rsp) => {
-                            this.scan = rsp.status;
-                            this.count_processed = rsp.status.total - rsp.status.new;
-                            this.count_done = rsp.summary.done;
-                            this.count_todo = rsp.summary.todo;
-                            this.count_total = rsp.status.total;
-                            this.scanning = rsp.scanning;
-                            this.importing = rsp.importing;
-                            if (!rsp.scanning) {
-                                this.loading = false;
-                                // After scan completes, check import status
-                                if (rsp.importing) {
-                                    this.checkImportState();
-                                }
-                                if (rsp.ignored_errors && rsp.ignored_errors.length > 0) {
-                                    this.ignored_errors = rsp.ignored_errors;
-                                } else {
-                                    this.ignored_errors = [];
-                                }
-                                return false;
-                            }
-                            this.loading = true;
-                            return true;
-                        });
-                    } else if (rsp.status && rsp.importing) {
+                    // If importing is in progress
+                    if (rsp.status && rsp.importing) {
                         // check importing status
                         this.checkImportState();
                     }

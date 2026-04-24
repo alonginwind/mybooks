@@ -8,7 +8,7 @@
                 <v-col cols="12" class="d-flex flex-wrap ga-2 mb-2">
                     <v-btn
                         :disabled="loading"
-                        outlined
+                        :outlined="$vuetify.breakpoint.xs"
                         color="primary"
                         @click="getDataFromApi"
                         class="flex-shrink-0"
@@ -22,8 +22,7 @@
                         <template v-slot:activator="{ on, attrs }">
                             <v-btn
                                 :disabled="loading || scraping"
-                                outlined
-                                color="purple"
+                                color="#2d6d4b"
                                 class="flex-shrink-0"
                                 :icon="$vuetify.breakpoint.xs"
                                 :small="$vuetify.breakpoint.xs"
@@ -69,8 +68,7 @@
                     </v-menu>
                     <v-btn
                         :disabled="loading || scraping"
-                        outlined
-                        color="info"
+                        color="secondary"
                         @click="show_dialog_auto_file"
                         class="flex-shrink-0"
                         :icon="$vuetify.breakpoint.xs"
@@ -81,8 +79,7 @@
                     </v-btn>
                     <v-btn
                         v-if="!loading && books_selected.length > 0"
-                        outlined
-                        color="error"
+                        color="#9f353a"
                         @click="deleteSelectedBooks"
                         class="flex-shrink-0"
                         :icon="$vuetify.breakpoint.xs"

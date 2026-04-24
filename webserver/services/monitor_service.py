@@ -385,7 +385,7 @@ class MonitorService:
                     files |= self._merge_pending
                     self._merge_pending.clear()
 
-            if ScanService.is_scanning() or ScanService.is_importing():
+            if ScanService.is_importing():
                 logging.info(
                     "[Monitor] ScanService busy, retrying in %ds (current pending files: %d)",
                     POLL_INTERVAL,
@@ -403,7 +403,7 @@ class MonitorService:
 
         logging.info("[Monitor] Starting automatic scan and import, number of files: %d", len(files))
         user_id = CONF.get("ADMIN_ID", 1)
-        ScanService().do_scan_import_files(files, user_id)
+        ScanService().do_import(list(files), user_id)
 
 
 def get_monitor_service() -> MonitorService:

@@ -322,7 +322,7 @@
         "import_audiobooks": "Import Audiobooks",
         "import_selected": "Import Selected Books",
         "delete": "Delete",
-        "import_all": "Import All Books",
+        "import_all": "Scan and import Books",
         "select_files": "Please select the files to be processed (by default, all books will be imported. Existing books will not be re-imported even if selected).",
         "selected_count": "A total of {count} selected",
         "todo": "To Process ({count})",
