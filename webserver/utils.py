@@ -21,6 +21,24 @@ def remove_zlibrary_suffix(text):
     return ZLIBRARY_PATTERN.sub('', text).strip()
 
 
+def _guess_title_author_from_filename(name):
+    if not name:
+        return name, None
+    title = name.strip()
+    author = None
+    if "作者" in title:
+        parts = re.split(r"作者[:：]", title, maxsplit=1)
+        if len(parts) >= 2:
+            title = parts[0].strip()
+            author = parts[1].strip()
+            # 去除title尾部的([（，【四种符号，author尾部的）】]四种符号
+            title = re.sub(r'[\s\(\[【（，,、]+$', '', title)
+            if title.startswith('《') and title.endswith('》'):
+                title = title[1:-1]
+            author = re.sub(r'[\s\)\]】）]+$', '', author)
+    return title, author
+
+
 def ascii_text(orig):
     from calibre.utils.localization import get_udc
     from calibre.constants import preferred_encoding
@@ -385,3 +403,16 @@ class ImageHelper:
             logging.error(f"Error adding stamp to image: {e}")
             logging.error(traceback.format_exc())
             return None
+
+
+if __name__ == "__main__":
+    # 测试_guess_title_author_from_filename
+    test_cases = [
+        "《宝鉴》（校对版全本）作者：打眼",
+        "《三体》作者：刘慈欣",
+        "《平凡的世界（》作者：路遥",
+        "《无人生还》(作者：阿加莎·克里斯蒂)",
+    ]
+    for filename in test_cases:
+        title, author = _guess_title_author_from_filename(filename)
+        print(f"Filename: {filename}\n  Title: {title}\n  Author: {author}\n")

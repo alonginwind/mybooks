@@ -1,9 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
+#
+# do_import 是扫描导入的主入口，负责协调整个两阶段流水线导入流程：
+# 前置阶段：收集文件列表，创建后台任务记录，初始化状态。
+#
+# 阶段一（Scanning）：主线程执行
+#   - 遍历指定路径（目录或文件列表），收集合法格式的文件路径。
+#   - 对每个文件计算部分 SHA-256 哈希（小于 10MB 取前 4MB；大于等于 10MB 取首尾各 3MB）。
+#   - 根据路径和哈希进行去重：
+#       * 已通过路径或哈希成功导入（状态 IMPORTED）且书库记录仍存在 → 跳过。
+#       * 存在 NEW/READY 状态的记录时复用缓存哈希，避免重复 I/O。
+#       * 否则清除同哈希的旧非导入记录，创建新 READY 状态的 ScanFile 行。
+#   - 将 READY 行的 ID 放入有界工作队列（最大 50），自然地对阶段二施加背压。
+#
+# 阶段二（Importing）：独立后台线程执行
+#   - 从工作队列中持续取出行 ID，加载对应 ScanFile 记录。
+#   - 读取书籍元数据（calibre get_metadata），并根据标题去重：
+#       * 标题已存在（电子书）→ 追加格式（add_format）。
+#       * 标题不存在 → 全新导入（import_book），同时创建 Item 关联记录。
+#   - 若配置 IMPORT_CATEGORY_WITH_FOLDER=True，将文件所在上传目录的第一级子目录名
+#     作为书籍分类写入自定义字段。
+#   - 若配置 REMOVE_IMPORTED_FILE=True，导入后删除源文件（仅适用于全新导入或已存在的情况）。
+#   - 每 20 个文件批量提交一次事务，完成后执行最终提交并清理 scoped_session。
+#
+
 import errno
 import hashlib
 import os
 import logging
+import queue as _queue
+import threading
 import time
 import traceback
 
@@ -19,8 +45,9 @@ from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver import loader
 
-SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
 CONF = loader.get_settings()
+MEGA_BYTES = 1024 * 1024
+SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
 
 
 class ScanService(AsyncService):
@@ -72,9 +99,11 @@ class ScanService(AsyncService):
         return False
 
     def _collect_files(self, paths):
-        """Collect file paths from dirs, direct file paths, or None/'all' (uses scan_upload_path)."""
         if paths is None or paths == "all":
             dirs = [CONF.get("scan_upload_path", "")]
+            if not dirs[0] or not os.path.isdir(dirs[0]):
+                logging.warning("[IMPORT] scan_upload_path is not configured")
+                return []
         elif isinstance(paths, str):
             dirs = [paths]
         else:
@@ -96,7 +125,7 @@ class ScanService(AsyncService):
                         if os.path.isfile(fpath):
                             filelist.append(fpath)
             else:
-                logging.warning("[IMPORT] Path not found: %s", p)
+                logging.warning("[SCAN] Path not found: %s", p)
         return filelist
 
     @AsyncService.register_service
@@ -142,20 +171,18 @@ class ScanService(AsyncService):
         ScanService.static_is_importing = False
 
     def _compute_hash(self, fpath):
-        """Compute partial sha256 for the file.
-        < 10MB: first 4MB; >= 10MB: first 3MB + last 3MB.
-        Returns (hash_str, None) on success, or (None, bad_reason) on error."""
+        start = time.time()
         sha256 = hashlib.sha256()
-        _MB = 1024 * 1024
         try:
             file_size = os.path.getsize(fpath)
             with open(fpath, "rb") as f:
-                if file_size < 10 * _MB:
-                    sha256.update(f.read(4 * _MB))
+                if file_size < 10 * MEGA_BYTES:
+                    sha256.update(f.read(4 * MEGA_BYTES))
                 else:
-                    sha256.update(f.read(3 * _MB))
-                    f.seek(-3 * _MB, 2)
-                    sha256.update(f.read(3 * _MB))
+                    sha256.update(f.read(3 * MEGA_BYTES))
+                    f.seek(-3 * MEGA_BYTES, 2)
+                    sha256.update(f.read(3 * MEGA_BYTES))
+            logging.info("[HASH] Computed hash for %s, size:%d in %.3f seconds", fpath, file_size, time.time() - start)
             return "sha256:" + sha256.hexdigest(), None
         except FileNotFoundError:
             logging.error("[IMPORT] File not found: %s", fpath)
@@ -167,250 +194,323 @@ class ScanService(AsyncService):
             logging.error("[IMPORT] Error reading file %s: %s", fpath, e)
             return None, ScanFile.INVALID
 
-    def do_import_internal(self, filelist, user_id, task_id=None):
-        """Process a list of file paths: compute sha256, check duplicates, read metadata, import."""
+    def _import_one_file(self, row, user_id, scan_upload_path, session):
+        """
+            Read metadata and import one READY ScanFile into calibre.
+
+            Handles all error paths internally (sets row.status, calls save_or_rollback).
+            Returns book_id if a new book was successfully linked via Item, else None.
+        """
         from calibre.ebooks.metadata.meta import get_metadata
         from calibre.ebooks.metadata.book.base import Metadata
 
-        session = self.session
+        fpath = row.path
+        fname = os.path.basename(fpath)
+        fmt = fpath.split(".")[-1].lower()
+        start_time = time.time()
+
+        # Skip metadata reading when title/author are derived from filename
+        skip_metadata = (fmt == "txt") or (fmt == "pdf" and CONF.get("PDF_TILE_WITH_FILE_NAME", False))
+        if skip_metadata:
+            title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+            author = None
+            if fmt == "txt":
+                title, author = utils._guess_title_author_from_filename(title)
+            mi = Metadata(title, [author] if author else [_("佚名")])
+            logging.info("[IMPORT] Skipped metadata read for %s: %s", fmt, repr(title))
+        else:
+            try:
+                with open(fpath, "rb") as stream:
+                    mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
+                    mi.title = utils.super_strip(mi.title)
+                    mi.authors = [utils.super_strip(s) for s in mi.authors]
+                logging.info("[IMPORT] Metadata read [%.3fs]: %s", time.time() - start_time, repr(mi.title))
+            except Exception as e:
+                logging.error("[IMPORT] Error reading metadata from %s: %s", fpath, e)
+                row.status = ScanFile.INVALID
+                self.save_or_rollback(row, session)
+                return None
+
+            if mi.title and mi.title == CALIBRE_ERROR_FLAG:
+                logging.error("[IMPORT] Failed to get metadata for %s", fpath)
+                row.status = ScanFile.INVALID
+                row.title = None
+                self.save_or_rollback(row, session)
+                return None
+
+            # Normalize title/author for pdf (PDF_TILE_WITH_FILE_NAME=False)
+            if fmt == "pdf":
+                title_ = mi.title.strip() if mi.title else ""
+                if not title_ or title_.find("下载工具") >= 0 or title_ == "SSReader Print.":
+                    mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+                else:
+                    mi.title = title_
+                if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
+                    mi.authors = [_("佚名")]
+
+        row.title = mi.title
+        row.author = mi.authors[0] if mi.authors else mi.author_sort
+        row.publisher = mi.publisher
+        row.tags = ", ".join(mi.tags)
+
+        new_book_id = None
+        try:
+            ids = self.db.books_with_same_title(mi)
+            existed_ebook = False
+            logging.info("[IMPORT] Same title book ids: %s for: %s", ids, fpath)
+            if ids:
+                row.book_id = 0
+                for bid in ids:
+                    b = self.db.get_metadata(bid, index_is_id=True)
+                    if b.get(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK) == BOOK_TYPE_PHYSICAL:
+                        continue
+                    existed_ebook = True
+                    row.book_id = bid
+                    if fmt.upper() in b.formats:
+                        row.status = ScanFile.EXIST
+                        break
+                if existed_ebook and row.status != ScanFile.EXIST:
+                    logging.info("[IMPORT] Adding format %s to existing book %d", fmt, row.book_id)
+                    self.db.add_format(row.book_id, fmt.upper(), fpath, True)
+                    row.status = ScanFile.IMPORTED
+
+            if not existed_ebook:
+                logging.info("[IMPORT] Importing new book [%s] from %s", repr(mi.title), fpath)
+                mi.title_sort = utils.get_title_sort(mi.title)
+                row.book_id = self.db.import_book(mi, [fpath])
+                row.status = ScanFile.IMPORTED
+                logging.info("[IMPORT] Calibre import done, book_id=%d [%.3fs]", row.book_id, time.time() - start_time)
+
+                item = Item()
+                item.book_id = row.book_id
+                item.collector_id = user_id
+                item.src_path = fpath
+                try:
+                    item.save()
+                    new_book_id = row.book_id
+                except Exception as err:
+                    logging.error("[IMPORT] save link error: %s", err)
+
+                if CONF.get("IMPORT_CATEGORY_WITH_FOLDER", False):
+                    rel = os.path.relpath(os.path.realpath(fpath), scan_upload_path)
+                    first_dir = rel.split(os.sep)[0] if os.sep in rel else ""
+                    if first_dir and len(first_dir) < 10 and not any(c in first_dir for c in ',:;|/\\\'"\t '):
+                        try:
+                            self.db.new_api.set_field(CALIBRE_COLUMN_CATEGORY, {row.book_id: first_dir})
+                            logging.info("[IMPORT] Set category '%s' for book_id=%d", first_dir, row.book_id)
+                        except Exception as cat_err:
+                            logging.warning("[IMPORT] Failed to set category for book_id=%d: %s", row.book_id, cat_err)
+                    else:
+                        logging.warning("[IMPORT] Skipping category for '%s': invalid dir name", first_dir)
+
+            if CONF.get("REMOVE_IMPORTED_FILE", False) and (not existed_ebook or row.status == ScanFile.EXIST):
+                self._remove_imported_file(fpath)
+        except Exception as err:
+            row.status = ScanFile.INVALID
+            logging.error("[IMPORT] Failed to process file %s: %s", fpath, err)
+            logging.error(traceback.format_exc())
+
+        self.save_or_rollback(row, session)
+        logging.info("[IMPORT] File done, status=%s [total %.3fs]: %s", row.status, time.time() - start_time, fpath)
+        if time.time() - start_time > 0.25:
+            logging.warning("[IMPORT] Slow import detected (%.3fs) for file: %s", time.time() - start_time, fpath)
+        return new_book_id
+
+    def _importing_worker(self, work_queue, importing_imported, task_id, total_count, user_id, scan_upload_path, batch_size):
+        """Worker thread for Phase 2: consumes row IDs from work_queue and imports each file."""
+        importing_session = self.scoped_session()
+        importing_index = 0
+        try:
+            while True:
+                row_id = work_queue.get()
+                try:
+                    if row_id is None:  # sentinel: Phase 1 finished
+                        break
+
+                    row = importing_session.query(ScanFile).get(row_id)
+                    if row is None:
+                        logging.warning("[IMPORT] ScanFile id=%d not found, skipping", row_id)
+                        continue
+
+                    importing_index += 1
+                    logging.info("[IMPORT] Processing [%d]: %s", importing_index, row.path)
+
+                    if task_id and total_count > 0:
+                        try:
+                            BackgroundService().update_progress(
+                                task_id=task_id,
+                                progress=min(99, 30 + int(importing_index * 70 / total_count)),
+                                progress_data={"stage": "importing", "total": total_count, "imported": len(importing_imported)}
+                            )
+                        except Exception as e:
+                            logging.error("[IMPORT] Failed to update progress: %s", e)
+
+                    new_book_id = self._import_one_file(row, user_id, scan_upload_path, importing_session)
+                    if new_book_id is not None:
+                        importing_imported.append(new_book_id)
+
+                    if importing_index % batch_size == 0:
+                        try:
+                            importing_session.commit()
+                            logging.info("[IMPORT] Batch committed at index %d", importing_index)
+                        except Exception as err:
+                            logging.error("[IMPORT] Batch commit error: %s", err)
+                            importing_session.rollback()
+                finally:
+                    work_queue.task_done()
+        except Exception as err:
+            logging.error("[IMPORT] Fatal error in worker: %s", err)
+            logging.error(traceback.format_exc())
+        finally:
+            try:
+                importing_session.commit()
+                logging.info("[IMPORT] Final commit completed")
+            except Exception as err:
+                logging.error("[IMPORT] Final commit error: %s", err)
+                importing_session.rollback()
+            try:
+                self.scoped_session.remove()
+            except Exception:
+                pass
+
+    def _scan_one_file(self, fpath, session, import_id, processed_paths):
+        """
+            Phase scanning: 处理单个文件：计算哈希，去重，创建/更新 READY 状态的 ScanFile 记录。
+        """
+        if not os.path.isfile(fpath) or not os.access(fpath, os.R_OK):
+            logging.warning("[SCAN] Not a valid file, skip: %s", fpath)
+            return None
+
+        fmt = fpath.split(".")[-1].lower()
+        if not fmt or fmt not in SCAN_EXT:
+            logging.info("[SCAN] Unsupported format [%s], skip: %s", fmt, fpath)
+            return None
+
+        real_fpath = os.path.realpath(fpath)
+        if real_fpath in processed_paths:
+            logging.info("[SCAN] Already processed in this run, skip: %s", fpath)
+            return None
+
+        same_path_rows = session.query(ScanFile).filter(ScanFile.path == fpath).all()
+        for r in same_path_rows:
+            if r.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[r.book_id]):
+                logging.info("[SCAN] Already imported by path: %s", fpath)
+                return None
+
+        # Reuse cached hash if available (NEW/READY record from a previous interrupted run).
+        # MISSED/PERMISSION: file was previously inaccessible, reprocess from scratch (no reuse).
+        reuse_hash = next(
+            (r.hash for r in same_path_rows
+             if r.status in (ScanFile.NEW, ScanFile.READY) and r.hash and r.hash.startswith("sha256:")),
+            None,
+        )
+        if reuse_hash:
+            logging.info("[SCAN] Reusing cached hash for: %s", fpath)
+        hash_val, bad_reason = (reuse_hash, None) if reuse_hash else self._compute_hash(fpath)
+
+        if bad_reason:
+            row = ScanFile(fpath, "", import_id)
+            row.status = bad_reason
+            self.save_or_rollback(row, session)
+            return None
+
+        processed_paths.add(real_fpath)
+
+        # Check already imported by hash
+        hash_rows = session.query(ScanFile).filter(ScanFile.hash == hash_val).all()
+        for hash_row in hash_rows:
+            if hash_row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[hash_row.book_id]):
+                logging.info("[SCAN] Already imported by hash: %s", fpath)
+                return None
+
+        # Create or reuse ScanFile record
+        if same_path_rows:
+            row = same_path_rows[0]
+            row.hash = hash_val
+            row.import_id = import_id
+        else:
+            if hash_rows:
+                session.query(ScanFile).filter(
+                    ScanFile.hash == hash_val,
+                    ScanFile.status != ScanFile.IMPORTED,
+                ).delete(synchronize_session=False)
+                session.flush()
+            row = ScanFile(fpath, hash_val, import_id)
+        row.status = ScanFile.READY
+        if self.save_or_rollback(row, session):
+            return row.id
+        return None
+
+    def do_import_internal(self, filelist, user_id, task_id=None):
+        """
+            并行执行:
+            Phase Scanning: 负责遍历文件、计算哈希、去重，并将 READY 状态的 ScanFile 行 ID 放入队列；
+            Phase Importing: 从队列中取出 ID，读取对应 ScanFile 行，执行元数据读取和导入操作。
+        """
         import_id = int(time.time())
         scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
         total_count = len(filelist)
-        imported = []
-        processed_paths: set[str] = set()
         batch_size = 20
 
+        # maxsize limits memory if Phase 2 is slower than Phase 1.
+        work_queue = _queue.Queue(maxsize=50)
+        importing_imported = []
+
         start_time = time.time()
-        logging.info("[IMPORT] Start Phase 1 (hash + dedup) for %d files", total_count)
+        logging.info("[IMPORT] Start (Phase 1 + Phase 2 pipelined) for %d files", total_count)
 
-        # === Phase 1: compute sha256, dedup, create READY ScanFile records ===
-        rows_to_process = []
-        for index, fpath in enumerate(filelist):
-            if task_id and total_count > 0 and index % 50 == 0:
-                try:
-                    BackgroundService().update_progress(
-                        task_id=task_id,
-                        progress=int(index * 50 / total_count),
-                        progress_data={"stage": "importing", "total": total_count, "imported": 0}
-                    )
-                except Exception as e:
-                    logging.error("[IMPORT] Failed to update phase-1 progress: %s", e)
+        importing_thread = threading.Thread(
+            target=self._importing_worker,
+            args=(work_queue, importing_imported, task_id, total_count, user_id, scan_upload_path, batch_size),
+            name="ScanService.importing",
+            daemon=True,
+        )
+        importing_thread.start()
 
-            if not os.path.isfile(fpath):
-                logging.warning("[IMPORT] Not a valid file, skip: %s", fpath)
-                continue
-
-            fname = os.path.basename(fpath)
-            fmt = fpath.split(".")[-1].lower()
-            if not fmt or fmt not in SCAN_EXT:
-                logging.info("[IMPORT] Unsupported format [%s], skip: %s", fmt, fpath)
-                continue
-
-            real_fpath = os.path.realpath(fpath)
-            if real_fpath in processed_paths:
-                logging.info("[IMPORT] Already processed in this run, skip: %s", fpath)
-                continue
-
-            # Check already imported by path
-            same_path_rows = session.query(ScanFile).filter(ScanFile.path == fpath).all()
-            already_done = False
-            for r in same_path_rows:
-                if r.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[r.book_id]):
-                    logging.info("[IMPORT] Already imported by path: %s", fpath)
-                    already_done = True
-                    break
-            if already_done:
-                continue
-
-            hash_val, bad_reason = self._compute_hash(fpath)
-
-            if bad_reason:
-                row = ScanFile(fpath, "", import_id)
-                row.status = bad_reason
-                self.save_or_rollback(row, session)
-                continue
-
-            processed_paths.add(real_fpath)
-
-            # Check already imported by hash
-            for hash_row in session.query(ScanFile).filter(ScanFile.hash == hash_val):
-                if hash_row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[hash_row.book_id]):
-                    logging.info("[IMPORT] Already imported by hash: %s", fpath)
-                    already_done = True
-                    break
-            if already_done:
-                continue
-
-            # Create or reuse ScanFile record
-            if same_path_rows:
-                row = same_path_rows[0]
-                row.hash = hash_val
-                row.import_id = import_id
-            else:
-                # Remove non-imported old records with same hash to avoid unique constraint violation
-                session.query(ScanFile).filter(ScanFile.hash == hash_val).delete(synchronize_session=False)
-                session.flush()
-                row = ScanFile(fpath, hash_val, import_id)
-            row.status = ScanFile.READY
-            if self.save_or_rollback(row, session):
-                rows_to_process.append(row)
-
-        total_to_process = len(rows_to_process)
-        logging.info("[IMPORT] Phase 1 done: %d files queued for import", total_to_process)
-
-        # === Phase 2: read metadata and import books ===
-        for index, row in enumerate(rows_to_process):
-            if task_id and total_to_process > 0:
-                try:
-                    BackgroundService().update_progress(
-                        task_id=task_id,
-                        progress=50 + int(index * 50 / total_to_process),
-                        progress_data={"stage": "importing", "total": total_to_process, "imported": len(imported)}
-                    )
-                except Exception as e:
-                    logging.error("[IMPORT] Failed to update phase-2 progress: %s", e)
-
-            fpath = row.path
-            fname = os.path.basename(fpath)
-            fmt = fpath.split(".")[-1].lower()
-            start_time = time.time()
-            logging.info("[IMPORT] Processing [%d/%d]: %s", index + 1, total_to_process, fpath)
-
-            # Skip metadata reading when title/author are derived from filename
-            skip_metadata = (fmt == "txt") or (fmt == "pdf" and CONF.get("PDF_TILE_WITH_FILE_NAME", False))
-            if skip_metadata:
-                title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
-                mi = Metadata(title, [_(u"佚名")])
-                logging.info("[IMPORT] Skipped metadata read for %s: %s", fmt, repr(title))
-            else:
-                # Read metadata
-                try:
-                    with open(fpath, "rb") as stream:
-                        mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
-                        mi.title = utils.super_strip(mi.title)
-                        mi.authors = [utils.super_strip(s) for s in mi.authors]
-                    logging.info("[IMPORT] Metadata read [%.3fs]: %s", time.time() - start_time, repr(mi.title))
-                except Exception as e:
-                    logging.error("[IMPORT] Error reading metadata from %s: %s", fpath, e)
-                    row.status = ScanFile.INVALID
-                    self.save_or_rollback(row, session)
-                    continue
-
-                if mi.title and mi.title == CALIBRE_ERROR_FLAG:
-                    logging.error("[IMPORT] Failed to get metadata for %s", fpath)
-                    row.status = ScanFile.INVALID
-                    row.title = None
-                    self.save_or_rollback(row, session)
-                    continue
-
-                # Normalize title/author for pdf (PDF_TILE_WITH_FILE_NAME=False)
-                if fmt == "pdf":
-                    title_ = mi.title.strip() if mi.title else ""
-                    if not title_ or title_.find(_(u"下载工具")) >= 0 or title_ == "SSReader Print.":
-                        mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
-                    else:
-                        mi.title = title_
-                    if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
-                        mi.authors = [_(u"佚名")]
-
-            row.title = mi.title
-            row.author = mi.authors[0] if mi.authors else mi.author_sort
-            row.publisher = mi.publisher
-            row.tags = ", ".join(mi.tags)
-
-            # Check duplicates and import
-            try:
-                ids = self.db.books_with_same_title(mi)
-                existed_ebook = False
-                logging.info("[IMPORT] Same title book ids: %s for file: %s", ids, fpath)
-                if ids:
-                    row.book_id = 0
-                    for bid in ids:
-                        b = self.db.get_metadata(bid, index_is_id=True)
-                        if b.get(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK) == BOOK_TYPE_PHYSICAL:
-                            continue
-                        existed_ebook = True
-                        row.book_id = bid
-                        if fmt.upper() in b.formats:
-                            row.status = ScanFile.EXIST
-                            break
-                    if existed_ebook and row.status != ScanFile.EXIST:
-                        logging.info("[IMPORT] Adding format %s to existing book %d", fmt, row.book_id)
-                        self.db.add_format(row.book_id, fmt.upper(), fpath, True)
-                        row.status = ScanFile.IMPORTED
-
-                if not existed_ebook:
-                    logging.info("[IMPORT] Importing new book [%s] from %s", repr(mi.title), fpath)
-                    mi.title_sort = utils.get_title_sort(mi.title)
-                    row.book_id = self.db.import_book(mi, [fpath])
-                    row.status = ScanFile.IMPORTED
-                    logging.info("[IMPORT] Calibre import done, book_id=%d [%.3fs]", row.book_id, time.time() - start_time)
-
-                    item = Item()
-                    item.book_id = row.book_id
-                    item.collector_id = user_id
-                    item.src_path = fpath
-                    try:
-                        item.save()
-                        imported.append(row.book_id)
-                    except Exception as err:
-                        logging.error("[IMPORT] save link error: %s", err)
-
-                    if CONF.get("IMPORT_CATEGORY_WITH_FOLDER", False):
-                        rel = os.path.relpath(os.path.realpath(fpath), scan_upload_path)
-                        first_dir = rel.split(os.sep)[0] if os.sep in rel else ""
-                        if first_dir and len(first_dir) < 10 and not any(c in first_dir for c in ',:;|/\\\'"\t '):
-                            try:
-                                self.db.new_api.set_field(CALIBRE_COLUMN_CATEGORY, {row.book_id: first_dir})
-                                logging.info("[IMPORT] Set category '%s' for book_id=%d", first_dir, row.book_id)
-                            except Exception as cat_err:
-                                logging.warning("[IMPORT] Failed to set category for book_id=%d: %s", row.book_id, cat_err)
-                        else:
-                            logging.warning("[IMPORT] Skipping category for '%s': invalid dir name", first_dir)
-
-                if CONF.get("REMOVE_IMPORTED_FILE", False) and (not existed_ebook or row.status == ScanFile.EXIST):
-                    self._remove_imported_file(fpath)
-            except Exception as err:
-                row.status = ScanFile.INVALID
-                logging.error("[IMPORT] Failed to process file %s: %s", fpath, err)
-                logging.error(traceback.format_exc())
-
-            self.save_or_rollback(row, session)
-            logging.info("[IMPORT] File done, status=%s [total %.3fs]: %s", row.status, time.time() - start_time, fpath)
-
-            # Batch commit every batch_size files
-            if (index + 1) % batch_size == 0:
-                try:
-                    session.commit()
-                    logging.info("[IMPORT] Batch committed at index %d", index + 1)
-                except Exception as err:
-                    logging.error("[IMPORT] Batch commit error: %s", err)
-                    session.rollback()
-                time.sleep(0.1)
-
-        # Final commit
+        # ─── Phase 1: compute sha256, dedup, create READY ScanFile records ────────
+        session = self.session
+        processed_paths: set[str] = set()
+        queued_count = 0
         try:
-            session.commit()
-            logging.info("[IMPORT] Final commit completed")
-        except Exception as err:
-            logging.error("[IMPORT] Final commit error: %s", err)
-            session.rollback()
+            for index, fpath in enumerate(filelist):
+                if task_id and total_count > 0 and index % 50 == 0:
+                    try:
+                        BackgroundService().update_progress(
+                            task_id=task_id,
+                            progress=int(index * 30 / total_count),
+                            progress_data={"stage": "importing", "total": total_count, "imported": 0}
+                        )
+                    except Exception as e:
+                        logging.error("[SCAN] Failed to update progress: %s", e)
+
+                row_id = self._scan_one_file(fpath, session, import_id, processed_paths)
+                if row_id is not None:
+                    work_queue.put(row_id)
+                    queued_count += 1
+        finally:
+            work_queue.put(None)  # sentinel: Phase 1 done
+
+        logging.info("[IMPORT] Phase 1 done: %d files queued. Waiting for Phase 2...", queued_count)
+
+        # Wait for Phase 2 to finish gracefully
+        importing_thread.join()
+
+        logging.info("[IMPORT] Both phases done in %.3fs. Queued: %d, Imported: %d",
+                     time.time() - start_time, queued_count, len(importing_imported))
 
         if task_id:
             try:
                 BackgroundService().update_progress(
                     task_id=task_id,
                     progress=100,
-                    progress_data={"stage": "completed", "total": total_to_process, "imported": len(imported)}
+                    progress_data={"stage": "completed", "total": queued_count, "imported": len(importing_imported)}
                 )
             except Exception as e:
                 logging.error("[IMPORT] Failed to update final progress: %s", e)
 
-        logging.info("[IMPORT] Done. Total queued: %d, Imported: %d", total_to_process, len(imported))
-
-        if imported:
-            logging.info("[IMPORT] Starting auto-fill for %d imported books", len(imported))
-            AutoFillService().auto_fill_all(imported)
+        if importing_imported:
+            logging.info("[IMPORT] Starting auto-fill for %d imported books", len(importing_imported))
+            AutoFillService().auto_fill_all(importing_imported)
 
     @AsyncService.register_service
     def do_rename_category(self, old_dir_path, new_dir_path, scan_upload_path):
