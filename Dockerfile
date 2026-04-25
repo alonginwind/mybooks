@@ -26,7 +26,7 @@ RUN mkdir -p /app-ssr/ /app-static/ && \
 # ----------------------------------------
 # 第二阶段，构建环境（基于预构建的基础镜像，含系统包、python依赖及calibre补丁）
 # 基础镜像构建：make build-base-multiarch
-FROM poxenstudio/talebook_base:latest AS server
+FROM docker.1ms.run/poxenstudio/talebook_base:latest AS server
 ARG BUILD_COUNTRY="CN"
 
 # ----------------------------------------

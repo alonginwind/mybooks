@@ -43,7 +43,7 @@ build-base-multiarch:
 		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN \
 		-f Dockerfile.base -t $(BASE_IMAGE) -t $(BASE_REPO1) \
-		--push .
+		--load .
 
 # 构建并推送多架构镜像（同时支持 amd64 和 arm64）
 build-multiarch: test
