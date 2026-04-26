@@ -434,5 +434,6 @@
   "有声书导入任务已启动": "Audiobook import task started",
   "有声书导入任务正在运行中，请稍候": "Audiobook import is already running, please wait",
   "未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因": "Did not find relevant information or access is restricted. If this happens frequently, please try again later or check the logs for the reason",
-  "当前站点已关闭注册": "Registration is closed on this site"
+  "当前站点已关闭注册": "Registration is closed on this site",
+  "已清理 %d 条无效图书记录": "Cleaned %d invalid book records"
 }
