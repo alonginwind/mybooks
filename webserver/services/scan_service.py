@@ -441,7 +441,7 @@ class ScanService(AsyncService):
         if hash_val in processed_hashes:
             # Keep back compatibility to set unique hash.
             row.hash = hashlib.md5(fpath.encode("utf-8")).hexdigest()
-            row.status = ScanFile.DROP
+            row.status = ScanFile.EXIST
             self.save_or_rollback(row, session)
             return None
 
@@ -454,7 +454,7 @@ class ScanService(AsyncService):
             if hash_row.status == ScanFile.IMPORTED and self.db.get_data_as_dict(ids=[hash_row.book_id]):
                 logging.info("[SCAN] Already imported by hash: %s", fpath)
                 row.hash = hashlib.md5(fpath.encode("utf-8")).hexdigest()
-                row.status = ScanFile.DROP
+                row.status = ScanFile.EXIST
                 self.save_or_rollback(row, session)
                 return None
 
