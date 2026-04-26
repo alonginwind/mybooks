@@ -64,6 +64,12 @@
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.exchangeType') }}</v-list-item-title>
                             </v-list-item>
+                            <v-list-item @click="show_clear_invalid_items_dialog">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-database-remove-outline</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-title>{{ $t('admin.books.clearInvalidItems') }}</v-list-item-title>
+                            </v-list-item>
                         </v-list>
                     </v-menu>
                     <v-btn
@@ -464,6 +470,21 @@
             </v-card>
         </v-dialog>
 
+        <!-- 清理无效记录确认对话框 -->
+        <v-dialog v-model="clear_invalid_items_dialog" persistent transition="dialog-bottom-transition" width="500">
+            <v-card>
+                <v-toolbar flat dense dark color="warning"> {{ $t('admin.books.reminderTitle') }} </v-toolbar>
+                <v-card-title></v-card-title>
+                <v-card-text>
+                    <p>{{ $t('admin.books.clearInvalidItemsConfirm') }}</p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn @click="clear_invalid_items_dialog = false">{{ $t('admin.books.cancel') }}</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn color="warning" @click="clearInvalidItems">{{ $t('admin.books.execute') }}</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
 
 </v-card>
 </template>
@@ -479,6 +500,7 @@ export default {
         clear_rare_tags_dialog: false,
         kindle_convert_dialog: false,
         update_title_sort_dialog: false,
+        clear_invalid_items_dialog: false,
         adding_book: false,
         books_selected: [],
         tag_input: null,
@@ -682,6 +704,30 @@ export default {
 
         show_update_title_sort_dialog() {
             this.update_title_sort_dialog = true;
+        },
+
+        show_clear_invalid_items_dialog() {
+            this.clear_invalid_items_dialog = true;
+        },
+
+        clearInvalidItems() {
+            this.loading = true;
+            this.clear_invalid_items_dialog = false;
+            this.$alert("info", this.$t("admin.books.clearInvalidItemsProcessing"));
+            this.$backend("/admin/clear/invalid/items", {
+                method: "POST",
+                body: JSON.stringify({}),
+            })
+                .then((rsp) => {
+                    this.handleApiResponse(rsp);
+                    if (rsp.err === "ok") {
+                        this.$alert("success", rsp.msg);
+                    }
+                    this.getDataFromApi();
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
         },
 
         kindleConvert() {

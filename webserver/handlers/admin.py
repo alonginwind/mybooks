@@ -973,6 +973,27 @@ class AdminDeleteBooks(BaseHandler):
         return {"err": "ok", "msg": _("删除成功")}
 
 
+class ClearInvalidItems(BaseHandler):
+    """Admin API: 清理在Calibre中已不存在的无效Items记录"""
+
+    @js
+    @is_admin
+    def post(self):
+        try:
+            all_calibre_ids = set(self.calibre_db_cache.all_book_ids())
+            items = self.sqlite_session.query(Item).all()
+            invalid_items = [item for item in items if item.book_id not in all_calibre_ids]
+            count = len(invalid_items)
+            for item in invalid_items:
+                logging.info("[CLEAR]Invalid item with book_id=%s", item.book_id)
+                self.sqlite_session.delete(item)
+            self.sqlite_session.commit()
+            return {"err": "ok", "msg": _("已清理 %d 条无效图书记录") % count, "count": count}
+        except Exception as e:
+            logging.error("[CLEAR]Failed to clear invalid items: %s", e)
+            return {"err": "error", "msg": _("清理失败: %s") % str(e)}
+
+
 class AudioTestConnection(BaseHandler):
     @js
     @auth
@@ -1322,6 +1343,7 @@ def routes():
         (r"/api/admin/book/update_title_sort", AdminBookUpdateTitleSort),
         (r"/api/admin/bookbarn/token/apply", AdminBookbarnTokenApply),
         (r"/api/admin/books/delete", AdminDeleteBooks),
+        (r"/api/admin/clear/invalid/items", ClearInvalidItems),
         (r"/api/admin/audio/test", AudioTestConnection),
         (r"/api/admin/release/notes", ReleaseNotes),
         (r"/api/admin/token", AdminTokenHandler),
