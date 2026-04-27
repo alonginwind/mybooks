@@ -972,6 +972,7 @@
     },
     "expected": {
         "pageTitle": "缺書登記",
+        "allPageTitle": "缺書管理",
         "title": "缺書登記",
         "add": "新增",
         "cancel": "取消",
@@ -985,7 +986,10 @@
         "colAuthor": "作者",
         "colPublisher": "出版社",
         "colCreateTime": "登記日期",
+        "colReaderName": "登記用戶",
         "colActions": "操作",
-        "deleteConfirm": "確定要刪除《{title}》的缺書登記嗎？"
+        "deleteConfirm": "確定要刪除《{title}》的缺書登記嗎？",
+        "allUsers": "所有用戶",
+        "filterByUser": "按用戶篩選"
     }
 }

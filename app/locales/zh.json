@@ -974,6 +974,7 @@
     },
     "expected": {
         "pageTitle": "缺书登记",
+        "allPageTitle": "缺书管理",
         "title": "缺书登记",
         "add": "添加",
         "cancel": "取消",
@@ -987,7 +988,10 @@
         "colAuthor": "作者",
         "colPublisher": "出版社",
         "colCreateTime": "登记日期",
+        "colReaderName": "用户",
         "colActions": "操作",
-        "deleteConfirm": "确定要删除《{title}》的缺书登记吗？"
+        "deleteConfirm": "确定要删除《{title}》的缺书登记吗？",
+        "allUsers": "所有用户",
+        "filterByUser": "按用户筛选"
     }
 }

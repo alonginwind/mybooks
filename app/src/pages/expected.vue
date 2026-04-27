@@ -105,11 +105,11 @@ export default {
       this.loading = true;
       this.$backend('/user/expected')
         .then(rsp => {
-          if (rsp.err !== 'ok') {
+          if (rsp.err !== 'ok' || !rsp.data || !rsp.data.items) {
             this.$alert('error', rsp.msg);
             return;
           }
-          this.items = rsp.items;
+          this.items = rsp.data.items;
         })
         .finally(() => {
           this.loading = false;
@@ -140,6 +140,7 @@ export default {
             this.addError = rsp.msg;
           } else {
             this.items.unshift(rsp.item);
+            console.log('Added expected item:', rsp.item);
             this.closeAddDialog();
           }
         })

@@ -5,6 +5,7 @@ import datetime
 import logging
 import re
 import os
+import traceback
 from webserver.i18n import _
 
 import tornado.escape
@@ -186,8 +187,6 @@ class SignUp(BaseHandler):
         try:
             user.save()
         except:
-            import traceback
-
             logging.error(traceback.format_exc())
             return {"err": "db.error", "msg": _("系统异常，请重试或更换注册信息")}
         self.send_active_email(user)
@@ -253,8 +252,6 @@ class UserNew(BaseHandler):
         try:
             user.save()
         except:
-            import traceback
-
             logging.error(traceback.format_exc())
             return {"err": "db.error", "msg": _("系统异常，请重试或更换注册信息")}
 
@@ -809,15 +806,33 @@ class UserExpectedItems(BaseHandler):
     @js
     @auth
     def get(self):
-        user_id = self.user_id()
-        items = (
-            self.sqlite_session.query(ExpectedItem)
-            .filter(ExpectedItem.reader_id == user_id)
-            .order_by(ExpectedItem.create_time.desc())
-            .all()
-        )
+        user_list = {}
+        user = self.get_argument("user", "").strip()
+
+        if not self.is_admin() or not user:
+            user_id = self.user_id()
+        else:
+            if user != "0":
+                user_id = int(user)
+            else:
+                user_id = 0
+                user_list = self.sqlite_session.query(Reader).all()
+                user_list = {u.id: u.username for u in user_list}
+
+        items = []
+        try:
+            query = self.sqlite_session.query(ExpectedItem)
+            if user_id > 0:
+                query = query.filter(ExpectedItem.reader_id == user_id)
+            items = query.order_by(ExpectedItem.create_time.desc()).all()
+        except Exception as e:
+            logging.error("Query expected items failed: %s", e)
+            logging.info(traceback.format_exc())
+
         result = []
         for item in items:
+            if user_list and item.reader_id not in user_list:
+                continue
             result.append(
                 {
                     "id": item.id,
@@ -829,9 +844,11 @@ class UserExpectedItems(BaseHandler):
                         if item.create_time
                         else ""
                     ),
+                    "reader_id": item.reader_id,
+                    "reader_name": user_list.get(item.reader_id, "%d" % item.reader_id),
                 }
             )
-        return {"err": "ok", "items": result}
+        return {"err": "ok", "data": {"items": result, "is_admin": self.is_admin(), "users": user_list}}
 
     @js
     @auth
