@@ -800,8 +800,28 @@ class UnpinItem(BaseHandler):
             return {"err": "db.error", "msg": _("取消置顶失败")}
 
 
+class UserHistoryClear(BaseHandler):
+    """清理用户阅读记录"""
+
+    @js
+    @auth
+    def post(self):
+        user = self.current_user
+        if not user:
+            return {"err": "auth.error", "msg": _("请先登录")}
+        try:
+            extra = dict(user.extra) if user.extra else {}
+            extra["read_history"] = []
+            user.extra = extra
+            user.save()
+            return {"err": "ok"}
+        except Exception as e:
+            logging.error("Clear read history failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _("数据库操作异常，请重试")}
+
+
 class UserExpectedItems(BaseHandler):
-    """缺书登记管理"""
 
     @js
     @auth
@@ -952,4 +972,5 @@ def routes():
         (r"/api/user/unpin", UnpinItem),
         (r"/api/user/devices", UserDevices),
         (r"/api/user/expected", UserExpectedItems),
+        (r"/api/user/history/clear", UserHistoryClear),
     ]

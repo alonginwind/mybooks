@@ -744,6 +744,8 @@
     "history": {
         "noRecords": "暫無閱讀歷史。請盡情暢遊書籍的海洋吧~",
         "onlineReading": "線上閱讀",
+        "clearHistory": "清除",
+        "clearHistoryConfirm": "確定要清除所有線上閱讀記錄嗎？",
         "pushedBooks": "推送過的書",
         "visitRecords": "瀏覽記錄",
         "noBooks": "無記錄",

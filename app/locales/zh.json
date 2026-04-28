@@ -746,6 +746,8 @@
     "history": {
         "noRecords": "暂无阅读历史。请尽情畅游书籍的海洋吧~",
         "onlineReading": "在线阅读",
+        "clearHistory": "清除",
+        "clearHistoryConfirm": "确定要清除所有在线阅读记录吗？",
         "pushedBooks": "推送过的书",
         "visitRecords": "浏览记录",
         "noBooks": "无记录",

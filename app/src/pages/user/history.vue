@@ -78,7 +78,18 @@
         </v-row>
         <v-row v-else v-for="item in history" :key="item.name">
             <v-col cols=12>
-                <legend>{{ $t(`history.${item.name}`) }}</legend>
+                <div class="d-flex align-center">
+                    <legend>{{ $t(`history.${item.name}`) }}</legend>
+                    <v-btn
+                        v-if="item.name === 'onlineReading'"
+                        small
+                        text
+                        color="error"
+                        class="ml-2"
+                        :loading="clearingHistory"
+                        @click="clearHistory(item)"
+                    >{{ $t('history.clearHistory') }}</v-btn>
+                </div>
                 <v-divider></v-divider>
             </v-col>
             <v-col cols=12 v-if="item.books.length==0" >
@@ -110,6 +121,7 @@ export default {
         readingStats: null,
         currentReadingBooks: [],
         monthReadDoneBooks: [],
+        clearingHistory: false,
     }),
     async asyncData({ params, app, res }) {
         if ( res !== undefined ) {
@@ -157,6 +169,18 @@ export default {
                 b.href = '/book/' + b.id;
                 return b;
             });
+        },
+        clearHistory(item) {
+            this.clearingHistory = true;
+            this.$backend('/user/history/clear', { method: 'POST' })
+                .then(rsp => {
+                    if (rsp.err === 'ok') {
+                        this.$set(this.user.extra, 'read_history', []);
+                    }
+                })
+                .finally(() => {
+                    this.clearingHistory = false;
+                });
         },
     },
 }

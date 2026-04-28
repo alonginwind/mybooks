@@ -741,6 +741,8 @@
     "history": {
         "noRecords": "No reading history. Please enjoy exploring the ocean of books~",
         "onlineReading": "Online Reading",
+        "clearHistory": "Clear",
+        "clearHistoryConfirm": "Are you sure you want to clear all online reading history?",
         "pushedBooks": "Pushed Books",
         "visitRecords": "Visit Records",
         "noBooks": "No Records",
