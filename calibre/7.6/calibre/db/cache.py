@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 
 __license__   = 'GPL v3'
@@ -1762,10 +1762,14 @@ class Cache:
                 callback(book_id, mi, True)
 
     @write_api
-    def set_cover(self, book_id_data_map):
+    def set_cover(self, book_id_data_map, no_processing=False):
         ''' Set the cover for this book. The data can be either a QImage,
         QPixmap, file object or bytestring. It can also be None, in which
-        case any existing cover is removed. '''
+        case any existing cover is removed.
+
+        :param no_processing: If True, skip image decoding/resizing/re-encoding
+            and write the raw bytes directly. Only use when the data is already
+            a valid JPEG within the maximum_cover_size limits. '''
 
         for book_id, data in iteritems(book_id_data_map):
             try:
@@ -1774,7 +1778,7 @@ class Cache:
                 self._update_path((book_id,))
                 path = self._field_for('path', book_id).replace('/', os.sep)
 
-            self.backend.set_cover(book_id, path, data)
+            self.backend.set_cover(book_id, path, data, no_processing=no_processing)
         for cc in self.cover_caches:
             cc.invalidate(book_id_data_map)
         return self._set_field('cover', {
@@ -1818,19 +1822,21 @@ class Cache:
             dirtied.update(self._set_field(name, {book_id:val}, do_path_update=False, allow_case_change=allow_case_change))
 
         path_changed = False
-        if set_title and mi.title:
-            path_changed = True
-            set_field('title', mi.title)
         authors_changed = False
-        if set_authors:
-            path_changed = True
-            if not mi.authors:
-                mi.authors = [_('Unknown')]
-            authors = []
-            for a in mi.authors:
-                authors += string_to_authors(a)
-            set_field('authors', authors)
-            authors_changed = True
+        with self.backend.conn:
+            # Batch title/authors writes in a single transaction to avoid per-write fsync overhead
+            if set_title and mi.title:
+                path_changed = True
+                set_field('title', mi.title)
+            if set_authors:
+                path_changed = True
+                if not mi.authors:
+                    mi.authors = [_('Unknown')]
+                authors = []
+                for a in mi.authors:
+                    authors += string_to_authors(a)
+                set_field('authors', authors)
+                authors_changed = True
 
         if path_changed:
             self._update_path({book_id})
@@ -1851,7 +1857,10 @@ class Cache:
                 with open(mi.cover, 'rb') as f:
                     cdata = f.read() or None
             if cdata is not None:
-                self._set_cover({book_id: cdata})
+                # Skip expensive JPEG decode/re-encode when the data is already
+                # a valid JPEG (detected by magic header bytes).
+                no_processing = isinstance(cdata, bytes) and cdata[:2] == b'\xff\xd8'
+                self._set_cover({book_id: cdata}, no_processing=no_processing)
         except:
             if ignore_errors:
                 traceback.print_exc()

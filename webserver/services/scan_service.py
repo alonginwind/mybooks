@@ -280,7 +280,7 @@ class ScanService(AsyncService):
             if ids:
                 row.book_id = 0
                 for bid in ids:
-                    b = self.db.get_metadata(bid, index_is_id=True)
+                    b = self.db.get_metadata(bid, index_is_id=True, get_user_categories=False)
                     if b.get(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK) == BOOK_TYPE_PHYSICAL:
                         continue
                     existed_ebook = True

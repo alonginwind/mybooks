@@ -2001,7 +2001,7 @@ class BookUpload(BaseHandler):
         if books:
             book_id = None
             for id in books:
-                b = self.calibre_db.get_metadata(id, index_is_id=True)
+                b = self.calibre_db.get_metadata(id, index_is_id=True, get_user_categories=False)
                 logging.info(f"book id:{id}, book_type:{b.get(CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK)}")
                 logging.info(f"  existed formats: {b.formats}")
                 # 如果是实体书，则跳过
