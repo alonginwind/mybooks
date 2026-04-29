@@ -76,10 +76,11 @@ RUN mkdir -p /data/log/nginx/ && \
 COPY server.py /var/www/talebook/
 COPY docker/ /var/www/talebook/docker/
 COPY webserver/ /var/www/talebook/webserver/
-COPY webserver/settings.py /var/www/talebook/webserver/
 COPY conf/nginx/ssl.* /data/books/ssl/
 COPY conf/nginx/talebook.conf /etc/nginx/conf.d/
 COPY conf/supervisor/talebook.conf /etc/supervisor/conf.d/
+COPY calibre/7.6/calibre/db/cache.py /usr/lib/calibre/calibre/db/
+COPY calibre/7.6/calibre/ebooks/metadata/epub.py /usr/lib/calibre/calibre/ebooks/metadata/
 COPY --from=builder /app-static/ /var/www/talebook/app/
 COPY --from=builder /app-static/dist/logo/ /data/books/logo/
 COPY --from=builder /app-static/dist/avatar/ /data/books/avatar/
