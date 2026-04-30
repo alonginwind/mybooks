@@ -99,7 +99,6 @@ settings = {
     "IMPORT_CATEGORY_WITH_FOLDER": False,
     "UPDATE_CATEGORY_WITH_FOLDER_RENAME": False,
     "REMOVE_IMPORTED_FILE": False,
-    "SKIP_IMPORTED_PATH": False,
 
     "PDF_TILE_WITH_FILE_NAME": False,
 

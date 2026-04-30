@@ -6,8 +6,8 @@
         <div v-html="$t('imports.note')"></div>
         <div v-html="$t('imports.calibre')"></div>
         </v-card-text>
-        <v-card-actions>
-            <v-row no-gutters>
+        <v-card-actions class="flex-column align-stretch">
+            <v-row no-gutters class="w-100">
                 <v-col cols="12" class="d-flex flex-wrap ga-2 mb-2">
                     <v-btn
                         :disabled="loading"
@@ -80,6 +80,21 @@
                             <span v-if="!$vuetify.breakpoint.xs">{{ $t('imports.delete') }}</span>
                         </v-btn>
                     </template>
+                    <spacer></spacer>
+                </v-col>
+            </v-row>
+            <v-row no-gutters class="w-100">
+                <v-col cols="12" sm="6" md="4" class="mb-2">
+                    <v-select
+                        v-model="skip_last_dirs"
+                        :items="scanScopeOptionsLocalized"
+                        :label="$t('imports.scan_scope')"
+                        item-text="text"
+                        item-value="value"
+                        dense
+                        outlined
+                        hide-details
+                    ></v-select>
                 </v-col>
             </v-row>
         </v-card-actions>
@@ -212,6 +227,12 @@ export default {
         audioImporting: false,
         batchAddDialog: false,
         csvFile: null,
+        skip_last_dirs: 0,
+        scanScopeOptions: [
+            { text: "imports.scan_scope_all", value: 0 },
+            { text: "imports.scan_scope_exclude_last", value: 1 },
+            { text: "imports.scan_scope_exclude_all", value: 2 },
+        ],
         options: {},
         count_todo: 0,
         count_done: 0,
@@ -270,6 +291,12 @@ export default {
             if (this.batchAdding) return this.$t('imports.progressBatchAdding');
             if (this.audioImporting) return this.$t('imports.progressAudioImporting');
             return "";
+        },
+        scanScopeOptionsLocalized() {
+            return this.scanScopeOptions.map((item) => ({
+                text: this.$t(item.text),
+                value: item.value,
+            }));
         },
     },
     methods: {
@@ -341,11 +368,13 @@ export default {
                         return v.path;
                     });
             }
+            const payload = {
+                filelist: filelist,
+                skip_last_dirs: this.skip_last_dirs,
+            };
             this.$backend("/admin/import/run", {
                 method: "POST",
-                body: JSON.stringify({
-                    filelist: filelist,
-                }),
+                body: JSON.stringify(payload),
             })
                 .then((rsp) => {
                     if (rsp.err !== "ok") {

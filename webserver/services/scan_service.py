@@ -115,25 +115,30 @@ class ScanService(AsyncService):
         session.rollback()
         return False
 
-    def _collect_imported_path(self):
+    def _collect_imported_path(self, skip_last=False):
         start_time = time.time()
         imported_rows = (
-            self.session.query(ScanFile.path)
+            self.session.query(ScanFile.path, ScanFile.import_id)
             .filter(ScanFile.status.in_([ScanFile.IMPORTED, ScanFile.EXIST]))
             .filter(ScanFile.path.isnot(None))
             .order_by(ScanFile.update_time.desc(), ScanFile.id.desc())
             .all()
         )
         if not imported_rows:
-            return [], []
+            return [], [], 0
 
         last_imported_dir = None
         imported_dirs = set()
         imported_files_in_last_dir = set()
 
-        for (path,) in imported_rows:
+        last_import_id = 0
+        for (path, import_id) in imported_rows:
             if not path:
                 continue
+            if skip_last and last_import_id > 0 and import_id != last_import_id:
+                continue
+            if last_import_id == 0:
+                last_import_id = import_id
             fpath = os.path.realpath(path)
             fdir = os.path.dirname(fpath)
             if last_imported_dir is None:
@@ -144,16 +149,17 @@ class ScanService(AsyncService):
                 imported_dirs.add(fdir)
 
         if last_imported_dir is None:
-            return [], []
+            return [], [], 0
 
         logging.info(
-            "[SCAN] Imported path cache loaded: dirs=%d, files_in_last_dir=%d, last_dir=%s, cost=%.3f seconds",
+            "[SCAN] Imported path cache loaded: dirs=%d, files_in_last_dir=%d, last_dir=%s, last_import_id=%d, cost=%.3f seconds",
             len(imported_dirs),
             len(imported_files_in_last_dir),
             last_imported_dir,
+            last_import_id,
             time.time() - start_time,
         )
-        return list(imported_dirs), list(imported_files_in_last_dir)
+        return list(imported_dirs), list(imported_files_in_last_dir), last_import_id
 
     def _collect_files(self, paths, imported_dirs=None, imported_files=None):
         if paths is None or paths == "all":
@@ -203,7 +209,7 @@ class ScanService(AsyncService):
         return filelist
 
     @AsyncService.register_service
-    def do_import(self, paths, user_id):
+    def do_import(self, paths, user_id, skip_last_dirs=0):
         if ScanService.static_is_importing:
             logging.error("Importing is running, please wait...")
             return
@@ -214,8 +220,10 @@ class ScanService(AsyncService):
 
         imported_dirs = []
         imported_files = []
-        if CONF.get("SKIP_IMPORTED_PATH", False):
-            imported_dirs, imported_files = self._collect_imported_path()
+        imported_id = 0
+        if skip_last_dirs > 0:
+            skip_last = (skip_last_dirs == 1)
+            imported_dirs, imported_files, imported_id = self._collect_imported_path(skip_last)
 
         filelist = self._collect_files(paths, imported_dirs=imported_dirs, imported_files=imported_files)
         logging.info("[IMPORT] Collected %d files in %.3f seconds", len(filelist), time.time() - start_time)
@@ -239,7 +247,7 @@ class ScanService(AsyncService):
 
         ScanService.static_import_files_cnt = len(filelist)
         try:
-            self.do_import_internal(filelist, user_id, task_id)
+            self.do_import_internal(filelist, user_id, task_id, imported_id)
             if task_id:
                 BackgroundService().complete_task(task_id=task_id)
             logging.info("[IMPORT] Completed")
@@ -555,13 +563,13 @@ class ScanService(AsyncService):
             return row.id, ScanFile.READY
         return None, None
 
-    def do_import_internal(self, filelist, user_id, task_id=None):
+    def do_import_internal(self, filelist, user_id, task_id=None, imported_id=0):
         """
             并行执行:
             Phase Scanning: 负责遍历文件、计算哈希、去重，并将 READY 状态的 ScanFile 行 ID 放入队列；
             Phase Importing: 从队列中取出 ID，读取对应 ScanFile 行，执行元数据读取和导入操作。
         """
-        import_id = int(time.time())
+        import_id = int(time.time()) if imported_id == 0 else imported_id
         ScanService.static_import_id = import_id
         scan_upload_path = os.path.realpath(CONF.get("scan_upload_path", ""))
         total_count = len(filelist)
@@ -571,7 +579,7 @@ class ScanService(AsyncService):
         importing_imported = []
 
         start_time = time.time()
-        logging.info("[IMPORT] Start (Phase 1 + Phase 2 pipelined) for %d files", total_count)
+        logging.info("[IMPORT] Start (Phase 1 + Phase 2 pipelined) for %d files, import_id=%d", total_count, import_id)
 
         ScanService.static_status_cnt = {
             ScanFile.READY: 0
