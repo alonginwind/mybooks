@@ -117,13 +117,35 @@ class ScanService(AsyncService):
 
     def _collect_imported_path(self, skip_last=False):
         start_time = time.time()
-        imported_rows = (
+        base_query = (
             self.session.query(ScanFile.path, ScanFile.import_id)
             .filter(ScanFile.status.in_([ScanFile.IMPORTED, ScanFile.EXIST]))
             .filter(ScanFile.path.isnot(None))
-            .order_by(ScanFile.update_time.desc(), ScanFile.id.desc())
-            .all()
         )
+
+        last_import_id = 0
+        if skip_last:
+            # Only skip last task's imported directories
+            last_row = (
+                self.session.query(ScanFile.import_id)
+                .filter(ScanFile.status.in_([ScanFile.IMPORTED, ScanFile.EXIST]))
+                .filter(ScanFile.path.isnot(None))
+                .filter(ScanFile.import_id.isnot(None))
+                .order_by(ScanFile.import_id.desc())
+                .first()
+            )
+            if not last_row:
+                return [], [], 0
+            last_import_id = last_row[0]
+            imported_rows = (
+                base_query
+                .filter(ScanFile.import_id == last_import_id)
+                .order_by(ScanFile.id.desc())
+                .all()
+            )
+        else:
+            imported_rows = base_query.order_by(ScanFile.import_id.desc(), ScanFile.id.desc()).all()
+
         if not imported_rows:
             return [], [], 0
 
@@ -131,11 +153,8 @@ class ScanService(AsyncService):
         imported_dirs = set()
         imported_files_in_last_dir = set()
 
-        last_import_id = 0
         for (path, import_id) in imported_rows:
             if not path:
-                continue
-            if skip_last and last_import_id > 0 and import_id != last_import_id:
                 continue
             if last_import_id == 0:
                 last_import_id = import_id
