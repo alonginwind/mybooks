@@ -25,13 +25,12 @@ RUN mkdir -p /app-ssr/ /app-static/ && \
 # ----------------------------------------
 # 第二阶段，构建环境（基于预构建的基础镜像，含系统包、python依赖及calibre补丁）
 # 基础镜像构建：make build-base-multiarch
-FROM docker.1ms.run/poxenstudio/talebook_base:latest AS server
 ARG BUILD_COUNTRY="CN"
 
 # ----------------------------------------
 # 测试阶段 (--break-system-packages)
 RUN echo "Testing..."
-FROM server AS test
+FROM docker.1ms.run/poxenstudio/talebook_base:latest AS test
 RUN pip install flake8 pytest --break-system-packages
 COPY webserver/ /var/www/talebook/webserver/
 COPY tests/ /var/www/talebook/tests/
@@ -40,7 +39,7 @@ RUN echo "Testing... [DONE]"
 
 # ----------------------------------------
 # 生产环境
-FROM server AS production
+FROM docker.1ms.run/poxenstudio/talebook_base:latest AS production
 ARG GIT_VERSION=""
 
 LABEL Author="horky <horky.chen@gmail.com>"
