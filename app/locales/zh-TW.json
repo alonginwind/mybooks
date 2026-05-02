@@ -838,7 +838,20 @@
         "taskTypeAIFill": "AI 更新資訊",
         "taskTypeTitleSortUpdate": "更新書名排序資訊",
         "taskTypeAudioImport": "有聲書匯入",
-        "aiConnectionError": "AI連接失敗，請檢查伺服器配置或登入狀態"
+        "aiConnectionError": "AI連接失敗，請檢查伺服器配置或登入狀態",
+        "memo": "使用者留言",
+        "memoDialogTitle": "留言",
+        "memoTypeSuggestion": "建議",
+        "memoTypeBookRequest": "求書",
+        "memoTypeHelp": "求助",
+        "memoTypeLabel": "留言類型",
+        "memoContentLabel": "留言內容",
+        "memoContentPlaceholder": "請輸入您的留言...",
+        "memoSubmit": "提交",
+        "memoCancel": "取消",
+        "memoSubmitSuccess": "留言提交成功！",
+        "memoSubmitFailed": "留言提交失敗，請稍後重試",
+        "memoContentRequired": "請輸入留言內容"
     },
     "language": {
         "zh": "简体中文",
@@ -998,5 +1011,23 @@
         "deleteConfirm": "確定要刪除《{title}》的缺書登記嗎？",
         "allUsers": "所有用戶",
         "filterByUser": "按用戶篩選"
+    },
+    "memos": {
+        "pageTitle": "留言管理",
+        "colId": "ID",
+        "colReaderName": "用戶名",
+        "colType": "類型",
+        "colContent": "內容",
+        "colStage": "階段",
+        "colDate": "日期",
+        "colActions": "操作",
+        "typeSuggestion": "建議",
+        "typeRequest": "求書",
+        "typeHelp": "求助",
+        "stageNew": "新留言",
+        "stageDone": "已完成",
+        "actionComplete": "完成",
+        "actionDelete": "刪除",
+        "deleteConfirm": "確定要刪除這條留言嗎？"
     }
 }

@@ -17,7 +17,7 @@ from webserver.services.mail import MailService
 from webserver.services.resource_service import ResourceService
 from webserver.handlers.base import BaseHandler, auth, js
 from webserver.handlers.audio import AudioUtils
-from webserver.models import Device, ExpectedItem, Message, Reader, StickyItem
+from webserver.models import Device, ExpectedItem, Memo, Message, Reader, StickyItem
 from webserver.version import VERSION
 
 CONF = loader.get_settings()
@@ -866,8 +866,7 @@ class UserExpectedItems(BaseHandler):
                 user_id = int(user)
             else:
                 user_id = 0
-                user_list = self.sqlite_session.query(Reader).all()
-                user_list = {u.id: u.username for u in user_list}
+                user_list = self.get_all_readers()
 
         items = []
         try:
@@ -981,6 +980,208 @@ class UserExpectedItems(BaseHandler):
             return {"err": "db.error", "msg": _("删除失败")}
 
 
+class UserMemo(BaseHandler):
+    """用户留言"""
+
+    GUEST_DAILY_LIMIT = 20
+    USER_DAILY_LIMIT = 10
+
+    def _get_today_count(self, reader_id):
+        """获取指定用户今日留言数量"""
+        today_start = datetime.datetime.now().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        return (
+            self.sqlite_session.query(Memo)
+            .filter(
+                Memo.reader_id == reader_id,
+                Memo.create_date >= today_start,
+            )
+            .count()
+        )
+
+    @js
+    def get(self):
+        user = self.current_user
+        page = int(self.get_argument("page", 1))
+        page_size = int(self.get_argument("page_size", 20))
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 20
+
+        query = self.sqlite_session.query(Memo)
+        user_list = {}
+
+        # 管理员可查全部，普通用户只查自己的
+        if user and user.is_admin():
+            user_list = self.get_all_readers()
+        elif user:
+            query = query.filter(Memo.reader_id == user.id)
+            user_list = {user.id: user.username}
+        else:
+            # 访客无法查看留言
+            return {"err": "ok", "data": {"items": [], "total": 0}}
+
+        total = query.count()
+        items = (
+            query.order_by(Memo.create_date.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+
+        result = []
+        for item in items:
+            result.append(
+                {
+                    "id": item.id,
+                    "reader_id": item.reader_id,
+                    "reader_name": user_list.get(item.reader_id, _("访客")) if item.reader_id == 0 else user_list.get(item.reader_id, str(item.reader_id)),
+                    "memo": item.memo,
+                    "memo_type": item.memo_type,
+                    "stage": item.stage,
+                    "create_date": (
+                        item.create_date.strftime("%Y-%m-%d %H:%M:%S")
+                        if item.create_date
+                        else ""
+                    ),
+                    "update_date": (
+                        item.update_date.strftime("%Y-%m-%d %H:%M:%S")
+                        if item.update_date
+                        else ""
+                    ),
+                }
+            )
+        return {"err": "ok", "data": {"items": result, "total": total}}
+
+    @js
+    def post(self):
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+        except Exception:
+            return {"err": "params.invalid", "msg": _("参数无效")}
+
+        memo_content = data.get("memo", "").strip()
+        if not memo_content:
+            return {"err": "params.memo.required", "msg": _("留言内容不能为空")}
+        if len(memo_content) > 2048:
+            return {"err": "params.memo.too_long", "msg": _("留言内容过长")}
+
+        memo_type = data.get("memo_type", 0)
+        if memo_type not in [0, 1, 2]:
+            return {"err": "params.memo_type.invalid", "msg": _("留言类型无效")}
+
+        memo_id = data.get("id", None)
+        user = self.current_user
+        reader_id = user.id if user else 0
+
+        # 更新已有留言
+        if memo_id:
+            existing = (
+                self.sqlite_session.query(Memo)
+                .filter(Memo.id == memo_id)
+                .first()
+            )
+            if not existing:
+                return {"err": "not_found", "msg": _("留言不存在")}
+            
+            # 管理员更新 stage
+            action = data.get("action", "")
+            if action == "done" and user and user.is_admin():
+                existing.stage = Memo.STAGE_DONE
+                existing.update_date = datetime.datetime.now()
+                try:
+                    existing.save()
+                    return {"err": "ok", "msg": _("处理成功")}
+                except Exception as e:
+                    logging.error("Complete memo failed: %s", e)
+                    self.sqlite_session.rollback()
+                    return {"err": "db.error", "msg": _("数据库操作异常，请重试")}
+
+            # 只有留言所有者或管理员可以更新
+            if user and (existing.reader_id == user.id or user.is_admin()):
+                existing.memo = memo_content
+                existing.memo_type = memo_type
+                existing.update_date = datetime.datetime.now()
+                try:
+                    existing.save()
+                    return {"err": "ok", "msg": _("留言更新成功")}
+                except Exception as e:
+                    logging.error("Update memo failed: %s", e)
+                    self.sqlite_session.rollback()
+                    return {"err": "db.error", "msg": _("数据库操作异常，请重试")}
+            else:
+                return {"err": "permission.denied", "msg": _("无权操作")}
+
+        # 频率限制
+        daily_limit = self.USER_DAILY_LIMIT if user else self.GUEST_DAILY_LIMIT
+        today_count = self._get_today_count(reader_id)
+        if today_count >= daily_limit:
+            return {
+                "err": "limit.exceeded",
+                "msg": _("今日留言次数已达上限"),
+            }
+
+        # 新增留言
+        memo = Memo(
+            reader_id=reader_id,
+            memo=memo_content,
+            memo_type=memo_type,
+            stage=Memo.STAGE_NEW,
+        )
+        self.sqlite_session.add(memo)
+        try:
+            self.sqlite_session.commit()
+            return {
+                "err": "ok",
+                "msg": _("留言提交成功"),
+                "data": {
+                    "id": memo.id,
+                    "memo": memo.memo,
+                    "memo_type": memo.memo_type,
+                    "stage": memo.stage,
+                    "create_date": (
+                        memo.create_date.strftime("%Y-%m-%d %H:%M:%S")
+                        if memo.create_date
+                        else ""
+                    ),
+                },
+            }
+        except Exception as e:
+            logging.error("Add memo failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _("数据库操作异常，请重试")}
+
+    @js
+    @auth
+    def delete(self):
+        if not self.is_admin():
+            return {"err": "permission.denied", "msg": _("无权操作")}
+            
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+        except Exception:
+            return {"err": "params.invalid", "msg": _("参数无效")}
+
+        item_id = data.get("id")
+        if not item_id:
+            return {"err": "params.id.required", "msg": _("ID不能为空")}
+
+        item = self.sqlite_session.query(Memo).filter(Memo.id == item_id).first()
+        if not item:
+            return {"err": "not_found", "msg": _("未找到该留言")}
+
+        try:
+            self.sqlite_session.delete(item)
+            self.sqlite_session.commit()
+            return {"err": "ok", "msg": _("删除成功")}
+        except Exception as e:
+            logging.error("Delete memo failed: %s", e)
+            self.sqlite_session.rollback()
+            return {"err": "db.error", "msg": _("删除失败")}
+
+
 class FriendsFaviconHandler(BaseHandler):
     """提供友情链接 favicon 文件的 HTTP 访问"""
 
@@ -1028,5 +1229,6 @@ def routes():
         (r"/api/user/devices", UserDevices),
         (r"/api/user/expected", UserExpectedItems),
         (r"/api/user/history/clear", UserHistoryClear),
+        (r"/api/user/memo", UserMemo),
         (r"/api/friends/favicon/(.*)", FriendsFaviconHandler),
     ]

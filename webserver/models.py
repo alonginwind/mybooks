@@ -638,5 +638,39 @@ class ExpectedItem(Base, SQLAlchemyMixin):
         self.create_time = datetime.datetime.now()
 
 
+class Memo(Base, SQLAlchemyMixin):
+    """网站留言"""
+
+    MEMO_TYPE_SUGGESTION = 0  # 建议
+    MEMO_TYPE_BOOK_REQUEST = 1  # 求书
+    MEMO_TYPE_HELP = 2  # 求助
+
+    STAGE_NEW = "new"
+    STAGE_SUSPEND = "suspend"
+    STAGE_DONE = "done"
+
+    __tablename__ = "memo"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    reader_id = Column(Integer, ForeignKey("readers.id"), nullable=False, default=0)
+    memo = Column(String(2048), nullable=False, default="")
+    memo_type = Column(Integer, nullable=False, default=0)
+    stage = Column(String(10), nullable=False, default="new")
+    create_date = Column(DateTime, default=datetime.datetime.now)
+    update_date = Column(DateTime, default=datetime.datetime.now)
+
+    # 建立关系
+    reader = relationship(Reader, backref="memos")
+
+    def __init__(self, reader_id, memo, memo_type=0, stage="new"):
+        super(Memo, self).__init__()
+        self.reader_id = reader_id
+        self.memo = memo
+        self.memo_type = memo_type
+        self.stage = stage
+        self.create_date = datetime.datetime.now()
+        self.update_date = datetime.datetime.now()
+
+
 def user_syncdb(engine):
     Base.metadata.create_all(engine)

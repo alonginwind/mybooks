@@ -111,6 +111,8 @@ class BaseHandler(web.RequestHandler):
     _query_fallback_cache = {}
     _physical_books_count_cache: int = 0
     _physical_books_count_cache_time: float = 0.0
+    _all_readers_cache: dict = {}
+    _all_readers_cache_time: float = 0.0
     site_url = ""
     db_lock = None  # 数据库访问锁，在应用启动时初始化
 
@@ -567,9 +569,25 @@ class BaseHandler(web.RequestHandler):
             BaseHandler._physical_books_count_cache = len(result)
             BaseHandler._physical_books_count_cache_time = now
             return BaseHandler._physical_books_count_cache
-        except Exception as e:
-            logging.error("get_physical_books_count failed: %s", e)
+        except Exception:
+            logging.error(traceback.format_exc())
             return BaseHandler._physical_books_count_cache
+
+    def get_all_readers(self):
+        from webserver.models import Reader
+        now = time.time()
+        if now - BaseHandler._all_readers_cache_time < 180 and BaseHandler._all_readers_cache:
+            return BaseHandler._all_readers_cache
+
+        try:
+            users = self.sqlite_session.query(Reader).all()
+            user_list = {u.id: u.username for u in users}
+            BaseHandler._all_readers_cache = user_list
+            BaseHandler._all_readers_cache_time = now
+            return user_list
+        except Exception as e:
+            logging.error("Get all readers failed: %s", e)
+            return BaseHandler._all_readers_cache
 
     def render_string(self, template_name, **kwargs):
         """使用Jinja2模板引擎"""

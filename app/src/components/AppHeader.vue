@@ -377,6 +377,46 @@
             </v-card>
         </v-dialog>
 
+        <v-dialog v-model="memoDialog" max-width="500">
+            <v-card>
+                <v-toolbar dark :color="appBarColor">
+                    <v-icon left color="white">mdi-message-draw</v-icon>
+                    <v-toolbar-title>{{ $t('appHeader.memoDialogTitle') }}</v-toolbar-title>
+                    <v-spacer></v-spacer>
+                    <v-btn icon dark @click="memoDialog = false">
+                        <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                </v-toolbar>
+                <v-card-text class="pt-6">
+                    <v-select
+                        v-model="memoType"
+                        :items="[
+                            { text: $t('appHeader.memoTypeSuggestion'), value: 0 },
+                            { text: $t('appHeader.memoTypeBookRequest'), value: 1 },
+                            { text: $t('appHeader.memoTypeHelp'), value: 2 }
+                        ]"
+                        :label="$t('appHeader.memoTypeLabel')"
+                        outlined
+                        dense
+                    ></v-select>
+                    <v-textarea
+                        v-model="memoContent"
+                        :label="$t('appHeader.memoContentLabel')"
+                        :placeholder="$t('appHeader.memoContentPlaceholder')"
+                        outlined
+                        rows="5"
+                        auto-grow
+                        hide-details
+                    ></v-textarea>
+                </v-card-text>
+                <v-card-actions class="px-6 pb-4">
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="memoDialog = false">{{ $t('appHeader.memoCancel') }}</v-btn>
+                    <v-btn color="primary" @click="submitMemo" :loading="memoSubmitting">{{ $t('appHeader.memoSubmit') }}</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <v-dialog v-model="ai_enabled" persistent max-width="700" scrollable>
             <v-card class="dialog-border d-flex flex-column" style="height: 600px;">
                 <v-card-title class="primary white--text py-3">
@@ -528,6 +568,10 @@ export default {
         taskPollingTimer: null,
         expandedGroups: {},
         feedbackDialog: false,
+        memoDialog: false,
+        memoType: 0,
+        memoContent: '',
+        memoSubmitting: false,
     };
     },
     computed: {
@@ -573,6 +617,7 @@ export default {
                         { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks", color: "green"},
                         { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement", color: "primary"},
                         { icon: "mdi-notebook", href: "/admin/all-expected", text: "expected.allPageTitle", color: "green"},
+                        { icon: "mdi-message-text-outline", href: "/admin/user-memos", text: "memos.pageTitle", color: "blue"},
                         { icon: "mdi-math-log", href: "/syslog", text: "appHeader.syslog", color: "#FB9795"},
                         { icon: "sms_failed", action: "openFeedback", text: "appHeader.feedback", color: "orange"},
                     ],
@@ -624,12 +669,17 @@ export default {
                 }
             ];
 
+            const memo_link = [
+                { icon: "mdi-message-draw", action: "openMemo", text: "appHeader.memo", color: "blue" },
+            ];
+
             return [].concat(this.user.is_login ? [] : [login_link])
                 .concat(home_links)
                 .concat(this.user.is_login ? user_links : [])
                 .concat(this.user.is_admin ? admin_links : [])
                 .concat(this.user.is_login ? reading_links : [])
                 .concat(nav_links)
+                .concat(memo_link)
                 .concat(this.sys.friends.length > 0 ? friend_links : [])
         },
     },
@@ -969,7 +1019,40 @@ export default {
         handleLinkAction(action) {
             if (action === 'openFeedback') {
                 this.feedbackDialog = true;
+            } else if (action === 'openMemo') {
+                this.resetMemo();
+                this.memoDialog = true;
             }
+        },
+        submitMemo() {
+            if (!this.memoContent.trim()) {
+                this.$store.commit('show_snackbar', { message: this.$t('appHeader.memoContentRequired'), color: 'error' });
+                return;
+            }
+            this.memoSubmitting = true;
+            this.$backend("/user/memo", {
+                method: "POST",
+                body: JSON.stringify({
+                    memo: this.memoContent.trim(),
+                    memo_type: this.memoType
+                })
+            }).then(rsp => {
+                this.memoSubmitting = false;
+                if (rsp.err === 'ok') {
+                    this.$store.commit('show_snackbar', { message: this.$t('appHeader.memoSubmitSuccess'), color: 'success' });
+                    this.memoDialog = false;
+                    this.resetMemo();
+                } else {
+                    this.$store.commit('show_snackbar', { message: rsp.msg || this.$t('appHeader.memoSubmitFailed'), color: 'error' });
+                }
+            }).catch(() => {
+                this.memoSubmitting = false;
+                this.$store.commit('show_snackbar', { message: this.$t('appHeader.memoSubmitFailed'), color: 'error' });
+            });
+        },
+        resetMemo() {
+            this.memoType = 0;
+            this.memoContent = '';
         },
     },
 };

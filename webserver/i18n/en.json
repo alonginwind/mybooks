@@ -435,5 +435,12 @@
   "有声书导入任务正在运行中，请稍候": "Audiobook import is already running, please wait",
   "未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因": "Did not find relevant information or access is restricted. If this happens frequently, please try again later or check the logs for the reason",
   "当前站点已关闭注册": "Registration is closed on this site",
-  "已清理 %d 条无效图书记录": "Cleaned %d invalid book records"
+  "已清理 %d 条无效图书记录": "Cleaned %d invalid book records",
+  "留言内容不能为空": "Memo content cannot be empty",
+  "留言内容过长": "Memo content is too long",
+  "留言类型无效": "Invalid memo type",
+  "今日留言次数已达上限": "Daily memo limit reached",
+  "留言提交成功": "Memo submitted successfully",
+  "留言更新成功": "Memo updated successfully",
+  "留言不存在": "Memo not found"
 }
