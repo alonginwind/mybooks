@@ -339,7 +339,7 @@ class ScanService(AsyncService):
                 self.save_or_rollback(row, session)
                 return None, ScanFile.INVALID
 
-            if mi and mi.title and mi.title == CALIBRE_ERROR_FLAG:
+            if mi is not None and mi.title and mi.title == CALIBRE_ERROR_FLAG:
                 logging.error("[IMPORT] Failed to get metadata for %s", fpath)
                 row.status = ScanFile.INVALID
                 row.title = None
@@ -347,8 +347,10 @@ class ScanService(AsyncService):
                 return None, ScanFile.INVALID
 
             # Normalize title/author for pdf (PDF_TILE_WITH_FILE_NAME=False)
-            if mi and fmt == "pdf":
-                if CONF.get("PDF_TILE_WITH_FILE_NAME", False):
+            if fmt == "pdf":
+                if mi is None:
+                    mi = Metadata(utils.remove_zlibrary_suffix(fname.replace("." + fmt, "")), [_("佚名")])
+                elif CONF.get("PDF_TILE_WITH_FILE_NAME", False):
                     mi.title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
                     mi.authors = [_("佚名")]
                 else:
