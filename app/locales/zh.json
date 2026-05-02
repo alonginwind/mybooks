@@ -841,7 +841,7 @@
         "taskTypeTitleSortUpdate": "更新书名排序信息",
         "taskTypeAudioImport": "有声书导入",
         "aiConnectionError": "AI连接失败，请检查服务器配置或登录状态",
-        "memo": "用户留言",
+        "memo": "站内留言",
         "memoDialogTitle": "留言",
         "memoTypeSuggestion": "建议",
         "memoTypeBookRequest": "求书",
@@ -851,7 +851,7 @@
         "memoContentPlaceholder": "请输入您的留言...",
         "memoSubmit": "提交",
         "memoCancel": "取消",
-        "memoSubmitSuccess": "留言提交成功！",
+        "memoSubmitSuccess": "留言已成功提交，我们将稍后查看处理。",
         "memoSubmitFailed": "留言提交失败，请稍后重试",
         "memoContentRequired": "请输入留言内容"
     },

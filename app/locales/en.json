@@ -846,7 +846,7 @@
         "memoContentPlaceholder": "Type your message here...",
         "memoSubmit": "Submit",
         "memoCancel": "Cancel",
-        "memoSubmitSuccess": "Message submitted successfully!",
+        "memoSubmitSuccess": "Message submitted successfully, we will review and process it later.",
         "memoSubmitFailed": "Failed to submit message, please try again later",
         "memoContentRequired": "Please enter your message"
     },

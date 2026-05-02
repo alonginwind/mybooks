@@ -95,6 +95,7 @@
                             :to="item.href"
                             :target="item.target"
                             :class="{ 'v-list-item--icon-only': miniVariant, 'login-button': item.text === 'appHeader.please_login' }"
+                            @click="item.action ? handleLinkAction(item.action) : undefined"
                         >
                             <v-list-item-action class="mt-1 mb-1 mr-2" dense v-if="!miniVariant">
                                 <v-icon class="pa-0 ma-0" :color="item.color || 'white'">{{ item.icon }}</v-icon>
@@ -134,7 +135,7 @@
             </template>
         </v-navigation-drawer>
 
-        <v-app-bar v-if="$store.state.nav" class="px-0" :color="appBarColor" dense dark app fixed clipped-left extension-height="64">
+        <v-app-bar v-if="$store.state.nav" class="px-0" color="#003153" dense dark app fixed clipped-left extension-height="64">
             <template v-if="btn_search && $vuetify.breakpoint.xs" #extension>
                 <v-container fluid class="py-2">
                     <v-form @submit.prevent="doSearch">
@@ -670,7 +671,7 @@ export default {
             ];
 
             const memo_link = [
-                { icon: "mdi-message-draw", action: "openMemo", text: "appHeader.memo", color: "blue" },
+                { icon: "mdi-message-text-outline", action: "openMemo", text: "appHeader.memo", color: "green" },
             ];
 
             return [].concat(this.user.is_login ? [] : [login_link])
