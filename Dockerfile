@@ -20,8 +20,7 @@ RUN mkdir -p /app-ssr/ /app-static/ && \
     ls -al && \
     cp -r .nuxt node_modules package* /app-ssr/ && \
     npm run build-spa && \
-    cp -r dist nuxt.config.js package* /app-static/
-
+    cp -r dist nuxt.config.js package* /app-static/ \
 
 # ----------------------------------------
 # 第二阶段，构建环境（基于预构建的基础镜像，含系统包、python依赖及calibre补丁）
@@ -84,6 +83,7 @@ COPY calibre/7.6/calibre/ebooks/metadata/epub.py /usr/lib/calibre/calibre/ebooks
 COPY --from=builder /app-static/ /var/www/talebook/app/
 COPY --from=builder /app-static/dist/logo/ /data/books/logo/
 COPY --from=builder /app-static/dist/avatar/ /data/books/avatar/
+COPY release_notes.txt /var/www/talebook/app/dist/static/
 
 
 RUN rm -f /etc/nginx/sites-enabled/default /var/www/html -rf && \
