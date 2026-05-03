@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import urllib.parse
+from html import escape
 
 from tornado import web
 
@@ -102,8 +103,13 @@ class PodcastBaseHandler(BaseHandler):
             "h1{color:#1a73e8}h2{color:#555;border-bottom:1px solid #ddd;padding-bottom:8px}",
             "ul{list-style:none;padding:0}li{margin:8px 0; background:#fff; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1)}",
             "a{color:#1a73e8;text-decoration:none}a:hover{text-decoration:underline}",
+            ".feed-row{display:flex;align-items:center;gap:8px;margin-top:8px}",
             ".feed-url{font-family:monospace;background:#e8f0fe;padding:8px;",
-            "border-radius:4px;font-size:13px; display:block; margin-top:8px; word-break: break-all;}",
+            "border-radius:4px;font-size:13px; display:block; word-break: break-all; flex:1}",
+            ".copy-btn{border:0px solid #c7d2feee;background:#fff;color:#1a73e8;",
+            "border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1}",
+            ".copy-btn:hover{background:#eef3ff}",
+            ".copy-btn.copied{color:#0f9d58;border-color:#0f9d58}",
             ".section{margin:24px 0}",
             ".token-info{background:#fff3cd;padding:12px;border-radius:8px;margin:16px 0}",
             ".book-meta{color:#666; font-size:14px; margin-top:4px}",
@@ -113,10 +119,36 @@ class PodcastBaseHandler(BaseHandler):
         if show_back:
             html.append('<p><a href="/podcast">🔙 返回 Podcast 首页</a></p>')
         html.append(body_html)
+        html.append(
+            "<script>(function(){"
+            "function fallbackCopy(text){"
+            "var ta=document.createElement('textarea');"
+            "ta.value=text;document.body.appendChild(ta);ta.select();"
+            "try{document.execCommand('copy');}catch(e){}"
+            "document.body.removeChild(ta);}"
+            "document.addEventListener('click',function(e){"
+            "var btn=e.target.closest('.copy-btn');if(!btn)return;"
+            "var text=btn.getAttribute('data-copy-text')||'';if(!text)return;"
+            "var done=function(){"
+            "btn.classList.add('copied');btn.textContent='✓';"
+            "setTimeout(function(){btn.classList.remove('copied');btn.textContent='📑';},1200);};"
+            "if(navigator.clipboard&&navigator.clipboard.writeText){"
+            "navigator.clipboard.writeText(text).then(done).catch(function(){fallbackCopy(text);done();});"
+            "}else{fallbackCopy(text);done();}"
+            "});})();</script>"
+        )
         html.append("</body></html>")
 
         self.set_header("Content-Type", "text/html; charset=UTF-8")
         self.write("\n".join(html))
+
+    def render_feed_url(self, feed_url):
+        safe_feed_url = escape(feed_url, quote=True)
+        return (
+            f'<div class="feed-row"><a class="feed-url" href="{safe_feed_url}">{safe_feed_url}</a>'
+            f'<button type="button" class="copy-btn" title="复制订阅地址" '
+            f'data-copy-text="{safe_feed_url}">📑</button></div>'
+        )
 
     def render_book_list(self, page_title, description, entries, token=None):
         html = []
@@ -140,7 +172,7 @@ class PodcastBaseHandler(BaseHandler):
                 )
                 if token is not None:
                     feed_url = feed_url + f"?token={token}"
-                html.append(f'<a class="feed-url" href="{feed_url}">{feed_url}</a>')
+                html.append(self.render_feed_url(feed_url))
                 html.append("</li>")
             html.append("</ul>")
 
@@ -198,7 +230,7 @@ class PodcastIndex(PodcastBaseHandler):
                                 '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                             )
                             html.append(
-                                f'<a class="feed-url" href="{feed_url}">{feed_url}</a>'
+                                self.render_feed_url(feed_url)
                             )
                             html.append("</li>")
                         html.append("</ul>")
@@ -225,7 +257,7 @@ class PodcastIndex(PodcastBaseHandler):
             if token_to_use:
                 all_url += f"?token={token_to_use}"
 
-            html.append(f'<p><a class="feed-url" href="{all_url}">{all_url}</a></p>')
+            html.append(self.render_feed_url(all_url))
             html.append("</div>")
 
         if categories:
@@ -486,7 +518,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
                             '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                         )
                         html.append(
-                            f'<a class="feed-url" href="{feed_url}">{feed_url}</a>'
+                            self.render_feed_url(feed_url)
                         )
                         html.append("</li>")
                     html.append("</ul>")
@@ -498,7 +530,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
         html.append('<div class="section">')
         html.append("<h2>全部有声书</h2>")
         all_url = f"{site_url}/podcast/all?token={token}"
-        html.append(f'<p><a class="feed-url" href="{all_url}">{all_url}</a></p>')
+        html.append(self.render_feed_url(all_url))
         html.append("</div>")
 
         categories = provider.get_categories()
