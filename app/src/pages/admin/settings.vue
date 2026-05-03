@@ -581,12 +581,38 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog
+      v-model="saveConfirmDialog"
+      persistent
+      transition="dialog-bottom-transition"
+      width="520"
+    >
+      <v-card>
+        <v-toolbar flat dense dark color="#003153">
+          {{ $t("settings.save_confirm_title") }}
+        </v-toolbar>
+        <v-card-text class="pt-4">
+          {{ saveConfirmMessage }}
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="saveConfirmDialog = false">
+            {{ $t("common.cancel") }}
+          </v-btn>
+          <v-btn color="primary" @click="confirmSaveSettings">
+            {{ $t("settings.confirm_save") }}
+          </v-btn>
+          <v-spacer></v-spacer>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <br />
     <div class="text-center">
       <p>{{ $t("settings.save_hints") }}</p>
       <v-btn
         color="primary"
-        @click="save_settings"
+        @click="openSaveConfirmDialog"
         class="save-btn"
         large
         elevation="4"
@@ -1211,6 +1237,7 @@ export default {
     trashSizeTexts: { trash: "", upload: "" },
     trashLoading: false,
     trashConfirmDialog: false,
+    saveConfirmDialog: false,
     stampPreviewUrl: "",
     stampPositions: [
       { value: "top-left", icon: "mdi-format-align-top" },
@@ -1238,6 +1265,11 @@ export default {
         value: source,
       }));
     },
+    saveConfirmMessage() {
+      return this.settings["autoreload"]
+        ? this.$t("settings.save_confirm_message_autoreload")
+        : this.$t("settings.save_confirm_message_no_autoreload");
+    },
   },
   mounted() {
     this.fetchTrashSize();
@@ -1250,6 +1282,13 @@ export default {
     }
   },
   methods: {
+    openSaveConfirmDialog() {
+      this.saveConfirmDialog = true;
+    },
+    confirmSaveSettings() {
+      this.saveConfirmDialog = false;
+      this.save_settings();
+    },
     save_settings: function () {
       if (this.settings["site_language"] === "") {
         this.settings["site_language"] = "zh";
