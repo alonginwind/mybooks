@@ -239,6 +239,7 @@
             "uncategorized": "Uncategorized",
             "actions": "Actions",
             "deleteBook": "Delete Book",
+            "updateAllMeta": "Update Books according to file name format",
             "header": {
                 "cover": "Cover",
                 "id": "ID",
@@ -841,6 +842,7 @@
         "taskTypeAIFill": "AI Update Info",
         "taskTypeTitleSortUpdate": "Update Pinyin Title Sort",
         "taskTypeAudioImport": "Audiobook Import",
+        "taskTypeMetadataUpdate": "Update Metadata",
         "aiConnectionError": "AI connection failed, please check server configuration or login status",
         "memo": "Memo",
         "memoDialogTitle": "Leave a Message",

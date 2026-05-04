@@ -242,6 +242,7 @@
             "uncategorized": "未分类",
             "actions": "操作",
             "deleteBook": "删除此书",
+            "updateAllMeta": "更新库中目录及文件格式",
             "header": {
                 "cover": "封面",
                 "id": "ID",
@@ -846,6 +847,7 @@
         "taskTypeAIFill": "AI更新信息",
         "taskTypeTitleSortUpdate": "更新书名排序信息",
         "taskTypeAudioImport": "有声书导入",
+        "taskTypeMetadataUpdate": "更新图书元数据",
         "aiConnectionError": "AI连接失败，请检查服务器配置或登录状态",
         "memo": "站内留言",
         "memoDialogTitle": "留言",

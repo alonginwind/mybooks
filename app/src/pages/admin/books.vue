@@ -70,6 +70,12 @@
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.clearInvalidItems') }}</v-list-item-title>
                             </v-list-item>
+                            <v-list-item @click="updateAllMeta">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-book-refresh-outline</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-title>{{ $t('admin.books.updateAllMeta') }}</v-list-item-title>
+                            </v-list-item>
                         </v-list>
                     </v-menu>
                     <v-btn
@@ -747,6 +753,21 @@ export default {
                     this.handleApiResponse(rsp);
                     this.books_selected = [];
                     this.getDataFromApi();
+                    this.$alert("success", rsp.msg);
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+
+        updateAllMeta() {
+            this.loading = true;
+            this.$backend("/admin/book/update_all_meta", {
+                method: "POST",
+                body: JSON.stringify({}),
+            })
+                .then((rsp) => {
+                    this.handleApiResponse(rsp);
                     this.$alert("success", rsp.msg);
                 })
                 .finally(() => {

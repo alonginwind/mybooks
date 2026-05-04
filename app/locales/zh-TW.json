@@ -242,6 +242,7 @@
             "uncategorized": "未分類",
             "actions": "操作",
             "deleteBook": "刪除此書",
+            "updateAllMeta": "更新庫中目錄及文件格式",
             "header": {
                 "cover": "封面",
                 "id": "ID",
@@ -844,6 +845,7 @@
         "taskTypeAIFill": "AI 更新資訊",
         "taskTypeTitleSortUpdate": "更新書名排序資訊",
         "taskTypeAudioImport": "有聲書匯入",
+        "taskTypeMetadataUpdate": "更新圖書元數據",
         "aiConnectionError": "AI連接失敗，請檢查伺服器配置或登入狀態",
         "memo": "站內留言",
         "memoDialogTitle": "留言",

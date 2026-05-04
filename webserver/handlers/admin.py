@@ -23,6 +23,7 @@ from webserver.services.autofill import AutoFillService
 from webserver.services.ai_fillinfo import AIFillInfoService
 from webserver.services.batch_convert import BatchConvertService
 from webserver.services.batch_title_sort import BatchTitleSortUpdateService
+from webserver.services.metadata_update import MetaDataUpdateService
 from webserver.services.mail import MailService
 from webserver.services.book_barn import BookBarnClient
 from webserver.services.background_service import BackgroundService, BackgroundTask
@@ -837,6 +838,20 @@ class AdminBookAIFill(BaseHandler):
         return {"err": "ok", "msg": _("AI 更新任务已启动，请耐心等待")}
 
 
+class AdminUpdateAllMeta(BaseHandler):
+    """Admin API: 批量更新所有书籍的元信息"""
+    @js
+    @is_admin
+    def post(self):
+        update_status = MetaDataUpdateService().status()
+        if update_status["is_running"]:
+            return {"err": "task.running", "msg": _("有更新任务正在运行中，请稍后再试")}
+
+        idlist = list(self.calibre_db_cache.all_book_ids())
+        MetaDataUpdateService().update_metadata(idlist)
+        return {"err": "ok", "msg": _("批量更新书籍元信息任务已启动，右上角可以查看进度")}
+
+
 class AdminBookConvert(BaseHandler):
     """Admin API: 批量转换Kindle格式为EPUB"""
 
@@ -1354,5 +1369,6 @@ def routes():
         (r"/api/admin/stamp", AdminStamp),
         (r"/api/library/stats", LibraryStats),
         (r"/api/admin/syslog", AdminSyslog),
+        (r"/api/admin/book/update_all_meta", AdminUpdateAllMeta),
         (r"/api/admin/syslog/download", AdminSyslogDownload),
     ]

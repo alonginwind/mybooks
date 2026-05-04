@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EPUB to Audio Worker - Convert EPUB books to audiobooks with progress tracking
+(PoxenStudio)EPUB to Audio Worker - Convert EPUB books to audiobooks with progress tracking
 
 python3 main.py --tts edge --language zh-CN --worker_count 2 --voice_name zh-CN-YunyangNeural --no_prompt
  test.epub ./epub_to_audio/
@@ -549,7 +549,7 @@ def main():
     else:
         print("[INFO] Running in full output mode...")
         try:
-            # Execute conversion and show full results
+            # (Horky)Execute conversion and show full results
             result = worker.convert_epub_to_audio(epub_path, output_dir, **options)
 
             # Print results

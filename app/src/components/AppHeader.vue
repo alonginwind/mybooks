@@ -997,6 +997,7 @@ export default {
                 'convert': this.$t('appHeader.taskTypeConvert'),
                 'ai_fill': this.$t('appHeader.taskTypeAIFill'),
                 'title_sort_update': this.$t('appHeader.taskTypeTitleSortUpdate'),
+                'metadata_update': this.$t('appHeader.taskTypeMetadataUpdate'),
             };
             return typeMap[serviceType] || serviceType;
         },
