@@ -879,9 +879,7 @@ class BaseHandler(web.RequestHandler):
             return items
         except Exception as e:
             cached = BaseHandler._query_fallback_cache.get(cache_key, [])
-            logging.error(
-                "get_category_with_count query failed for %s: %s", cache_key, str(e)
-            )
+            logging.error("get_category_with_count query failed for %s: %s", cache_key, str(e))
             if cached:
                 logging.warning(
                     "get_category_with_count fallback to cache for %s, count=%d",

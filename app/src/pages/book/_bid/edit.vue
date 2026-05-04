@@ -49,8 +49,16 @@
                                     <v-text-field :label="$t('book.edit.fields.series')" v-model="book.series">{{ book.series }}</v-text-field>
                                 </v-col>
                                 <v-col class='py-0' cols=12 sm=6>
-                                    <v-text-field :label="$t('book.edit.fields.publisher')" v-model="book.publisher">{{ book.publisher }}
-                                    </v-text-field>
+                                    <v-combobox
+                                        :label="$t('book.edit.fields.publisher')"
+                                        v-model="book.publisher"
+                                        :items="publisherNames"
+                                        :search-input.sync="publisher_input"
+                                        :loading="publishers_loading"
+                                        clearable
+                                        hide-no-data
+                                        :filter="publisherFilter"
+                                    ></v-combobox>
                                 </v-col>
                                 <v-col class='py-0' cols=12 sm=6>
                                     <v-text-field :label="$t('book.edit.fields.pubdate')" v-model="book.pubdate">{{ book.pubdate }}</v-text-field>
@@ -73,8 +81,8 @@
                                 </v-col>
                                 <v-col class='py-0' cols=12>
                                     <!-- TAGS -->
-                                    <v-combobox v-model="book.tags" :items="book.tags" :label="$t('book.edit.fields.tags')"
-                                                :search-input.sync="tag_input" hide-selected multiple small-chips>
+                                    <v-combobox v-model="book.tags" :items="tagNames" :label="$t('book.edit.fields.tags')"
+                                                :search-input.sync="tag_input" :loading="tags_loading" :filter="tagFilter" hide-selected multiple small-chips>
                                         <template v-slot:no-data>
                                             <v-list-item>
                                                 <span v-if="!tag_input">{{ $t('book.edit.fields.tags.noData') }}</span>
@@ -169,19 +177,16 @@ const languageCodes = {
 
 export default {
     components: {},
-    computed: {
-        pub_year: function () {
-            if (this.book === null) {
-                return "";
-            }
-            return this.book.pubdate.split("-")[0];
-        },
-    },
     data: () => ({
         bookid: 0,
         book: {'id': 0, 'files': [], 'tags': [], 'pubdate': ''},
         author_input: null,
         tag_input: null,
+        publisher_input: null,
+        publishers: [],
+        publishers_loading: false,
+        tags_list: [],
+        tags_loading: false,
         debug: false,
         mail_to: "",
         dialog_kindle: false,
@@ -190,6 +195,41 @@ export default {
         alert_type: "error",
         languageOptions: Object.entries(languageCodes).map(([code, name]) => ({ code, name })),
     }),
+    computed: {
+        pub_year: function () {
+            if (this.book === null) {
+                return "";
+            }
+            return this.book.pubdate.split("-")[0];
+        },
+        publisherNames() {
+            return this.publishers.map(p => p.name);
+        },
+        tagNames() {
+            return this.tags_list.map(t => t.name);
+        },
+    },
+    async mounted() {
+        this.publishers_loading = true;
+        this.tags_loading = true;
+        try {
+            const [pubRsp, tagRsp] = await Promise.all([
+                this.$backend('/publisher'),
+                this.$backend('/tag'),
+            ]);
+            if (pubRsp && pubRsp.items) {
+                this.publishers = pubRsp.items.slice(0, 100);
+            }
+            if (tagRsp && tagRsp.items) {
+                this.tags_list = tagRsp.items.slice(0, 100);
+            }
+        } catch (e) {
+            // ignore
+        } finally {
+            this.publishers_loading = false;
+            this.tags_loading = false;
+        }
+    },
     async asyncData({params, app, res}) {
         if (res !== undefined) {
             res.setHeader('Cache-Control', 'no-cache');
@@ -232,6 +272,12 @@ export default {
                         this.$alert("error", rsp.msg);
                     }
                 });
+        },
+        publisherFilter(item, queryText) {
+            return item.toLowerCase().includes(queryText.toLowerCase());
+        },
+        tagFilter(item, queryText) {
+            return item.toLowerCase().includes(queryText.toLowerCase());
         },
         languageName(code) {
             const found = this.languageOptions.find(opt => opt.code === code);
