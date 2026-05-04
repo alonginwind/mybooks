@@ -270,6 +270,15 @@ class ScanService(AsyncService):
             if task_id:
                 BackgroundService().complete_task(task_id=task_id)
             logging.info("[IMPORT] Completed")
+            self.add_msg(
+                user_id=user_id,
+                status="success",
+                msg=_("图书导入完成: 共%d本，成功%d本，失败%d本") % (
+                    ScanService.static_import_files_cnt,
+                    ScanService.static_status_cnt.get(ScanFile.IMPORTED, 0),
+                    ScanService.static_status_cnt.get(ScanFile.INVALID, 0),
+                ),
+            )
         except Exception as err:
             if task_id:
                 BackgroundService().complete_task(task_id=task_id, error_message=str(err))

@@ -848,7 +848,7 @@ class AdminUpdateAllMeta(BaseHandler):
             return {"err": "task.running", "msg": _("有更新任务正在运行中，请稍后再试")}
 
         idlist = list(self.calibre_db_cache.all_book_ids())
-        MetaDataUpdateService().update_metadata(idlist)
+        MetaDataUpdateService().update_metadata(self.current_user.id, idlist)
         return {"err": "ok", "msg": _("批量更新书籍元信息任务已启动，右上角可以查看进度")}
 
 

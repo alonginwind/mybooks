@@ -80,7 +80,7 @@ class MetaDataUpdateService(AsyncService):
             logging.error("[MetaDataUpdate] Failed to update task progress: %s", e)
 
     @AsyncService.register_service
-    def update_metadata(self, idlist: list = None):
+    def update_metadata(self, uid, idlist: list = None):
         self.is_running = True
         self.start_time = time.time()
         self.count_done = 0
@@ -139,6 +139,13 @@ class MetaDataUpdateService(AsyncService):
 
         # 遍历library目录，清理空目录
         self._cleanup_empty_dirs()
+
+        # 发送消息通知用户更新完成
+        self.add_msg(
+            user_id=uid,
+            status="success",
+            msg=_("图书元数据更新完成: 共%d本，成功%d本，失败%d本") % (self.count_total, self.count_done, self.count_fail),
+        )
 
         self.is_running = False
         self.current_book_id = None
