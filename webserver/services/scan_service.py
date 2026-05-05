@@ -349,11 +349,15 @@ class ScanService(AsyncService):
                 return None, ScanFile.INVALID
 
             if mi is not None and mi.title and mi.title == CALIBRE_ERROR_FLAG:
-                logging.error("[IMPORT] Failed to get metadata for %s", fpath)
-                row.status = ScanFile.INVALID
-                row.title = None
-                self.save_or_rollback(row, session)
-                return None, ScanFile.INVALID
+                # PDF加密导致元数据读取失败，后续会用文件名做标题，作者佚名；其他格式则直接视为无效文件
+                if fmt == "pdf":
+                    mi = None
+                else:
+                    logging.error("[IMPORT] Failed to get metadata for %s", fpath)
+                    row.status = ScanFile.INVALID
+                    row.title = None
+                    self.save_or_rollback(row, session)
+                    return None, ScanFile.INVALID
 
             # Normalize title/author for pdf (PDF_TILE_WITH_FILE_NAME=False)
             if fmt == "pdf":

@@ -107,7 +107,7 @@ class BookDetail(BaseHandler):
             logging.error("get book %s failed: %s" % (bid, e))
 
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         # 添加当前用户的阅读状态信息
         if self.current_user:
@@ -153,10 +153,10 @@ class BookTags(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         isbn = book.get("isbn", "")
         title = book.get("title", "")
@@ -164,12 +164,12 @@ class BookTags(BaseHandler):
         author = authors[0] if authors else ""
 
         if title.startswith("百度百科"):
-            return {"err": "ok", "msg": _(u"无需更新")}
+            return {"err": "ok", "msg": _("无需更新")}
 
         try:
             api = BookBarnTags(token=CONF.get("BOOKBARN_TOKEN", ""))
             if not api:
-                return {"err": "plugin.missing", "msg": _(u"BookBarn Tags插件未安装")}
+                return {"err": "plugin.missing", "msg": _("BookBarn Tags插件未安装")}
             tags = api.get_tags(isbn=isbn, title=title, author=author)
             if not tags:
                 tags = ""
@@ -180,11 +180,11 @@ class BookTags(BaseHandler):
                     updated_tags = list(set(new_tags))
                     self.calibre_db.set_tags(book_id, updated_tags)
                     logging.info(f"Updated tags for book {book_id}: {updated_tags}")
-                    return {"err": "ok", "msg": _(u"标签更新成功")}
-            return {"err": "ok", "msg": _(u"标签已是最新，无需更新")}
+                    return {"err": "ok", "msg": _("标签更新成功")}
+            return {"err": "ok", "msg": _("标签已是最新，无需更新")}
         except Exception as e:
             logging.error(f"Error updating tags for book {book_id}: {e}")
-            return {"err": "internal", "msg": _(u"更新标签时发生错误，请稍后再试")}
+            return {"err": "internal", "msg": _("更新标签时发生错误，请稍后再试")}
 
 
 class BookAIFill(BaseHandler):
@@ -195,21 +195,21 @@ class BookAIFill(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         result = AIFillInfoService().fill_one(book_id, force=True)
         status = result.get("status", "fail")
         if status == "ok":
             return {
                 "err": "ok",
-                "msg": _(u"AI 更新成功"),
+                "msg": _("AI 更新成功"),
                 "category": result.get("category", ""),
                 "tags": result.get("tags", []),
             }
-        return {"err": "ai.fill.failed", "msg": result.get("msg", _(u"AI 更新失败"))}
+        return {"err": "ai.fill.failed", "msg": result.get("msg", _("AI 更新失败"))}
 
 
 class BookUpdateTags(BaseHandler):
@@ -218,11 +218,11 @@ class BookUpdateTags(BaseHandler):
     @auth
     def post(self):
         if not self.is_admin():
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         tag_name = self.get_argument("tag", "").strip()
         if not tag_name:
-            return {"err": "params.invalid", "msg": _(u"请指定标签名称")}
+            return {"err": "params.invalid", "msg": _("请指定标签名称")}
 
         try:
             # Search books by tag
@@ -230,7 +230,7 @@ class BookUpdateTags(BaseHandler):
             book_ids = self.calibre_db_cache.search(query)
 
             if not book_ids:
-                return {"err": "ok", "msg": _(u"未找到包含该标签的书籍"), "count": 0}
+                return {"err": "ok", "msg": _("未找到包含该标签的书籍"), "count": 0}
 
             # Convert to list to avoid "Set changed size during iteration" error
             book_ids = list(book_ids)
@@ -244,15 +244,15 @@ class BookUpdateTags(BaseHandler):
             # Call AutoFillService to update tags in background
             AutoFillService().auto_fill_all(book_ids, only_tags=True, force=True)
 
-            msg = _(u"已提交 %d 本书籍的标签更新任务，正在后台处理, 请稍后刷新查看结果") % len(book_ids)
+            msg = _("已提交 %d 本书籍的标签更新任务，正在后台处理, 请稍后刷新查看结果") % len(book_ids)
             if total_count > 300:
-                msg += _(u"（共找到 %d 本，仅处理前 300 本）") % total_count
+                msg += _("（共找到 %d 本，仅处理前 300 本）") % total_count
 
             return {"err": "ok", "msg": msg, "count": len(book_ids), "total": total_count}
 
         except Exception as e:
             logging.error(f"Error in batch tag update for tag {tag_name}: {e}")
-            return {"err": "internal", "msg": _(u"批量更新标签时发生错误")}
+            return {"err": "internal", "msg": _("批量更新标签时发生错误")}
 
 
 class BookCategory(BaseHandler):
@@ -262,10 +262,10 @@ class BookCategory(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         data = tornado.escape.json_decode(self.request.body)
         category = data.get(COLUMN_CATEGORY, "").strip()
@@ -275,10 +275,10 @@ class BookCategory(BaseHandler):
         try:
             # Use set_field directly on the cache to avoid Metadata object issues
             self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: category})
-            return {"err": "ok", "msg": _(u"分类更新成功")}
+            return {"err": "ok", "msg": _("分类更新成功")}
         except Exception as e:
             logging.error(f"Error updating category for book {book_id}: {e}")
-            return {"err": "internal", "msg": _(u"更新分类失败")}
+            return {"err": "internal", "msg": _("更新分类失败")}
 
 
 class BookCategoryBatch(BaseHandler):
@@ -286,7 +286,7 @@ class BookCategoryBatch(BaseHandler):
     @auth
     def post(self):
         if not self.is_admin():
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         data = tornado.escape.json_decode(self.request.body)
         category = data.get(COLUMN_CATEGORY, "").strip()
@@ -294,10 +294,10 @@ class BookCategoryBatch(BaseHandler):
         tag = data.get("tag", "").strip()
 
         if not category:
-            return {"err": "params.category.empty", "msg": _(u"分类不能为空")}
+            return {"err": "params.category.empty", "msg": _("分类不能为空")}
 
         if not author and not tag:
-            return {"err": "params.invalid", "msg": _(u"必须指定作者或标签")}
+            return {"err": "params.invalid", "msg": _("必须指定作者或标签")}
 
         # Find books
         book_ids = set()
@@ -311,7 +311,7 @@ class BookCategoryBatch(BaseHandler):
                 book_ids.update(ids)
             except Exception as e:
                 logging.error(f"Error searching books by author {author}: {e}")
-                return {"err": "internal", "msg": _(u"搜索作者书籍失败")}
+                return {"err": "internal", "msg": _("搜索作者书籍失败")}
 
         if tag:
             # Search by tag
@@ -321,10 +321,10 @@ class BookCategoryBatch(BaseHandler):
                 book_ids.update(ids)
             except Exception as e:
                 logging.error(f"Error searching books by tag {tag}: {e}")
-                return {"err": "internal", "msg": _(u"搜索标签书籍失败")}
+                return {"err": "internal", "msg": _("搜索标签书籍失败")}
 
         if not book_ids:
-            return {"err": "ok", "msg": _(u"未找到符合条件的书籍"), "count": 0}
+            return {"err": "ok", "msg": _("未找到符合条件的书籍"), "count": 0}
 
         logging.info(f"Batch updating category to '{category}' for {len(book_ids)} books (Author: {author}, Tag: {tag})")
 
@@ -342,10 +342,10 @@ class BookCategoryBatch(BaseHandler):
             self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, updates)
             count = len(book_ids)
 
-            return {"err": "ok", "msg": _(u"成功更新 %d 本书籍分类") % count, "count": count}
+            return {"err": "ok", "msg": _("成功更新 %d 本书籍分类") % count, "count": count}
         except Exception as e:
             logging.error(f"Error batch updating category: {e}")
-            return {"err": "internal", "msg": _(u"批量更新分类失败")}
+            return {"err": "internal", "msg": _("批量更新分类失败")}
 
 
 class BookCategories(BaseHandler):
@@ -398,7 +398,7 @@ class BookCategories(BaseHandler):
             return {"err": "ok", "categories": categories}
         except Exception as e:
             logging.error(f"Error fetching categories: {e}")
-            return {"err": "internal", "msg": _(u"获取分类列表失败")}
+            return {"err": "internal", "msg": _("获取分类列表失败")}
 
 
 class TagSearch(BaseHandler):
@@ -417,7 +417,7 @@ class TagSearch(BaseHandler):
             return {"err": "ok", "tags": tags}
         except Exception as e:
             logging.error(f"Error searching tags: {e}")
-            return {"err": "internal", "msg": _(u"获取标签列表失败")}
+            return {"err": "internal", "msg": _("获取标签列表失败")}
 
 
 class BookConverter(BaseHandler):
@@ -427,10 +427,10 @@ class BookConverter(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         fmts = []
         paths = []
@@ -441,7 +441,7 @@ class BookConverter(BaseHandler):
                 paths.append(book_path)
 
         if ('epub' in fmts) and ('azw3' in fmts):
-            return {"err": "params.book.invalid", "msg": _(u"本书已有EPUB及Kindle版本, 不需要转换")}
+            return {"err": "params.book.invalid", "msg": _("本书已有EPUB及Kindle版本, 不需要转换")}
 
         if fmts[0] == "epub":
             fmt = "azw3"
@@ -454,9 +454,9 @@ class BookConverter(BaseHandler):
 
         service = ConvertService()
         if service.is_book_converting(book):
-            return {"err": "params.book.converting", "msg": _(u"本书正在转换中，请稍后再试")}
+            return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
         service.convert_and_save(self.user_id(), book, fpath, fmt)
-        return {"err": "ok", "content": "%s" % _(u"转换成功，请稍后刷新页面查看")}
+        return {"err": "ok", "content": "%s" % _("转换成功，请稍后刷新页面查看")}
 
 
 class BookToPDF(BaseHandler):
@@ -466,10 +466,10 @@ class BookToPDF(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         fmts = []
         paths = []
@@ -485,16 +485,16 @@ class BookToPDF(BaseHandler):
             paths.append(book_path)
 
         if has_pdf:
-            return {"err": "params.book.invalid", "msg": _(u"本书已有PDF版本, 不需要转换")}
+            return {"err": "params.book.invalid", "msg": _("本书已有PDF版本, 不需要转换")}
         if len(fmts) == 0:
-            return {"err": "params.book.invalid", "msg": _(u"本书不支持转换，仅支持EPUB及Kindle使用的格式转换为PDF")}
+            return {"err": "params.book.invalid", "msg": _("本书不支持转换，仅支持EPUB及Kindle使用的格式转换为PDF")}
 
         fpath = paths[0]
         service = ConvertService()
         if service.is_book_converting(book):
-            return {"err": "params.book.converting", "msg": _(u"本书正在转换中，请稍后再试")}
+            return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
         service.convert_and_save(self.user_id(), book, fpath, "pdf")
-        return {"err": "ok", "content": "%s" % _(u"转换成功，请稍后刷新页面查看")}
+        return {"err": "ok", "content": "%s" % _("转换成功，请稍后刷新页面查看")}
 
 
 class BookSetSole(BaseHandler):
@@ -503,14 +503,14 @@ class BookSetSole(BaseHandler):
     def post(self, bid):
         book = self.get_book(bid, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
         bid = book["id"]
         if isinstance(book["collector"], dict):
             cid = book["collector"]["id"]
         else:
             cid = book["collector"].id
         if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         succeed = False
         try:
@@ -522,9 +522,9 @@ class BookSetSole(BaseHandler):
             logging.error("set book %d sole failed: %s" % (bid, e))
 
         if succeed:
-            return {"err": "ok", "msg": _(u"更新成功")}
+            return {"err": "ok", "msg": _("更新成功")}
         else:
-            return {"err": "db.update.failed", "msg": _(u"更新失败，请稍后再试")}
+            return {"err": "db.update.failed", "msg": _("更新失败，请稍后再试")}
 
 
 class BookRefer(BaseHandler):
@@ -602,7 +602,7 @@ class BookRefer(BaseHandler):
                     d["rating"] = round(float(b.rating) / 2, 1)
                 d["pubyear"] = pubdate.strftime("%Y") if pubdate else ""
                 if not d.get("comments", ""):
-                    d["comments"] = _(u"无详细介绍")
+                    d["comments"] = _("无详细介绍")
                 rsp.append(d)
             except Exception as e:
                 logging.error("get book meta error: %s" % e)
@@ -652,7 +652,7 @@ class BookRefer(BaseHandler):
             try:
                 return api.get_book(mi)
             except:
-                raise RuntimeError({"err": "httprequest.douban.failed", "msg": _(u"豆瓣接口查询失败")})
+                raise RuntimeError({"err": "httprequest.douban.failed", "msg": _("豆瓣接口查询失败")})
 
         if provider_key == youshu.KEY:
             title = re.sub(u"[(（].*", "", mi.title)
@@ -660,7 +660,7 @@ class BookRefer(BaseHandler):
             try:
                 return api.get_book(title)
             except:
-                raise RuntimeError({"err": "httprequest.youshu.failed", "msg": _(u"优书网查询失败")})
+                raise RuntimeError({"err": "httprequest.youshu.failed", "msg": _("优书网查询失败")})
         return mi
 
     def reset_book_meta(self, book_id):
@@ -670,7 +670,7 @@ class BookRefer(BaseHandler):
             if book_path:
                 break
         if not book_path:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
         logging.info("[RESET]reset book meta for %d, path=%s" % (book_id, book_path))
 
         from calibre.ebooks.metadata.meta import get_metadata
@@ -680,7 +680,7 @@ class BookRefer(BaseHandler):
         fmt = os.path.splitext(book_name)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _("文件名不合法")}
         fmt = fmt.lower()
 
         # read ebook meta
@@ -701,18 +701,18 @@ class BookRefer(BaseHandler):
             else:
                 org_mi.set("tags", [])
         if org_mi.title and org_mi.title == CALIBRE_ERROR_FLAG:
-            return {"err": "book.invalid", "msg": _(u"此书籍文件无法识别, 或者受DRM保护无法处理")}
+            return {"err": "book.invalid", "msg": _("此书籍文件无法识别, 或者受DRM保护无法处理")}
 
         if fmt in ["txt", "pdf"]:
             org_mi.title = book_name.replace("." + fmt, "")
-            org_mi.authors = [_(u"佚名")]
+            org_mi.authors = [_("佚名")]
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
-        org_mi.set("comments", _(u""))
+        org_mi.set("comments", _(""))
         if org_mi.get("comments", "") == "":
-            org_mi.set("comments", _(u"无详细介绍"))
+            org_mi.set("comments", _("无详细介绍"))
         org_mi.timestamp = nowf()
         self.calibre_db.set_metadata(book_id, org_mi, force_changes=True)
         self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: ""})
@@ -793,39 +793,39 @@ class BookRefer(BaseHandler):
                 metadata = json.loads(metadata)
             except Exception as e:
                 logging.error(f"Error parsing metadata JSON: {e}")
-                return {"err": "params.invalid", "msg": _(u"无效的metadata参数")}
+                return {"err": "params.invalid", "msg": _("无效的metadata参数")}
         if not self.current_user.can_edit():
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         book_id = int(id)
         mi = self.calibre_db.get_metadata(book_id, index_is_id=True)
         if not mi:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         if should_reset == "yes":
             return self.reset_book_meta(book_id)
 
         if not provider_key:
-            return {"err": "params.provider_key.invalid", "msg": _(u"请求参数错误")}
+            return {"err": "params.provider_key.invalid", "msg": _("请求参数错误")}
         if not provider_value:
-            return {"err": "params.provider_key.invalid", "msg": _(u"请求参数错误")}
+            return {"err": "params.provider_key.invalid", "msg": _("请求参数错误")}
         if only_meta == "yes" and only_cover == "yes":
-            return {"err": "params.conflict", "msg": _(u"参数冲突")}
+            return {"err": "params.conflict", "msg": _("参数冲突")}
 
         if provider_key in (douban.KEY, youshu.KEY):
             try:
                 refer_mi = self.plugin_get_book_meta(provider_key, provider_value, mi)
                 if not refer_mi:
-                    return {"err": "plugin.no_result", "msg": _(u"未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因")}
+                    return {"err": "plugin.no_result", "msg": _("未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因")}
                 # Correct the author if douban detail not return authors
                 if not refer_mi.authors or (len(refer_mi.authors) == 1 and refer_mi.authors[0] in ("佚名", "")):
                     refer_mi.author_sort = metadata.get("author_sort", None) if metadata else mi.author_sort
                     refer_mi.authors = metadata.get("authors", []) if metadata else mi.authors
             except Exception as e:
                 logging.error(f"Error fetching book meta from plugin {provider_key}: {e}")
-                return {"err": "plugin.no_result", "msg": _(u"未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因")}
+                return {"err": "plugin.no_result", "msg": _("未找到相关信息或被限制访问，频繁出现请稍后再试，或查看日志确认原因")}
         else:
             refer_mi = self._convert_to_metadata(metadata) if metadata else mi
             if only_meta != "yes":
@@ -836,12 +836,12 @@ class BookRefer(BaseHandler):
                     logging.error(f"Error filling book metadata from plugin {provider_key}: {e}")
 
         if not refer_mi:
-            return {"err": "plugin.fail", "msg": _(u"拉取图书信息异常，请重试")}
+            return {"err": "plugin.fail", "msg": _("拉取图书信息异常，请重试")}
 
         if only_cover == "yes":
             # just set cover
             if not refer_mi.cover_data:
-                return {"err": "plugin.no_cover", "msg": _(u"未找到封面信息")}
+                return {"err": "plugin.no_cover", "msg": _("未找到封面信息")}
             mi.cover_data = refer_mi.cover_data
         else:
             if only_meta == "yes":
@@ -872,11 +872,11 @@ class BookCover(BaseHandler):
         book_id = int(id)
         mi = self.calibre_db.get_metadata(book_id, index_is_id=True)
         if not mi:
-            return {"err": "params.book.invalid", "msg": _(u"书籍不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
 
         fileinfo = self.request.files.get('cover_data')
         if not fileinfo:
-            return {"err": "params.invalid", "msg": _(u"未上传封面文件")}
+            return {"err": "params.invalid", "msg": _("未上传封面文件")}
         fileinfo = fileinfo[0]
         # Prepare cover data as (format, bytes) tuple for Calibre API
         img_data = fileinfo['body']
@@ -899,7 +899,7 @@ class BookFavorite(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
 
         user_id = self.user_id()
         data = tornado.escape.json_decode(self.request.body)
@@ -920,7 +920,7 @@ class BookFavorite(BaseHandler):
         reading_state.save()
 
         action = "收藏" if favorite_status else "取消收藏"
-        return {"err": "ok", "msg": _(u"%s成功") % action}
+        return {"err": "ok", "msg": _("%s成功") % action}
 
     @js
     @auth
@@ -951,7 +951,7 @@ class BookFavorite(BaseHandler):
             favorite_books.append(book_data)
 
         return {"err": "ok",
-                "title": _(u"我的收藏"),
+                "title": _("我的收藏"),
                 "total": len(favorite_books),
                 "books": favorite_books}
 
@@ -964,7 +964,7 @@ class BookWantToRead(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
 
         user_id = self.user_id()
         data = tornado.escape.json_decode(self.request.body)
@@ -985,7 +985,7 @@ class BookWantToRead(BaseHandler):
         reading_state.save()
 
         action = "标记为待读" if wants_status else "取消待读"
-        return {"err": "ok", "msg": _(u"%s成功") % action}
+        return {"err": "ok", "msg": _("%s成功") % action}
 
     @js
     @auth
@@ -1015,7 +1015,7 @@ class BookWantToRead(BaseHandler):
             favorite_books.append(book_data)
 
         return {"err": "ok",
-                "title": _(u"待读清单"),
+                "title": _("待读清单"),
                 "total": len(favorite_books),
                 "books": favorite_books}
 
@@ -1049,7 +1049,7 @@ class BookReading(BaseHandler):
             reading_books.append(book_data)
 
         return {"err": "ok",
-                "title": _(u"在读书籍"),
+                "title": _("在读书籍"),
                 "total": len(reading_books),
                 "books": reading_books}
 
@@ -1057,7 +1057,7 @@ class BookReading(BaseHandler):
 class PrintBooks(BaseHandler):
     @js
     def get(self):
-        title = _(u"实体书")
+        title = _("实体书")
 
         # 查询所有实体书，按添加时间倒序排列
         db_items = self.sqlite_session.query(Item).filter(
@@ -1092,7 +1092,7 @@ class PrintBooks(BaseHandler):
             import traceback
             traceback.print_exc()
             logging.error("Failed to get print books: %s", e)
-            return {"err": "internal", "msg": _(u"获取实体书失败")}
+            return {"err": "internal", "msg": _("获取实体书失败")}
 
 
 class BookSoled(BaseHandler):
@@ -1101,7 +1101,7 @@ class BookSoled(BaseHandler):
     def get(self):
         """获取当前用户设为soled的所有图书信息"""
         user_id = self.user_id()
-        title = _(u"私有书籍")
+        title = _("私有书籍")
 
         # 查询当前用户设为sole的所有图书，按添加时间倒序排列
         db_items = self.sqlite_session.query(Item).filter(
@@ -1139,7 +1139,7 @@ class BookSoled(BaseHandler):
             import traceback
             traceback.print_exc()
             logging.error("Failed to get soled books: %s", e)
-            return {"err": "internal", "msg": _(u"获取私有书籍失败")}
+            return {"err": "internal", "msg": _("获取私有书籍失败")}
 
 
 class BookReadDone(BaseHandler):
@@ -1171,7 +1171,7 @@ class BookReadDone(BaseHandler):
             read_done_books.append(book_data)
 
         return {"err": "ok",
-                "title": _(u"已读完书籍"),
+                "title": _("已读完书籍"),
                 "total": len(read_done_books),
                 "books": read_done_books}
 
@@ -1274,7 +1274,7 @@ class BookReadingState(BaseHandler):
         book_id = int(id)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
 
         user_id = self.user_id()
         data = tornado.escape.json_decode(self.request.body)
@@ -1282,7 +1282,7 @@ class BookReadingState(BaseHandler):
 
         # 验证阅读状态值
         if read_state not in [0, 1, 2]:
-            return {"err": "params.invalid", "msg": _(u"阅读状态参数错误")}
+            return {"err": "params.invalid", "msg": _("阅读状态参数错误")}
 
         # 查找或创建阅读状态记录
         reading_state = self.sqlite_session.query(ReadingState).filter(
@@ -1306,7 +1306,7 @@ class BookReadingState(BaseHandler):
         reading_state.save()
 
         state_names = {0: "未读", 1: "在读", 2: "已读完"}
-        return {"err": "ok", "msg": _(u"阅读状态已设置为：%s") % state_names[read_state]}
+        return {"err": "ok", "msg": _("阅读状态已设置为：%s") % state_names[read_state]}
 
     @js
     @auth
@@ -1346,7 +1346,7 @@ class BookEdit(BaseHandler):
         if data.get("pubdate", None):
             content = douban.str2date(data["pubdate"])
             if content is None:
-                return {"err": "params.pudate.invalid", "msg": _(u"出版日期参数错误，格式应为 2026-05-10或2026-05或2026年或2026")}
+                return {"err": "params.pudate.invalid", "msg": _("出版日期参数错误，格式应为 2026-05-10或2026-05或2026年或2026")}
             mi.set("pubdate", content)
 
         if data.get("book_count", None):
@@ -1402,7 +1402,7 @@ class BookEdit(BaseHandler):
     def post(self, bid):
         book = self.get_book(bid, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
         bid = book["id"]
         update_books = []
         if isinstance(book["collector"], dict):
@@ -1410,7 +1410,7 @@ class BookEdit(BaseHandler):
         else:
             cid = book["collector"].id
         if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         data = tornado.escape.json_decode(self.request.body)
         # output data
@@ -1421,11 +1421,11 @@ class BookEdit(BaseHandler):
             for bid in id_list:
                 self.edit_book(bid, data)
                 update_books.append(bid)
-            return {"err": "ok", "msg": _(u"更新成功"), "books": update_books}
+            return {"err": "ok", "msg": _("更新成功"), "books": update_books}
         else:
             self.edit_book(bid, data)
             update_books = [bid]
-        return {"err": "ok", "msg": _(u"更新成功"), "books": update_books}
+        return {"err": "ok", "msg": _("更新成功"), "books": update_books}
 
 
 class BookDelete(BaseHandler):
@@ -1440,16 +1440,16 @@ class BookDelete(BaseHandler):
         else:
             cid = book["collector"].id
         if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         if not self.current_user.can_delete() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         # 删除整本书
         AudioUtils.clear_audio(bid)
         if self.delete_book(bid, book.get("title", "")):
-            return {"err": "ok", "msg": _(u"删除成功")}
-        return {"err": "fail", "msg": _(u"删除失败, 请查看日志。如果一直出错，请联系管理员。")}
+            return {"err": "ok", "msg": _("删除成功")}
+        return {"err": "fail", "msg": _("删除失败, 请查看日志。如果一直出错，请联系管理员。")}
 
 
 class BookDeleteFormat(BaseHandler):
@@ -1458,7 +1458,7 @@ class BookDeleteFormat(BaseHandler):
     def post(self, bid):
         book = self.get_book(bid, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
         bid = book["id"]
 
         if isinstance(book["collector"], dict):
@@ -1466,37 +1466,37 @@ class BookDeleteFormat(BaseHandler):
         else:
             cid = book["collector"].id
         if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         if not self.current_user.can_delete() or not (self.is_admin() or self.is_book_owner(bid, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         try:
             data = tornado.escape.json_decode(self.request.body)
             fmt = data.get("format", "").strip().lower()
         except:
-            return {"err": "params.invalid", "msg": _(u"请求参数格式错误")}
+            return {"err": "params.invalid", "msg": _("请求参数格式错误")}
 
         if not fmt:
-            return {"err": "params.missing", "msg": _(u"格式参数不能为空")}
+            return {"err": "params.missing", "msg": _("格式参数不能为空")}
 
         fmt_key = "fmt_%s" % fmt
         if fmt_key not in book:
-            return {"err": "format.not_found", "msg": _(u"书籍不包含 %s 格式") % fmt.upper()}
+            return {"err": "format.not_found", "msg": _("书籍不包含 %s 格式") % fmt.upper()}
 
         # 检查书籍是否只有一个格式
         available_formats = book.get("available_formats", "")
         available_formats = [f.strip() for f in available_formats if f.strip()]
         if len(available_formats) <= 1:
-            return {"err": "last.format", "msg": _(u"书籍只有一个格式，无法刪除")}
+            return {"err": "last.format", "msg": _("书籍只有一个格式，无法刪除")}
 
         try:
             self.calibre_db_cache.remove_formats({bid: [fmt.upper()]})
-            self.add_msg("success", _(u"删除书籍《%s》的%s格式") % (book["title"], fmt))
-            return {"err": "ok", "msg": _(u"删除%s格式成功" % fmt)}
+            self.add_msg("success", _("删除书籍《%s》的%s格式") % (book["title"], fmt))
+            return {"err": "ok", "msg": _("删除%s格式成功" % fmt)}
         except Exception as e:
             logging.error(f"删除书籍《{book['title']}》的{fmt}格式失败: {e}")
-            return {"err": "fail", "msg": _(u"删除%s格式失败, 请查看日志。如果一直出错，请联系管理员。" % fmt)}
+            return {"err": "fail", "msg": _("删除%s格式失败, 请查看日志。如果一直出错，请联系管理员。" % fmt)}
 
 
 class BookDownload(BaseHandler, web.StaticFileHandler):
@@ -1522,9 +1522,9 @@ class BookDownload(BaseHandler, web.StaticFileHandler):
         if self.current_user:
             if self.current_user.can_save():
                 if not self.current_user.is_active():
-                    raise web.HTTPError(403, reason=_(u"无权操作，请先登录注册邮箱激活账号。"))
+                    raise web.HTTPError(403, reason=_("无权操作，请先登录注册邮箱激活账号。"))
             else:
-                raise web.HTTPError(403, reason=_(u"无权操作"))
+                raise web.HTTPError(403, reason=_("无权操作"))
 
     def parse_url_path(self, url_path: str) -> str:
         filename = url_path.split("/")[-1]
@@ -1536,7 +1536,7 @@ class BookDownload(BaseHandler, web.StaticFileHandler):
         self.increase_history_count("download_history")
         self.count_increase(book_id, count_download=1)
         if "fmt_%s" % fmt not in book:
-            raise web.HTTPError(404, reason=_(u"%s格式无法下载" % fmt))
+            raise web.HTTPError(404, reason=_("%s格式无法下载" % fmt))
 
         path = book["fmt_%s" % fmt]
         book["fmt"] = fmt
@@ -1581,7 +1581,7 @@ class BookNav(ListHandler):
 
 class RecentBook(ListHandler):
     def get(self):
-        title = _(u"新书推荐")
+        title = _("新书推荐")
         ids = self.books_by_id()
         return self.render_book_list([], ids=ids, title=title, sort_fields="id")
 
@@ -1645,7 +1645,7 @@ class SearchBook(ListHandler):
         order_by = self.get_argument("order", "").strip()
 
         if not name and not book_title:
-            return self.write({"err": "params.invalid", "msg": _(u"请输入搜索关键字")})
+            return self.write({"err": "params.invalid", "msg": _("请输入搜索关键字")})
 
         title_search = len(book_title) > 0
         if title_search:
@@ -1658,7 +1658,7 @@ class SearchBook(ListHandler):
                 name = name.replace("py:", "title_sort:")
                 break
 
-        title = _(u"搜索：%(name)s") % {"name": name}
+        title = _("搜索：%(name)s") % {"name": name}
         ids = []
         seen = set()
         seg_or_query = None
@@ -1723,7 +1723,7 @@ class SearchBook(ListHandler):
 
 class HotBook(ListHandler):
     def get(self):
-        title = _(u"热度榜单")
+        title = _("热度榜单")
         db_items = self.sqlite_session.query(Item).filter(Item.count_visit > 1).order_by(Item.count_visit.desc())
         start = self.get_argument_start()
         delta = 60
@@ -1738,11 +1738,11 @@ class BookAddByISBN(BaseHandler):
     @auth
     def post(self):
         if not self.current_user.can_upload():
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
         data = tornado.escape.json_decode(self.request.body)
         isbn = data.get("isbn", "").strip()
         if not isbn:
-            return {"err": "params.invalid", "msg": _(u"请输入ISBN号")}
+            return {"err": "params.invalid", "msg": _("请输入ISBN号")}
 
         # 使用基类方法查找已存在的ISBN实体书
         existing_books = self.find_phy_books_by_isbn(isbn)
@@ -1773,7 +1773,7 @@ class BookAddByISBN(BaseHandler):
             # 更新calibre custom data
             self.calibre_db_cache.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: book_count})
             self.calibre_db_cache.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
-            return {"err": "ok", "msg": _(u"实体书数量已更新，当前数量：%d") % book_count, "book_id": book_id}
+            return {"err": "ok", "msg": _("实体书数量已更新，当前数量：%d") % book_count, "book_id": book_id}
 
         logging.info("Adding new book by ISBN: %s" % isbn)
         # 通过Douban API查询ISBN的图书信息
@@ -1802,13 +1802,13 @@ class BookAddByISBN(BaseHandler):
                     book_data = None
 
             if not book_data:
-                return {"err": "book.notfound", "msg": _(u"未找到该ISBN号对应的图书")}
+                return {"err": "book.notfound", "msg": _("未找到该ISBN号对应的图书")}
 
             # 通过上面返回的book metadata, 添加图书到calibre中（不需要文件，仅metadata）
             book_data.title_sort = utils.get_title_sort(book_data.title)
             book_id = self.calibre_db.create_book_entry(book_data)
             if book_id is None:
-                return {"err": "book.duplicate", "msg": _(u"该图书已存在或创建失败")}
+                return {"err": "book.duplicate", "msg": _("该图书已存在或创建失败")}
 
             try:
                 self.calibre_db_cache.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
@@ -1824,10 +1824,10 @@ class BookAddByISBN(BaseHandler):
             item.book_count = 1
             self.sqlite_session.add(item)
             self.sqlite_session.commit()
-            return {"err": "ok", "msg": _(u"图书添加成功"), "book_id": book_id}
+            return {"err": "ok", "msg": _("图书添加成功"), "book_id": book_id}
         except Exception as e:
             logging.error("Failed to add book by ISBN: %s", e)
-            return {"err": "internal", "msg": _(u"查询ISBN失败，请在系统设置中配置互联网信息源中插件地址。如http://douban-rs-api:80/。")}
+            return {"err": "internal", "msg": _("查询ISBN失败，请在系统设置中配置互联网信息源中插件地址。如http://douban-rs-api:80/。")}
 
 
 class BookUpload(BaseHandler):
@@ -1885,41 +1885,41 @@ class BookUpload(BaseHandler):
         """向已存在的书籍添加新格式文件"""
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "book.not_found", "msg": _(u"书籍不存在")}
+            return {"err": "book.not_found", "msg": _("书籍不存在")}
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         name, data = self.get_upload_file()
         if name is None:
-            return {"err": "params.filename", "msg": _(u"文件不存在或未选择文件")}
+            return {"err": "params.filename", "msg": _("文件不存在或未选择文件")}
 
         name = re.sub(r"[\x80-\xFF]+", BookUpload.convert, name)
         name = self._sanitize_uploaded_filename(name)
         if not name:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _("文件名不合法")}
         logging.info(f"Adding format to book {book_id}, file name = {repr(name)}")
 
         fmt = os.path.splitext(name)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
-            return {"err": "params.filename", "msg": _(u"文件名不合法, 没有扩展名")}
+            return {"err": "params.filename", "msg": _("文件名不合法, 没有扩展名")}
         fmt = fmt.lower()
 
         if fmt not in SUPPORTED_EBOOK_FORMATS:
-            return {"err": "params.format.unsupported", "msg": _(u"不支持的书籍格式: %s" % fmt)}
+            return {"err": "params.format.unsupported", "msg": _("不支持的书籍格式: %s" % fmt)}
 
         if f"fmt_{fmt}" in book:
             return {
                 "err": "format.already_exists",
-                "msg": _(u"书籍已存在 %s 格式") % fmt.upper(),
+                "msg": _("书籍已存在 %s 格式") % fmt.upper(),
                 "book_id": book_id
             }
 
         try:
             fpath = self._safe_upload_path(name)
         except ValueError:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _("文件名不合法")}
         with open(fpath, "wb") as f:
             f.write(data)
         logging.info(f"Save format file to [{fpath}]")
@@ -1934,11 +1934,11 @@ class BookUpload(BaseHandler):
             except Exception as e:
                 logging.warning(f"Failed to write metadata to new format: {e}")
 
-            self.add_msg("success", _(u"格式添加成功！"))
-            return {"err": "ok", "book_id": book_id, "msg": _(u"成功添加 %s 格式") % fmt.upper()}
+            self.add_msg("success", _("格式添加成功！"))
+            return {"err": "ok", "book_id": book_id, "msg": _("成功添加 %s 格式") % fmt.upper()}
         except Exception as e:
             logging.error(f"Failed to add format to book {book_id}: {e}")
-            return {"err": "internal", "msg": _(u"添加格式失败: %s") % str(e)}
+            return {"err": "internal", "msg": _("添加格式失败: %s") % str(e)}
         finally:
             # 清理临时文件
             if os.path.exists(fpath):
@@ -1950,9 +1950,9 @@ class BookUpload(BaseHandler):
 
         if CONF["ALLOW_GUEST_UPLOAD"] is False:
             if self.is_guest():
-                return {"err": "permission", "msg": _(u"无权操作，请先登录")}
+                return {"err": "permission", "msg": _("无权操作，请先登录")}
             if not self.current_user.can_upload():
-                return {"err": "permission", "msg": _(u"无权操作")}
+                return {"err": "permission", "msg": _("无权操作")}
 
         # 检查是否为添加格式到已有书籍
         target_book_id = self.get_argument("bid", None)
@@ -1961,26 +1961,26 @@ class BookUpload(BaseHandler):
 
         name, data = self.get_upload_file()
         if name is None:
-            return {"err": "params.filename", "msg": _(u"文件不存在或未选择文件")}
+            return {"err": "params.filename", "msg": _("文件不存在或未选择文件")}
 
         name = re.sub(r"[\x80-\xFF]+", BookUpload.convert, name)
         name = self._sanitize_uploaded_filename(name)
         if not name:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _("文件名不合法")}
         logging.error("upload book name = " + repr(name))
         fmt = os.path.splitext(name)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
-            return {"err": "params.filename", "msg": _(u"文件名不合法, 没有扩展名")}
+            return {"err": "params.filename", "msg": _("文件名不合法, 没有扩展名")}
         fmt = fmt.lower()
         if fmt not in SUPPORTED_EBOOK_FORMATS:
-            return {"err": "params.format.unsupported", "msg": _(u"不支持的书籍格式: %s" % fmt)}
+            return {"err": "params.format.unsupported", "msg": _("不支持的书籍格式: %s" % fmt)}
 
         # save file
         try:
             fpath = self._safe_upload_path(name)
         except ValueError:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _("文件名不合法")}
         with open(fpath, "wb") as f:
             f.write(data)
         logging.info("save upload file into [%s]", fpath)
@@ -1990,8 +1990,11 @@ class BookUpload(BaseHandler):
         with open(fpath, "rb") as stream:
             mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
             if mi.title and mi.title == CALIBRE_ERROR_FLAG:
-                logger.error("Failed to get metadata for %s, reason:%s", fpath, mi.comments)
-                failed = True
+                if fmt == "pdf":
+                    mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
+                else:
+                    logging.error("Failed to get metadata for %s, reason:%s", fpath, mi.comments)
+                    failed = True
             mi.title = utils.super_strip(mi.title)
             if mi.author_sort == "Unknown" and mi.authors and len(mi.authors) > 0:
                 mi.authors = [utils.super_strip(a) for a in mi.authors]
@@ -2000,7 +2003,7 @@ class BookUpload(BaseHandler):
 
         if failed:
             Path(fpath).unlink(missing_ok=True)
-            return {"err": "book.invalid", "msg": _(u"此书籍文件无法识别, 或者受DRM保护无法导入")}
+            return {"err": "book.invalid", "msg": _("此书籍文件无法识别, 或者受DRM保护无法导入")}
 
         # 非结构化的格式，calibre无法识别准确的信息，直接从文件名提取
         if fmt == "txt":
@@ -2012,12 +2015,12 @@ class BookUpload(BaseHandler):
                 mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
             else:
                 title = mi.title.strip() if mi.title else ""
-                if not title or title.find(_(u"下载工具")) >= 0 or title == "SSReader Print.":
+                if not title or title.find(_("下载工具")) >= 0 or title == "SSReader Print.":
                     mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
                 else:
                     mi.title = utils.remove_zlibrary_suffix(title)
             if mi.authors is None or len(mi.authors) == 0 or mi.authors[0].lower() == "unknown":
-                mi.authors = [_(u"佚名")]
+                mi.authors = [_("佚名")]
 
         logging.info("upload mi.title = " + repr(mi.title))
         books = self.calibre_db.books_with_same_title(mi)
@@ -2037,7 +2040,7 @@ class BookUpload(BaseHandler):
                 if fmt.upper() in b.formats:
                     return {
                         "err": "samebook",
-                        "msg": _(u"同名书籍《%s》已存在这一图书格式 %s") % (mi.title, fmt),
+                        "msg": _("同名书籍《%s》已存在这一图书格式 %s") % (mi.title, fmt),
                         "book_id": b.get("id")
                     }
             logging.info("import [%s] from %s with format %s", repr(mi.title), fpath, fmt)
@@ -2049,7 +2052,7 @@ class BookUpload(BaseHandler):
         else:
             fpaths = [fpath]
             book_id = self._add_new_book(mi, fpaths)
-        self.add_msg("success", _(u"导入书籍成功！"))
+        self.add_msg("success", _("导入书籍成功！"))
         return {"err": "ok", "book_id": book_id}
 
 
@@ -2111,9 +2114,9 @@ class BookUploadChunk(BaseHandler):
         """Handle chunked upload POST requests"""
         if CONF["ALLOW_GUEST_UPLOAD"] is False:
             if self.is_guest():
-                return {"err": "permission", "msg": _(u"无权操作，请先登录")}
+                return {"err": "permission", "msg": _("无权操作，请先登录")}
             if not self.current_user.can_upload():
-                return {"err": "permission", "msg": _(u"无权操作")}
+                return {"err": "permission", "msg": _("无权操作")}
 
         # Get parameters from form data
         filename = self.get_argument("filename", "")
@@ -2122,28 +2125,28 @@ class BookUploadChunk(BaseHandler):
         file_hash = self.get_argument("file_hash", "")
 
         if not filename:
-            return {"err": "params.filename", "msg": _(u"文件名不能为空")}
+            return {"err": "params.filename", "msg": _("文件名不能为空")}
         filename = re.sub(r"[\x80-\xFF]+", BookUpload.convert, filename)
         filename = self._sanitize_uploaded_filename(filename)
         if not filename:
-            return {"err": "params.filename", "msg": _(u"文件名不合法")}
+            return {"err": "params.filename", "msg": _("文件名不合法")}
         logging.error("upload book name = " + repr(filename))
         fmt = os.path.splitext(filename)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
-            return {"err": "params.filename", "msg": _(u"文件名不合法，没有包含扩展名")}
+            return {"err": "params.filename", "msg": _("文件名不合法，没有包含扩展名")}
         fmt = fmt.lower()
         if fmt not in SUPPORTED_EBOOK_FORMATS:
-            return {"err": "params.format.unsupported", "msg": _(u"不支持的书籍格式: %s" % fmt)}
+            return {"err": "params.format.unsupported", "msg": _("不支持的书籍格式: %s" % fmt)}
 
         if not file_hash:
-            return {"err": "params.hash", "msg": _(u"文件hash不能为空")}
+            return {"err": "params.hash", "msg": _("文件hash不能为空")}
         if not re.fullmatch(r"[a-fA-F0-9]{8,128}", file_hash):
-            return {"err": "params.hash", "msg": _(u"文件hash不合法")}
+            return {"err": "params.hash", "msg": _("文件hash不合法")}
 
         # Get the chunk data
         if "chunk" not in self.request.files:
-            return {"err": "params.chunk", "msg": _(u"未找到文件块数据")}
+            return {"err": "params.chunk", "msg": _("未找到文件块数据")}
 
         chunk_file = self.request.files["chunk"][0]
         chunk_data = chunk_file["body"]
@@ -2171,7 +2174,7 @@ class BookUploadChunk(BaseHandler):
             # Still waiting for more chunks
             return {
                 "err": "ok",
-                "msg": _(u"分块上传成功"),
+                "msg": _("分块上传成功"),
                 "received_chunks": len(received_chunks),
                 "total_chunks": total_chunks
             }
@@ -2185,18 +2188,18 @@ class BookUploadChunk(BaseHandler):
             filename = re.sub(r"[\x80-\xFF]+", BookUpload.convert, filename)
             filename = self._sanitize_uploaded_filename(filename)
             if not filename:
-                return {"err": "params.filename", "msg": _(u"文件名不合法")}
+                return {"err": "params.filename", "msg": _("文件名不合法")}
             fmt = os.path.splitext(filename)[1]
             fmt = fmt[1:] if fmt else None
             if not fmt:
-                return {"err": "params.filename", "msg": _(u"文件名不合法")}
+                return {"err": "params.filename", "msg": _("文件名不合法")}
             fmt = fmt.lower()
 
             # Merge chunks into final file
             try:
                 final_path = self._safe_upload_path(filename)
             except ValueError:
-                return {"err": "params.filename", "msg": _(u"文件名不合法")}
+                return {"err": "params.filename", "msg": _("文件名不合法")}
             with open(final_path, "wb") as outfile:
                 for i in range(total_chunks):
                     chunk_path = os.path.join(temp_dir, f"chunk_{i}")
@@ -2214,8 +2217,11 @@ class BookUploadChunk(BaseHandler):
             with open(final_path, "rb") as stream:
                 mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
                 if mi.title and mi.title == CALIBRE_ERROR_FLAG:
-                    logger.error("Failed to get metadata for %s, reason:%s", final_path, mi.comments)
-                    failed = True
+                    if fmt == "pdf":
+                        mi.title = utils.remove_zlibrary_suffix(filename.replace("." + fmt, ""))
+                    else:
+                        logger.error("Failed to get metadata for %s, reason:%s", final_path, mi.comments)
+                        failed = True
                 mi.title = utils.super_strip(mi.title)
                 if mi.author_sort == "Unknown" and mi.authors and len(mi.authors) > 0:
                     mi.authors = [utils.super_strip(a) for a in mi.authors]
@@ -2223,12 +2229,12 @@ class BookUploadChunk(BaseHandler):
                     mi.authors = [utils.super_strip(mi.author_sort)]
             if failed:
                 Path(final_path).unlink(missing_ok=True)
-                return {"err": "book.invalid", "msg": _(u"此书籍文件无法识别, 或者受DRM保护无法导入")}
+                return {"err": "book.invalid", "msg": _("此书籍文件无法识别, 或者受DRM保护无法导入")}
 
             # Handle special formats like txt and pdf
             if fmt in ["txt", "pdf"]:
                 mi.title = utils.remove_zlibrary_suffix(filename.replace("." + fmt, ""))
-                mi.authors = [_(u"佚名")]
+                mi.authors = [_("佚名")]
 
             logging.info("chunked upload mi.title = " + repr(mi.title))
 
@@ -2248,7 +2254,7 @@ class BookUploadChunk(BaseHandler):
                     if fmt.upper() in b.formats:
                         return {
                             "err": "samebook",
-                            "msg": _(u"同名书籍《%s》已存在这一图书格式 %s") % (mi.title, fmt),
+                            "msg": _("同名书籍《%s》已存在这一图书格式 %s") % (mi.title, fmt),
                             "book_id": b.get("id")
                         }
                 logging.info("import [%s] from %s with format %s", repr(mi.title), final_path, fmt)
@@ -2260,7 +2266,7 @@ class BookUploadChunk(BaseHandler):
             else:
                 book_id = self._add_new_book(mi, [final_path])
 
-            self.add_msg("success", _(u"导入书籍成功！"))
+            self.add_msg("success", _("导入书籍成功！"))
             return {"err": "ok", "book_id": book_id}
 
         except Exception as e:
@@ -2269,7 +2275,7 @@ class BookUploadChunk(BaseHandler):
             if os.path.exists(temp_dir):
                 import shutil
                 shutil.rmtree(temp_dir)
-            return {"err": "upload_error", "msg": _(u"文件上传处理失败：%s") % str(e)}
+            return {"err": "upload_error", "msg": _("文件上传处理失败：%s") % str(e)}
 
 
 class BookRead(BaseHandler):
@@ -2280,13 +2286,13 @@ class BookRead(BaseHandler):
         if self.current_user:
             if self.current_user.can_read():
                 if not self.current_user.is_active():
-                    raise web.HTTPError(403, reason=_(u"无权在线阅读，请先登录注册邮箱激活账号。"))
+                    raise web.HTTPError(403, reason=_("无权在线阅读，请先登录注册邮箱激活账号。"))
             else:
-                raise web.HTTPError(403, reason=_(u"无权在线阅读"))
+                raise web.HTTPError(403, reason=_("无权在线阅读"))
 
         book = self.get_book(id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
         book_id = book["id"]
         self.user_history("read_history", book)
         self.count_increase(book_id, count_download=1)
@@ -2315,7 +2321,7 @@ class BookRead(BaseHandler):
                 return self.redirect("/login")
 
             if self.current_user and not self.current_user.can_save():
-                raise web.HTTPError(403, reason=_(u"无权在线阅读PDF类书籍"))
+                raise web.HTTPError(403, reason=_("无权在线阅读PDF类书籍"))
 
             pdf_url = urllib.parse.quote_plus(self.api_url + "/api/book/%(id)d.PDF" % book)
             pdf_reader_url = CONF["PDF_VIEWER"] % {"pdf_url": pdf_url}
@@ -2326,7 +2332,7 @@ class BookRead(BaseHandler):
             txt_reader_url = f'/book/{book_id}/readtxt'
             return self.redirect(txt_reader_url)
 
-        raise web.HTTPError(404, reason=_(u"抱歉，在线阅读器暂不支持该格式的书籍"))
+        raise web.HTTPError(404, reason=_("抱歉，在线阅读器暂不支持该格式的书籍"))
 
 
 class TxtRead(BaseHandler):
@@ -2398,7 +2404,7 @@ class BookSuggestion(ListHandler):
     def get(self, id):
         book = self.get_book(id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
 
         tags = book.get("tags", [])
         similar_books = []
@@ -2416,7 +2422,7 @@ class BookSuggestion(ListHandler):
         similar_books = [b for b in similar_books if b["id"] != book["id"]]
         return {
             "err": "ok",
-            "msg": _(u"推荐成功"),
+            "msg": _("推荐成功"),
             "books": [self.fmt(b) for b in similar_books]
         }
 
@@ -2428,17 +2434,17 @@ class BookSendToDevice(BaseHandler):
         book_id = int(bid)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "book.not_found", "msg": _(u"书籍已不存在")}
+            return {"err": "book.not_found", "msg": _("书籍已不存在")}
 
         # 检查用户权限
         if not CONF["ALLOW_GUEST_PUSH"]:
             if not self.current_user:
-                return {"err": "user.need_login", "msg": _(u"请先登录")}
+                return {"err": "user.need_login", "msg": _("请先登录")}
             else:
                 if not self.current_user.can_push():
-                    return {"err": "permission", "msg": _(u"无权操作")}
+                    return {"err": "permission", "msg": _("无权操作")}
                 elif not self.current_user.is_active():
-                    return {"err": "permission", "msg": _(u"无权操作，请先激活账号。")}
+                    return {"err": "permission", "msg": _("无权操作，请先激活账号。")}
 
         # 解析请求参数
         try:
@@ -2447,20 +2453,20 @@ class BookSendToDevice(BaseHandler):
             device_url = data.get("device_url", "")
             mailbox = data.get("mailbox", "")
         except:
-            return {"err": "params.invalid", "msg": _(u"请求参数格式错误")}
+            return {"err": "params.invalid", "msg": _("请求参数格式错误")}
 
         # Kindle设备使用邮箱地址，其他设备使用device_url
         if device_type == "kindle":
             if not mailbox:
-                return {"err": "params.missing", "msg": _(u"Kindle设备需要提供邮箱地址")}
+                return {"err": "params.missing", "msg": _("Kindle设备需要提供邮箱地址")}
         else:
             if not device_type or not device_url:
-                return {"err": "params.missing", "msg": _(u"设备类型和设备地址不能为空")}
+                return {"err": "params.missing", "msg": _("设备类型和设备地址不能为空")}
 
         # 支持的设备类型
         supported_types = ["duokan", "ireader", "hanwang", "boox", "dangdang", "kindle", "purelibro"]
         if device_type not in supported_types:
-            return {"err": "device.unsupported", "msg": _(u"不支持的设备类型: %s") % device_type}
+            return {"err": "device.unsupported", "msg": _("不支持的设备类型: %s") % device_type}
 
         # Kindle设备通过邮件发送
         if device_type == "kindle":
@@ -2482,9 +2488,9 @@ class BookSendToDevice(BaseHandler):
                 MailService().send_book(self.user_id(), self.site_url, book, mail_to, fmt, fpath)
                 self.add_msg(
                     "success",
-                    _(u"服务器正在推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},
+                    _("服务器正在推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},
                 )
-                return {"err": "ok", "msg": _(u"服务器后台正在推送。您可关闭此窗口，继续浏览其他书籍。")}
+                return {"err": "ok", "msg": _("服务器后台正在推送。您可关闭此窗口，继续浏览其他书籍。")}
 
         # 如果没有可直接发送的格式，检查是否有azw3或mobi格式需要转换
         if "fmt_azw3" in book or "fmt_mobi" in book:
@@ -2493,14 +2499,14 @@ class BookSendToDevice(BaseHandler):
             ConvertService().convert_and_send(self.user_id(), self.site_url, book, mail_to)
             self.add_msg(
                 "success",
-                _(u"服务器正在推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},
+                _("服务器正在推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},
             )
-            return {"err": "ok", "msg": _(u"服务器正在转换格式，稍后将自动推送。您可关闭此窗口，继续浏览其他书籍。")}
+            return {"err": "ok", "msg": _("服务器正在转换格式，稍后将自动推送。您可关闭此窗口，继续浏览其他书籍。")}
 
         # 没有Kindle支持的格式
         return {
             "err": "format.not_supported",
-            "msg": _(u"书籍没有Kindle支持的格式!")
+            "msg": _("书籍没有Kindle支持的格式!")
         }
 
     def _send_to_other_device(self, book, book_id, device_type, device_url):
@@ -2518,11 +2524,11 @@ class BookSendToDevice(BaseHandler):
                 break
 
         if not file_path:
-            return {"err": "file.not_found", "msg": _(u"书籍没有支持的文件格式（epub/azw3/pdf/txt）")}
+            return {"err": "file.not_found", "msg": _("书籍没有支持的文件格式（epub/azw3/pdf/txt）")}
 
         # 检查文件是否存在
         if not os.path.exists(file_path):
-            return {"err": "file.missing", "msg": _(u"书籍文件不存在: %s") % file_path}
+            return {"err": "file.missing", "msg": _("书籍文件不存在: %s") % file_path}
 
         # 导入对应的上传器
         try:
@@ -2540,7 +2546,7 @@ class BookSendToDevice(BaseHandler):
 
             uploader_class = uploader_map.get(device_type)
             if not uploader_class:
-                return {"err": "uploader.not_found", "msg": _(u"找不到对应的上传器: %s") % device_type}
+                return {"err": "uploader.not_found", "msg": _("找不到对应的上传器: %s") % device_type}
 
             # 创建上传器实例
             book_name = book.get("title", "")
@@ -2565,27 +2571,27 @@ class BookSendToDevice(BaseHandler):
 
             if result.get('success'):
                 logging.info(f"[SEND_TO_DEVICE] 发送成功: {book_id} -> {device_type}")
-                return {"err": "ok", "msg": _(u"书籍发送成功")}
+                return {"err": "ok", "msg": _("书籍发送成功")}
             else:
                 error_type = result.get('error_type', 'unknown')
                 error_msg = result.get('message', '发送失败')
 
                 if error_type == 'connection':
-                    return {"err": "connection.failed", "msg": _(u"无法连接到设备。请确认IP地址正确，且设备已开启WiFi上传功能")}
+                    return {"err": "connection.failed", "msg": _("无法连接到设备。请确认IP地址正确，且设备已开启WiFi上传功能")}
                 elif error_type == 'timeout':
-                    return {"err": "upload.timeout", "msg": _(u"上传超时。请检查网络连接和设备状态")}
+                    return {"err": "upload.timeout", "msg": _("上传超时。请检查网络连接和设备状态")}
                 elif error_type == 'http':
                     status_code = result.get('status_code', 0)
-                    return {"err": "upload.failed", "msg": _(u"上传失败 (HTTP %d)。请查看日志获取详细信息") % status_code}
+                    return {"err": "upload.failed", "msg": _("上传失败 (HTTP %d)。请查看日志获取详细信息") % status_code}
                 else:
-                    return {"err": "upload.error", "msg": _(u"上传过程出错: %s。请查看日志获取详细信息") % error_msg}
+                    return {"err": "upload.error", "msg": _("上传过程出错: %s。请查看日志获取详细信息") % error_msg}
 
         except ImportError as e:
             logging.error(f"[SEND_TO_DEVICE] 导入上传器失败: {e}")
-            return {"err": "uploader.import_error", "msg": _(u"设备上传功能不可用")}
+            return {"err": "uploader.import_error", "msg": _("设备上传功能不可用")}
         except Exception as e:
             logging.error(f"[SEND_TO_DEVICE] 发送失败: {e}")
-            return {"err": "upload.error", "msg": _(u"发送过程出错，请查看日志获取详细信息")}
+            return {"err": "upload.error", "msg": _("发送过程出错，请查看日志获取详细信息")}
 
 
 class BookSendToMail(BaseHandler):
@@ -2595,31 +2601,31 @@ class BookSendToMail(BaseHandler):
         book_id = int(bid)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "book.not_found", "msg": _(u"书籍已不存在")}
+            return {"err": "book.not_found", "msg": _("书籍已不存在")}
 
         if not CONF["ALLOW_GUEST_PUSH"]:
             if not self.current_user:
-                return {"err": "user.need_login", "msg": _(u"请先登录")}
+                return {"err": "user.need_login", "msg": _("请先登录")}
             else:
                 if not self.current_user.can_push():
-                    return {"err": "permission", "msg": _(u"无权限进行推送，请联系管理员检查权限")}
+                    return {"err": "permission", "msg": _("无权限进行推送，请联系管理员检查权限")}
                 elif not self.current_user.is_active():
-                    return {"err": "permission", "msg": _(u"无权限进行操作，请先激活账号。")}
+                    return {"err": "permission", "msg": _("无权限进行操作，请先激活账号。")}
 
         # 解析请求参数
         try:
             data = tornado.escape.json_decode(self.request.body)
             mail_to = data.get("email", "").strip()
         except:
-            return {"err": "params.invalid", "msg": _(u"没有指定邮箱地址")}
+            return {"err": "params.invalid", "msg": _("没有指定邮箱地址")}
 
         if not mail_to:
-            return {"err": "params.missing", "msg": _(u"邮箱地址不能为空")}
+            return {"err": "params.missing", "msg": _("邮箱地址不能为空")}
 
         # 验证邮箱地址格式
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, mail_to):
-            return {"err": "email.invalid", "msg": _(u"邮箱地址格式不正确")}
+            return {"err": "email.invalid", "msg": _("邮箱地址格式不正确")}
 
         # 按优先级查找可用格式: EPUB > AZW3 > PDF > MOBI > TXT
         format_priority = ["epub", "azw3", "pdf", "mobi", "txt"]
@@ -2634,11 +2640,11 @@ class BookSendToMail(BaseHandler):
                 break
 
         if not file_path:
-            return {"err": "format.not_found", "msg": _(u"书籍没有支持的文件格式（EPUB/AZW3/PDF/MOBI/TXT）")}
+            return {"err": "format.not_found", "msg": _("书籍没有支持的文件格式（EPUB/AZW3/PDF/MOBI/TXT）")}
 
         # 检查文件是否存在
         if not os.path.exists(file_path):
-            return {"err": "file.missing", "msg": _(u"书籍文件不存在")}
+            return {"err": "file.missing", "msg": _("书籍文件不存在")}
 
         # 检查文件大小（50MB = 52428800 bytes）
         file_size = os.path.getsize(file_path)
@@ -2647,7 +2653,7 @@ class BookSendToMail(BaseHandler):
             size_mb = file_size / (1024 * 1024)
             return {
                 "err": "file.too_large",
-                "msg": _(u"附件过大（%.1fMB），邮件附件大小不能超过50MB") % size_mb
+                "msg": _("附件过大（%.1fMB），邮件附件大小不能超过50MB") % size_mb
             }
 
         # 记录推送历史和增加统计
@@ -2658,10 +2664,10 @@ class BookSendToMail(BaseHandler):
 
         self.add_msg(
             "success",
-            _(u"已开始推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},
+            _("已开始推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},
         )
 
-        return {"err": "ok", "msg": _(u"后台正在推送，稍后可以刷新页面，在通知消息中查看结果。")}
+        return {"err": "ok", "msg": _("后台正在推送，稍后可以刷新页面，在通知消息中查看结果。")}
 
 
 class BookSperate(BaseHandler):
@@ -2674,37 +2680,37 @@ class BookSperate(BaseHandler):
         book_id = int(bid)
         book = self.get_book(book_id, raise_exception=False)
         if not book:
-            return {"err": "params.book.invalid", "msg": _(u"书籍已不存在")}
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
 
         if isinstance(book["collector"], dict):
             cid = book["collector"]["id"]
         else:
             cid = book["collector"].id
         if not self.current_user.can_edit() or not (self.is_admin() or self.is_book_owner(book_id, cid)):
-            return {"err": "permission", "msg": _(u"无权操作")}
+            return {"err": "permission", "msg": _("无权操作")}
 
         try:
             data = tornado.escape.json_decode(self.request.body)
             fmt = data.get("format", "").strip().lower()
         except:
-            return {"err": "params.invalid", "msg": _(u"请求参数格式错误")}
+            return {"err": "params.invalid", "msg": _("请求参数格式错误")}
 
         if not fmt:
-            return {"err": "params.missing", "msg": _(u"格式参数不能为空")}
+            return {"err": "params.missing", "msg": _("格式参数不能为空")}
 
         fmt_key = "fmt_%s" % fmt
         if fmt_key not in book:
-            return {"err": "format.not_found", "msg": _(u"书籍不包含 %s 格式") % fmt.upper()}
+            return {"err": "format.not_found", "msg": _("书籍不包含 %s 格式") % fmt.upper()}
 
         original_path = book[fmt_key]
         if not os.path.exists(original_path):
-            return {"err": "file.missing", "msg": _(u"格式文件不存在: %s") % original_path}
+            return {"err": "file.missing", "msg": _("格式文件不存在: %s") % original_path}
 
         # 检查书籍是否只有一个格式
         available_formats = book.get("available_formats", "")
         available_formats = [f.strip() for f in available_formats if f.strip()]
         if len(available_formats) <= 1:
-            return {"err": "last.format", "msg": _(u"书籍只有一个格式，无法分离")}
+            return {"err": "last.format", "msg": _("书籍只有一个格式，无法分离")}
 
         try:
             # 复制文件到上传目录
@@ -2734,12 +2740,12 @@ class BookSperate(BaseHandler):
                     mi.authors = [utils.super_strip(mi.author_sort)]
 
             if failed:
-                return {"err": "book.invalid", "msg": _(u"此书籍文件无法识别, 或者受DRM保护无法处理")}
+                return {"err": "book.invalid", "msg": _("此书籍文件无法识别, 或者受DRM保护无法处理")}
 
             # 对于txt和pdf格式，从文件名提取信息
             if fmt in ["txt", "pdf"]:
                 mi.title = utils.remove_zlibrary_suffix(filename.replace("." + fmt, ""))
-                mi.authors = [_(u"佚名")]
+                mi.authors = [_("佚名")]
 
             # 创建新书籍
             fpaths = [upload_path]
@@ -2750,7 +2756,7 @@ class BookSperate(BaseHandler):
                 # 清理临时文件
                 if os.path.exists(upload_path):
                     os.remove(upload_path)
-                return {"err": "book.create.failed", "msg": _(u"创建新书籍失败")}
+                return {"err": "book.create.failed", "msg": _("创建新书籍失败")}
 
             # 创建Item记录
             item = Item()
@@ -2763,10 +2769,10 @@ class BookSperate(BaseHandler):
             self.calibre_db_cache.remove_formats({book_id: [fmt.upper()]})
 
             logging.info(f"[SEPARATE] Successfully separated format {fmt} from book {book_id} to new book {new_book_id}")
-            self.add_msg("success", _(u"成功将 %s 格式分离为新书籍") % fmt.upper())
+            self.add_msg("success", _("成功将 %s 格式分离为新书籍") % fmt.upper())
             return {
                 "err": "ok",
-                "msg": _(u"格式分离成功"),
+                "msg": _("格式分离成功"),
                 "original_book_id": book_id,
                 "new_book_id": new_book_id
             }
@@ -2781,7 +2787,7 @@ class BookSperate(BaseHandler):
                 except Exception as err:
                     logging.error(f"[SEPARATE] Failed to clean up temporary file {upload_path}: {err}")
 
-            return {"err": "internal", "msg": _(u"分离格式时发生错误: %s") % str(e)}
+            return {"err": "internal", "msg": _("分离格式时发生错误: %s") % str(e)}
 
 
 class BookSaveMeta(BaseHandler):
@@ -2791,7 +2797,7 @@ class BookSaveMeta(BaseHandler):
         """将书籍的元数据保存到文件中（仅支持 epub/azw3/pdf）"""
         book_id = int(bid)
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限，非管理员或书籍所有者无法操作")}
+            return {"err": "user.no_permission", "msg": _("无权限，非管理员或书籍所有者无法操作")}
 
         fmt = self.get_argument("fmt", None)
         return self.save_book_meta(book_id, fmt=fmt)
@@ -2804,7 +2810,7 @@ class BookAddStamp(BaseHandler):
         """为书籍封面加盖图章"""
         book_id = int(bid)
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _(u"无权限，非管理员或书籍所有者无法操作")}
+            return {"err": "user.no_permission", "msg": _("无权限，非管理员或书籍所有者无法操作")}
 
         # 检查功能是否启用
         if not CONF.get("ENABLE_STAMP_FEATURE", False):
@@ -2872,11 +2878,11 @@ class ClearRareTags(ListHandler):
     def post(self):
         """清理稀少标签, 对少于3本书的标签所对应的书籍重新更新标签"""
         if not self.is_admin():
-            return {"err": "user.not_admin", "msg": _(u"无权限")}
+            return {"err": "user.not_admin", "msg": _("无权限")}
 
         ids = list(self.calibre_db_cache.all_book_ids())
         if not ids or len(ids) < 100:
-            return {"err": "ok", "msg": _(u"书籍数量较少，无需清理标签")}
+            return {"err": "ok", "msg": _("书籍数量较少，无需清理标签")}
 
         try:
             # 使用SQL直接批量查询：找出所有count < 3的tag对应的所有书籍ID
@@ -2896,7 +2902,7 @@ class ClearRareTags(ListHandler):
                 rows = self.calibre_db_cache.backend.conn.get(sql)
 
             if not rows:
-                return {"err": "ok", "msg": _(u"没有找到稀少标签对应的书籍")}
+                return {"err": "ok", "msg": _("没有找到稀少标签对应的书籍")}
 
             book_ids = [row[0] for row in rows]
 
@@ -2916,7 +2922,7 @@ class ClearRareTags(ListHandler):
             rare_tag_count = tag_count_rows[0][0] if tag_count_rows else 0
 
             if not book_ids:
-                return {"err": "ok", "msg": _(u"没有找到需要更新的书籍")}
+                return {"err": "ok", "msg": _("没有找到需要更新的书籍")}
 
             # 调用自动填充服务，只更新标签
             service = AutoFillService()
@@ -2924,14 +2930,14 @@ class ClearRareTags(ListHandler):
 
             return {
                 "err": "ok",
-                "msg": _(u"开始更新 %d 本书的标签，涉及 %d 个稀少标签") % (len(book_ids), rare_tag_count),
+                "msg": _("开始更新 %d 本书的标签，涉及 %d 个稀少标签") % (len(book_ids), rare_tag_count),
                 "book_count": len(book_ids),
                 "tag_count": rare_tag_count
             }
 
         except Exception as e:
             logging.error(f"Clear rare tags error: {e}")
-            return {"err": "error", "msg": _(u"处理失败：%s") % str(e)}
+            return {"err": "error", "msg": _("处理失败：%s") % str(e)}
 
 
 class BookExchangeType(BaseHandler):
@@ -2940,13 +2946,13 @@ class BookExchangeType(BaseHandler):
     def post(self):
         """批量转换书籍类型, 电子书与实体书互转"""
         if not self.is_admin():
-            return {"err": "user.no_permission", "msg": _(u"无权限")}
+            return {"err": "user.no_permission", "msg": _("无权限")}
 
         data = tornado.escape.json_decode(self.request.body)
         idlist = data.get("idlist", [])
 
         if not idlist:
-            return {"err": "params.invalid", "msg": _(u"请提供书籍ID列表")}
+            return {"err": "params.invalid", "msg": _("请提供书籍ID列表")}
 
         success_count = 0
         skip_count = 0
@@ -2956,7 +2962,7 @@ class BookExchangeType(BaseHandler):
             try:
                 book = self.get_book(book_id, raise_exception=False)
                 if not book:
-                    results.append({"book_id": book_id, "status": "not_found", "msg": _(u"书籍已不存在")})
+                    results.append({"book_id": book_id, "status": "not_found", "msg": _("书籍已不存在")})
                     skip_count += 1
                     continue
 
@@ -2975,7 +2981,7 @@ class BookExchangeType(BaseHandler):
                     # 检查是否有ISBN
                     isbn = book.get("isbn", "")
                     if not isbn:
-                        results.append({"book_id": book_id, "status": "skip", "msg": _(u"无ISBN，跳过")})
+                        results.append({"book_id": book_id, "status": "skip", "msg": _("无ISBN，跳过")})
                         skip_count += 1
                         continue
 
@@ -2987,25 +2993,25 @@ class BookExchangeType(BaseHandler):
                             break
 
                     if has_formats:
-                        results.append({"book_id": book_id, "status": "skip", "msg": _(u"已有电子书格式，跳过")})
+                        results.append({"book_id": book_id, "status": "skip", "msg": _("已有电子书格式，跳过")})
                         skip_count += 1
                         continue
 
                     # 转换为实体书
                     item.book_type = BOOK_TYPE_PHYSICAL
                     item.book_count = 1
-                    results.append({"book_id": book_id, "status": "success", "msg": _(u"已转为实体书")})
+                    results.append({"book_id": book_id, "status": "success", "msg": _("已转为实体书")})
                     success_count += 1
 
                 # 如果是实体书，转为电子书
                 elif current_type == BOOK_TYPE_PHYSICAL:
                     item.book_type = BOOK_TYPE_EBOOK
                     item.book_count = 1
-                    results.append({"book_id": book_id, "status": "success", "msg": _(u"已转为电子书")})
+                    results.append({"book_id": book_id, "status": "success", "msg": _("已转为电子书")})
                     success_count += 1
 
                 else:
-                    results.append({"book_id": book_id, "status": "skip", "msg": _(u"未知类型")})
+                    results.append({"book_id": book_id, "status": "skip", "msg": _("未知类型")})
                     skip_count += 1
 
             except Exception as e:
@@ -3018,11 +3024,11 @@ class BookExchangeType(BaseHandler):
             self.sqlite_session.commit()
         except Exception as e:
             self.sqlite_session.rollback()
-            return {"err": "db.error", "msg": _(u"数据库错误：%s") % str(e)}
+            return {"err": "db.error", "msg": _("数据库错误：%s") % str(e)}
 
         return {
             "err": "ok",
-            "msg": _(u"处理完成：成功 %d 本，跳过 %d 本") % (success_count, skip_count),
+            "msg": _("处理完成：成功 %d 本，跳过 %d 本") % (success_count, skip_count),
             "success_count": success_count,
             "skip_count": skip_count,
             "results": results
