@@ -120,19 +120,20 @@ class BookSearch:
                 if calibre_books:
                     books.extend(calibre_books)
             except Exception as e:
-                logging.error(_(u"Calibre Metadata API查询失败: %s" % str(e)))
+                logging.error("Calibre Metadata API查询失败: %s" % str(e))
         else:
-            logging.info(_("未启用 Calibre Metadata API 搜索，跳过 Google 和 Amazon 搜索"))
+            logging.debug("未启用 Calibre Metadata API 搜索，跳过 Google 和 Amazon 搜索")
 
         # 优书网搜索
         if META_SOURCE_YOUSHU in sources:
+            logging.info("使用优书网搜索图书，title: %s, sources: %s" % (clean_title, sources))
             youshu_api = youshu.YoushuApi(copy_image=True)
             try:
                 book = youshu_api.get_book(clean_title)
                 if book:
                     books.append(book)
             except Exception as e:
-                logging.error(_(u"优书网查询失败: %s" % str(e)))
+                logging.error("优书网查询失败: %s" % str(e))
 
-        logging.info(_("搜索完成，找到 %d 本书") % len(books))
+        logging.info("搜索完成，找到 %d 本书" % len(books))
         return books

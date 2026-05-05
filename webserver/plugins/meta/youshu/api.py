@@ -64,11 +64,13 @@ class YoushuPage:
         """
         extract book cover image
         """
-        img = self.soup.select_one('a.book-detail-img')
-        if img and img.has_attr('href'):
-            href = img['href']
+        img = self.soup.find('img', style="border:1px solid #cccccc;width:100%;")
+        if img and img.has_attr('src'):
+            href = img['src']
             url = re.sub(r'/300$', '/600', href)
             return url
+        else:
+            logging.info("No cover image found on the page.")
         return None
 
     def get_id(self):
@@ -121,7 +123,7 @@ class YoushuSearch:
 
     def search(self, keyword):
         payload = {
-            "searchtype": "all",
+            "searchtype": "articlename",
             "searchkey": keyword,
             "t_btnsearch": ""
         }

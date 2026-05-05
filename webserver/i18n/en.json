@@ -281,7 +281,6 @@
   "服务器正在转换格式，稍后将自动推送。您可关闭此窗口，继续浏览其他书籍。": "Server is converting formats and will push automatically later. You can close this window and continue browsing",
   "未上传头像文件": "Avatar file not uploaded",
   "未上传封面文件": "No cover file uploaded",
-  "未启用 Calibre Metadata API 搜索，跳过 Google 和 Amazon 搜索": "Calibre Metadata API search is not enabled, skipping Google and Amazon search",
   "未在图片中识别到条形码": "No barcode recognized in the image",
   "未找到EPUB文件": "EPUB file not found",
   "未找到包含该标签的书籍": "No books found with that tag",

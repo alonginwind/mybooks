@@ -8,13 +8,14 @@ import traceback
 from webserver.i18n import _
 
 from webserver import loader, utils
-from webserver.plugins.meta import baike, douban
+from webserver.plugins.meta import baike, douban, youshu
 from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.plugins.meta.calibre import CalibreMetadataApi
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver.constants import AUTO_FILL_META, META_SELECTED_SOURCES, \
-    META_SOURCE_DOUBAN, META_SOURCE_BAIDU, META_SOURCE_GOOGLE, META_SOURCE_AMAZON
+    META_SOURCE_DOUBAN, META_SOURCE_BAIDU, META_SOURCE_GOOGLE, META_SOURCE_AMAZON, \
+    META_SOURCE_YOUSHU
 
 CONF = loader.get_settings()
 
@@ -253,7 +254,7 @@ class AutoFillService(AsyncService):
         book = None
         books = []
 
-        # 1. 豆瓣查询 ISBN
+        # 豆瓣查询 ISBN
         if META_SOURCE_DOUBAN in sources:
             try:
                 api = douban.DoubanBookApi(
@@ -272,7 +273,7 @@ class AutoFillService(AsyncService):
                             book_detail_mi.author_sort = mi.author_sort
                     return book_detail_mi
 
-                # 2. 豆瓣查询 title
+                # 豆瓣查询 title
                 books = api.search_books(title)
                 if books:
                     book_detail_mi = None
@@ -290,7 +291,7 @@ class AutoFillService(AsyncService):
             except Exception:
                 logging.error(_("douban 接口查询 %s 失败"), title)
 
-        # 3 & 4. 使用 Google Books 和 Amazon.com 查询
+        # 使用 Google Books 和 Amazon.com 查询
         calibre_sources = [s for s in sources if s in (META_SOURCE_GOOGLE, META_SOURCE_AMAZON)]
         if calibre_sources:
             try:
@@ -312,7 +313,7 @@ class AutoFillService(AsyncService):
                 logging.error(_("calibre 插件书名查询 %s 失败: %s"), title, e)
                 logging.error(traceback.format_exc())
 
-        # 5. 百度百科查询
+        # 百度百科查询
         if META_SOURCE_BAIDU in sources:
             api = baike.BaiduBaikeApi(copy_image=True)
             try:
@@ -321,6 +322,17 @@ class AutoFillService(AsyncService):
                     return book
             except Exception:
                 logging.error(_("baidu 接口查询 %s 失败"), title)
+
+        # 优书查询
+        if META_SOURCE_YOUSHU in sources:
+            logging.info("尝试使用 youshu 插件查询 %s", title)
+            api = youshu.YoushuApi(copy_image=True)
+            try:
+                book = api.get_book(title)
+                if book:
+                    return book
+            except Exception:
+                logging.error(_("youshu 接口查询 %s 失败"), title)
 
         return None
 
@@ -378,7 +390,18 @@ class AutoFillService(AsyncService):
             except Exception:
                 logging.error(_("calibre 插件书名查询 %s 失败"), title)
 
-        # 5. 百度百科查询
+        # 优书网查询
+        if META_SOURCE_YOUSHU in sources:
+            logging.info("尝试使用 youshu 插件查询 %s", title)
+            api = youshu.YoushuApi(copy_image=True)
+            try:
+                book = api.get_book(title)
+                if book:
+                    return book
+            except Exception:
+                logging.error(_("youshu 接口查询 %s 失败"), title)
+
+        # 百度百科查询
         if META_SOURCE_BAIDU in sources:
             api = baike.BaiduBaikeApi(copy_image=True)
             try:
