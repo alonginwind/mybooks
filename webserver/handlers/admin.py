@@ -782,16 +782,18 @@ class AdminBookFill(BaseHandler):
         if filling_status["is_running"]:
             return {"err": "task.running", "msg": _("有任务正在运行中，请稍后再试")}
 
+        force = False
         if idlist == "all":
             idlist = list(self.calibre_db_cache.all_book_ids())
         elif isinstance(idlist, list):
             for bid in idlist:
                 if not isinstance(bid, int):
                     return {"err": "params.error.idlist", "msg": _("idlist参数错误")}
+            force = True
         else:
             return {"err": "params.error.idlist", "msg": _("idlist参数错误")}
 
-        AutoFillService().auto_fill_all(idlist)
+        AutoFillService().auto_fill_all(idlist, force=force)
         return {"err": "ok", "msg": _("任务启动成功！请耐心等待，稍后再来刷新页面")}
 
 

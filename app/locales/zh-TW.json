@@ -177,6 +177,7 @@
             "description": "此表格僅展示圖書的部分欄位，點擊即可快捷修改。完整圖書資訊請點擊連結查看書籍詳情頁面",
             "refresh": "重新整理",
             "autoUpdate": "自動更新資訊",
+            "autoUpdateSelected": "更新所選書籍資訊",
             "batchProcess": "批次處理",
             "clearRareTags": "更新稀少標籤",
             "clearInvalidItems": "清理無效記錄",
@@ -216,6 +217,7 @@
             "reminderTitle": "提醒",
             "reminder": {
                 "description": "即將從網際網路刮削所有圖書的書籍資訊，請了解以下功能限制：",
+                "descriptionSelected": "即將從網際網路刮削所選圖書的書籍資訊，請了解以下功能限制：",
                 "rule1": "1. 請在「系統設定」中設定好「網際網路書籍資訊來源」，啟用豆瓣外掛；",
                 "rule2": "2. 本操作只更新「沒有封面」或「沒有簡介」的圖書；",
                 "rule3": "3. 受限於豆瓣等服務的限制，每秒鐘僅更新 1 本書;",

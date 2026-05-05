@@ -87,7 +87,7 @@
                         :small="$vuetify.breakpoint.xs"
                     >
                         <v-icon>mdi-book-refresh-outline</v-icon>
-                        <span v-if="!$vuetify.breakpoint.xs">{{ $t('admin.books.autoUpdate') }}</span>
+                        <span v-if="!$vuetify.breakpoint.xs">{{ $t(books_selected.length > 0 ? 'admin.books.autoUpdateSelected' : 'admin.books.autoUpdate') }}</span>
                     </v-btn>
                     <v-btn
                         v-if="!loading && books_selected.length > 0"
@@ -388,7 +388,12 @@
                 <v-toolbar flat dense dark color="primary"> {{ $t('admin.books.reminderTitle') }} </v-toolbar>
                 <v-card-title></v-card-title>
                 <v-card-text>
-                    <p> {{ $t('admin.books.reminder.description') }} </p>
+                    <p v-if="books_selected.length > 0">
+                        {{ $t('admin.books.reminder.descriptionSelected') }}
+                    </p>
+                    <p v-else>
+                        {{ $t('admin.books.reminder.description') }}
+                    </p>
                     <p> {{ $t('admin.books.reminder.rule1') }} </p>
                     <p> {{ $t('admin.books.reminder.rule2') }} </p>
                     <p> {{ $t('admin.books.reminder.rule3') }} </p>
@@ -544,6 +549,10 @@ export default {
     },
     computed: {
         auto_fill_mins: function() {
+            const selected_count = this.books_selected.length > 0 ? this.books_selected.length : this.total;
+            if (selected_count > 0) {
+                return Math.floor(selected_count / 60) + 1;
+            }
             return Math.floor(this.total/60) + 1;
         },
         progressPercent() {
@@ -838,9 +847,10 @@ export default {
                 });
         },
         auto_fill() {
+            const idlist = this.getSelectedBookIds();
             this.$backend("/admin/book/fill", {
                 method: "POST",
-                body: JSON.stringify({"idlist": "all"}),
+                body: JSON.stringify({"idlist": idlist}),
             })
             .then((rsp) => {
                 this.meta_dialog = false;

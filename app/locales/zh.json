@@ -177,6 +177,7 @@
             "description": "此表格仅展示图书的部分字段，点击即可快捷修改。完整图书信息请点击链接查看书籍详情页面",
             "refresh": "刷新",
             "autoUpdate": "自动更新信息",
+            "autoUpdateSelected": "更新所选书籍信息",
             "batchProcess": "批量处理",
             "clearRareTags": "更新稀少标签",
             "clearInvalidItems": "清理无效记录",
@@ -216,6 +217,7 @@
             "reminderTitle": "提醒",
             "reminder": {
                 "description": "即将从互联网刮削所有图书的书籍信息，请了解以下功能限制：",
+                "descriptionSelected": "即将从互联网刮削所选图书的书籍信息，请了解以下功能限制：",
                 "rule1": "1. 请在「系统设置」中配置好「互联网书籍信息源」，启用豆瓣插件；",
                 "rule2": "2. 本操作只更新「没有封面」或「没有简介」的图书；",
                 "rule3": "3. 受限于豆瓣等服务的限制，每秒钟仅更新1本书;",

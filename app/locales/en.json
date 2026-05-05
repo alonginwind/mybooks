@@ -172,6 +172,7 @@
             "description": "This table only displays partial fields of books. Click to quickly modify. For complete book information, please click the link to view the book details page.",
             "refresh": "Refresh",
             "autoUpdate": "Auto-update book information...",
+            "autoUpdateSelected": "Update selected book information",
             "batchProcess": "Batch Process",
             "clearRareTags": "Update Rare Tags",
             "clearInvalidItems": "Clear Invalid Records",
@@ -211,6 +212,7 @@
             "reminderTitle": "Reminder",
             "reminder": {
                 "description": "You are about to fetch book information from the internet. Please note the following limitations:",
+                "descriptionSelected": "You are about to fetch book information for the selected books from the internet. Please note the following limitations:",
                 "rule1": "1. Please configure the 'Internet Book Information Source' in 'System Settings' and enable the Douban plugin;",
                 "rule2": "2. This operation only updates books without covers or descriptions;",
                 "rule3": "3. Due to limitations of services like Douban, only one book can be updated per second;",
