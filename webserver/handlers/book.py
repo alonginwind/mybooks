@@ -716,7 +716,7 @@ class BookRefer(BaseHandler):
         if org_mi.get("comments", "") == "":
             org_mi.set("comments", _("无详细介绍"))
         dynamic_cover = False
-        if org_mi.cover_data is not None:
+        if CONF.get("USE_DYNAMIC_COVER", False) and org_mi.cover_data is not None:
             (data, mime) = org_mi.cover_data
             if data is None and mime is None:
                 author = org_mi.authors[0] if org_mi.authors else _("佚名")
@@ -1337,22 +1337,33 @@ class BookReadingState(BaseHandler):
 
 
 class BookEdit(BaseHandler):
+    KEYS = [
+        "authors",
+        "title",
+        "comments",
+        "tags",
+        "publisher",
+        "isbn",
+        "series",
+        "rating",
+        "languages",
+    ]
+
     def edit_book(self, bid, data):
         from calibre.utils.date import now as nowf
         mi = self.calibre_db.get_metadata(bid, index_is_id=True)
-        KEYS = [
-            "authors",
-            "title",
-            "comments",
-            "tags",
-            "publisher",
-            "isbn",
-            "series",
-            "rating",
-            "languages",
-        ]
+        logging.info(f"Editing book {bid}, current title: {mi.title}, new title: {data.get('title', None)}")
+        need_update_cover = False
+        if CONF.get("USE_DYNAMIC_COVER", False) and data.get("title", None) and data["title"] != mi.title:
+            fmt, cover_data = mi.cover_data if mi.cover_data else (None, None)
+            if cover_data is not None:
+                dynamic_cover_flag = self.calibre_db_cache.get_custom_book_data(bid, COLUMN_DYNAMIC_COVER, default=0)
+                need_update_cover = dynamic_cover_flag == 1
+            else:
+                need_update_cover = True
+
         for key, val in data.items():
-            if key not in KEYS:
+            if key not in self.KEYS:
                 continue
             mi.set(key, val)
 
@@ -1408,8 +1419,7 @@ class BookEdit(BaseHandler):
         mi.timestamp = nowf()
         mi.title_sort = utils.get_title_sort(mi.title)
         # If the existing cover is dynamic generated, and the new title or author may cause the cover to be no longer suitable, we need to regenerate it
-        dynamic_cover_flag = data.get(COLUMN_DYNAMIC_COVER, 0)
-        if dynamic_cover_flag == 1:
+        if CONF.get("USE_DYNAMIC_COVER", False) and need_update_cover:
             author = mi.authors[0] if mi.authors else _("佚名")
             cover_data = CoverGenerator.generate_cover(mi.title, author)
             if cover_data:
@@ -1433,8 +1443,7 @@ class BookEdit(BaseHandler):
             return {"err": "permission", "msg": _("无权操作")}
 
         data = tornado.escape.json_decode(self.request.body)
-        # output data
-        logging.info(f"Book edit data: {data}")
+        logging.debug(f"Book edit data: {data}")
         id_list = data.get("ids", None)
         if id_list and bid in id_list:
             # 仅当有列表，且当前书籍在列表中时，才进行批量更新
@@ -1861,13 +1870,14 @@ class BookUpload(BaseHandler):
     def _add_new_book(self, mi, fpaths):
         dynamic_cover = False
         mi.title_sort = utils.get_title_sort(mi.title)
-        fmt, cover_data = mi.cover_data
-        if fmt is None and cover_data is not None:
-            author = mi.authors[0] if mi.authors else _("佚名")
-            data = CoverGenerator.generate_cover(mi.title, author)
-            if data:
-                mi.cover_data = ("jpeg", data)
-                dynamic_cover = True
+        if CONF.get("USE_DYNAMIC_COVER", False):
+            fmt, cover_data = mi.cover_data
+            if fmt is None and cover_data is not None:
+                author = mi.authors[0] if mi.authors else _("佚名")
+                data = CoverGenerator.generate_cover(mi.title, author)
+                if data:
+                    mi.cover_data = ("jpeg", data)
+                    dynamic_cover = True
         book_id = self.calibre_db.import_book(mi, fpaths)
         if book_id is not None and dynamic_cover:
             try:
@@ -2095,13 +2105,14 @@ class BookUploadChunk(BaseHandler):
     def _add_new_book(self, mi, fpaths):
         dynamic_cover = False
         mi.title_sort = utils.get_title_sort(mi.title)
-        fmt, cover_data = mi.cover_data
-        if fmt is None and cover_data is not None:
-            author = mi.authors[0] if mi.authors else _("佚名")
-            data = CoverGenerator.generate_cover(mi.title, author)
-            if data:
-                mi.cover_data = ("jpeg", data)
-                dynamic_cover = True
+        if CONF.get("USE_DYNAMIC_COVER", False):
+            fmt, cover_data = mi.cover_data
+            if fmt is None and cover_data is not None:
+                author = mi.authors[0] if mi.authors else _("佚名")
+                data = CoverGenerator.generate_cover(mi.title, author)
+                if data:
+                    mi.cover_data = ("jpeg", data)
+                    dynamic_cover = True
         book_id = self.calibre_db.import_book(mi, fpaths)
         if book_id is not None and dynamic_cover:
             try:

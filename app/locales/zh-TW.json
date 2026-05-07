@@ -245,7 +245,7 @@
             "actions": "操作",
             "deleteBook": "刪除此書",
             "updateAllMeta": "更新庫中目錄及文件格式",
-            "updateAllDynamicCover": "為無封面書籍設定動態封面",
+            "updateAllDynamicCover": "為無封面書籍生成封面",
             "header": {
                 "cover": "封面",
                 "id": "ID",
@@ -700,6 +700,7 @@
         "enable_webdav_sync": "WebDAV 中支援閱讀器可寫目錄 (用於閱讀器同步，檔案保存在 reader 目錄下)",
         "enable_debug_logging": "啟用除錯日誌記錄（預設關閉，開啟後記錄詳細的除錯資訊）",
         "enable_audio_conversion_log": "啟用有聲書轉換日誌記錄（預設關閉，開啟後記錄轉換的詳細日誌)",
+        "use_dynamic_cover": "啟用動態封面（根據書籍資訊自動生成封面圖片）",
         "enable_opds_service": "啟用 OPDS 目錄服務（用於閱讀器透過 OPDS 協定存取書庫）",
         "enable_webdav_service": "啟用 WebDAV 服務（用於閱讀器透過 WebDAV 協定存取書庫）",
         "enable_podcast_service": "啟用 Podcast 訂閱服務（用於播放器透過 Podcast 協定存取有聲書）",

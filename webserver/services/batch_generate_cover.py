@@ -13,7 +13,7 @@ from webserver import loader
 from webserver.base.cover_generator import CoverGenerator
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
-from webserver.constants import CALIBRE_COLUMN_DYNAMIC_COVER
+from webserver.constants import CALIBRE_COLUMN_DYNAMIC_COVER, COLUMN_DYNAMIC_COVER
 
 CONF = loader.get_settings()
 
@@ -73,7 +73,7 @@ class DynamicCoverUpdateService(AsyncService):
             return
 
         self.count_total = len(books_to_update)
-        logging.info("[DynamicCover] Starting metadata update for %d books", self.count_total)
+        logging.info("[DynamicCover] Starting cover update for %d books", self.count_total)
 
         try:
             task = BackgroundService().update_task(
@@ -105,7 +105,7 @@ class DynamicCoverUpdateService(AsyncService):
                         custom_data = self.db.get_custom_book_data(CALIBRE_COLUMN_DYNAMIC_COVER, book_id, 0)
                         dynamic_cover_flag = int(custom_data) == 1
                         logging.info(f"[DynamicCover] Book id={book_id} already has cover data, dynamic_cover_flag={dynamic_cover_flag}")
-                    if not dynamic_cover_flag or data is not None:
+                    if not dynamic_cover_flag and data is not None:
                         continue
                     author = mi.author_sort[0] if mi.author_sort else _("佚名")
                     data = CoverGenerator.generate_cover(mi.title, author)
@@ -113,7 +113,7 @@ class DynamicCoverUpdateService(AsyncService):
                         mi.cover_data = ("jpeg", data)
                         logging.debug(f"[DynamicCover] Generated cover for book id={book_id}")
                         self.db.set_metadata(book_id, mi, commit=True)
-                        self.db.set_field(CALIBRE_COLUMN_DYNAMIC_COVER, {book_id: 1})
+                        self.db.set_custom(book_id, 1, COLUMN_DYNAMIC_COVER)
                 logging.debug("[DynamicCover] Updated book id=%d (%d/%d)", book_id, index + 1, self.count_total)
             except Exception as e:
                 self.count_fail += 1

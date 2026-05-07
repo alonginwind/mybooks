@@ -1117,6 +1117,12 @@ export default {
             label: "settings.enable_audio_conversion_log",
             type: "checkbox",
           },
+          {
+            icon: "mdi-image-sync-outline",
+            key: "USE_DYNAMIC_COVER",
+            label: "settings.use_dynamic_cover",
+            type: "checkbox",
+          }
         ],
       },
 

@@ -62,9 +62,8 @@ class CoverGenerator:
                 img = Image.new("RGB", (width, height), random.choice(cls.COLORS))
             draw = ImageDraw.Draw(img)
 
-            title_size = height // 12 if height > 400 else height // 9
+            title_size = height // 12 if height > 400 else height // 9 - 3
             author_size = title_size // 2 if height > 400 else title_size // 1.5
-            logging.info(f"[Cover] 图片尺寸: {width}x{height} | 标题字号: {title_size} | 作者字号: {author_size}")
 
             if title_size in cls._title_font_map and author_size in cls._author_font_map:
                 t_font, a_font = cls._title_font_map[title_size], cls._author_font_map[author_size]

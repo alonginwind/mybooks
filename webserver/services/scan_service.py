@@ -407,13 +407,14 @@ class ScanService(AsyncService):
                 logging.info("[IMPORT] Importing new book [%s] from %s", repr(mi.title), fpath)
                 dynamic_cover = False
                 mi.title_sort = utils.get_title_sort(mi.title)
-                fmt, data = mi.cover_data
-                if fmt is None and data is not None:
-                    author = mi.authors[0] if mi.authors else _("佚名")
-                    data = CoverGenerator.generate_cover(mi.title, author)
-                    if data:
-                        mi.cover_data = ("jpeg", data)
-                        dynamic_cover = True
+                if CONF.get("USE_DYNAMIC_COVER", False):
+                    fmt, data = mi.cover_data
+                    if fmt is None and data is not None:
+                        author = mi.authors[0] if mi.authors else _("佚名")
+                        data = CoverGenerator.generate_cover(mi.title, author)
+                        if data:
+                            mi.cover_data = ("jpeg", data)
+                            dynamic_cover = True
                 row.book_id = self.db.import_book(mi, [fpath], notify=False, import_hooks=False)
                 if row.book_id is not None and dynamic_cover:
                     self.db.set_field(CALIBRE_COLUMN_DYNAMIC_COVER, {row.book_id: 1})

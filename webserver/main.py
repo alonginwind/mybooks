@@ -502,7 +502,7 @@ def get_upload_size():
 
 def setup_logging():
     logger = logging.getLogger()
-    log_level = logging.DEBUG if CONF.get("LOG_LEVEL_DEBUG", False) else logging.INFO
+    log_level = logging.DEBUG if CONF.get("LOG_LEVEL_DEBUG", False) or VERSION == "v0.0.1" else logging.INFO
     if options.log_file_prefix:
         # remove tornado default file handler to avoid duplicate logs
         logger.handlers = [h for h in logger.handlers if not isinstance(h, logging.FileHandler)]

@@ -460,7 +460,8 @@ class AdminSettings(BaseHandler):
             "ENABLE_STAMP_FEATURE",
             "STAMP_POSITION",
             "ENABLE_TXT_TO_TXTZ_PLUGIN",
-            "SEND_MAIL_FOR_NEW_BOOKS"
+            "SEND_MAIL_FOR_NEW_BOOKS",
+            "USE_DYNAMIC_COVER",
         ]
 
         current_icon = CONF.get(
