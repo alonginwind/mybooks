@@ -499,6 +499,44 @@ class BookToPDF(BaseHandler):
         return {"err": "ok", "content": "%s" % _("转换成功，请稍后刷新页面查看")}
 
 
+class BookToTxtZ(BaseHandler):
+    @js
+    @auth
+    def post(self, id):
+        book_id = int(id)
+        book = self.get_book(book_id, raise_exception=False)
+        if not book:
+            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
+
+        if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
+            return {"err": "user.no_permission", "msg": _("无权限")}
+
+        fmts = []
+        paths = []
+        has_txtz = False
+        for fmt in ["txt", "txtz"]:
+            book_path = book.get("fmt_%s" % fmt, None)
+            if not book_path:
+                continue
+            if fmt == "txtz":
+                has_txtz = True
+                continue
+            fmts.append(fmt)
+            paths.append(book_path)
+
+        if has_txtz:
+            return {"err": "params.book.invalid", "msg": _("本书已有TXTZ版本, 不需要转换")}
+        if len(fmts) == 0:
+            return {"err": "params.book.invalid", "msg": _("本书不支持转换，仅支持TXT格式转换为TXTZ")}
+
+        fpath = paths[0]
+        service = ConvertService()
+        if service.is_book_converting(book):
+            return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
+        service.convert_and_save(self.user_id(), book, fpath, "txtz")
+        return {"err": "ok", "content": "%s" % _("转换成功，请稍后刷新页面查看")}
+
+
 class BookSetSole(BaseHandler):
     @js
     @auth
@@ -3122,6 +3160,7 @@ def routes():
         (r"/api/book/txt/init", BookTxtInit),
         (r"/api/book/([0-9]+)/convert", BookConverter),
         (r"/api/book/([0-9]+)/topdf", BookToPDF),
+        (r"/api/book/([0-9]+)/totxtz", BookToTxtZ),
         (r"/api/book/([0-9]+)/setsole", BookSetSole),
         (r"/api/book/([0-9]+)/cover", BookCover),
         (r"/api/book/([0-9]+)/favorite", BookFavorite),
