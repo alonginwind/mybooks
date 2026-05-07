@@ -19,7 +19,7 @@ class CoverGenerator:
         "#00142f", "#4A2B31"
     ]
     ENABLE_GRADIENT = True
-    ENABLE_AUTO_OUTPUT = False
+    ENABLE_AUTHOR_OUTPUT = False
     DEFAULT_WIDTH = 1200
     DEFAULT_HEIGHT = 1600
 
@@ -46,14 +46,13 @@ class CoverGenerator:
         l, t = (diag - width) // 2, (diag - height) // 2
         mask = mask.crop((l, t, l + width, t + height))
         base.paste(top, (0, 0), mask)
-        if time.time() - start > 0.08:
+        if time.time() - start > 0.02:
             logging.warning(f"[COVER] Gradient generation took {time.time() - start:.2f}s, disable it.")
             cls.ENABLE_GRADIENT = False
         return base
 
     @classmethod
     def generate_cover(cls, title, author, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT, font_path=DEFAULT_FONT_PATH, bk_img_path=None, no_graident=False, debug=False):
-        start = time.time()
         try:
             if bk_img_path and os.path.exists(bk_img_path):
                 img = Image.open(bk_img_path).convert("RGB")
@@ -110,13 +109,12 @@ class CoverGenerator:
                 draw.text((x, current_y), line, font=t_font, fill=(255, 255, 255))
                 current_y += h + (title_size // 10)
 
-            if cls.ENABLE_AUTO_OUTPUT and author and height > 300:
+            if cls.ENABLE_AUTHOR_OUTPUT and author and height > 300:
                 current_y += (title_size // 4)  # 标题与作者间距
                 bbox = draw.textbbox((0, 0), author, font=a_font)
                 w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
                 x = (width - w) // 2
                 draw.text((x, current_y), author, font=a_font, fill=(255, 255, 255))
-                logging.info(f"[Cover] 作者: {author} | 位置: ({x}, {current_y})")
 
             output = io.BytesIO()
             img.save(output, format='JPEG', quality=95)
@@ -124,8 +122,6 @@ class CoverGenerator:
 
             if debug:
                 with open("/tmp/cover_debug.jpg", "wb") as f: f.write(data)
-            end = time.time()
-            logging.info(f"[Cover] 封面生成完成，耗时: {end - start:.2f}s")
             return data
 
         except Exception as e:
