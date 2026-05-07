@@ -18,6 +18,7 @@ from tornado import web
 from webserver import loader
 from webserver.handlers.base import BaseHandler
 from webserver.podcast.feed_builder import build_book_feed
+from webserver.podcast.opml_builder import build_book_opml
 from webserver.podcast.podcast_provider import PodcastProvider
 from webserver import constants
 
@@ -98,20 +99,20 @@ class PodcastBaseHandler(BaseHandler):
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
             f"<title>{title}</title>",
             "<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;",
-            "margin:40px auto;padding:0 20px;background:#f8f9fa;color:#333}",
-            "h1{color:#1a73e8}h2{color:#555;border-bottom:1px solid #ddd;padding-bottom:8px}",
-            "ul{list-style:none;padding:0}li{margin:8px 0; background:#fff; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1)}",
-            "a{color:#1a73e8;text-decoration:none}a:hover{text-decoration:underline}",
+            "margin:40px auto;padding:0 20px;background:#002133;color:#e0e0e0}",
+            "h1{color:#6ea8fe}h2{color:#a0b4c8;border-bottom:1px solid #2e3a4e;padding-bottom:8px}",
+            "ul{list-style:none;padding:0}li{margin:8px 0; background:#16213e; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.4)}",
+            "a{color:#6ea8fe;text-decoration:none}a:hover{text-decoration:underline}",
             ".feed-row{display:flex;align-items:center;gap:8px;margin-top:8px}",
-            ".feed-url{font-family:monospace;background:#e8f0fe;padding:8px;",
+            ".feed-url{font-family:monospace;background:#0f3460;color:#a8c7fa;padding:8px;",
             "border-radius:4px;font-size:13px; display:block; word-break: break-all; flex:1}",
-            ".copy-btn{border:0px solid #c7d2feee;background:#fff;color:#1a73e8;",
+            ".copy-btn{border:0px solid #2e4a7a;background:#16213e;color:#6ea8fe;",
             "border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1}",
-            ".copy-btn:hover{background:#eef3ff}",
-            ".copy-btn.copied{color:#0f9d58;border-color:#0f9d58}",
+            ".copy-btn:hover{background:#0f3460}",
+            ".copy-btn.copied{color:#4caf8a;border-color:#4caf8a}",
             ".section{margin:24px 0}",
-            ".token-info{background:#fff3cd;padding:12px;border-radius:8px;margin:16px 0}",
-            ".book-meta{color:#666; font-size:14px; margin-top:4px}",
+            ".token-info{background:#2a2000;border:1px solid #5a4500;padding:12px;border-radius:8px;margin:16px 0}",
+            ".book-meta{color:#8a9bb0; font-size:14px; margin-top:4px}",
             "</style></head><body>",
             f"<h1>🎧 {title}</h1>",
         ]
@@ -129,8 +130,7 @@ class PodcastBaseHandler(BaseHandler):
             "var btn=e.target.closest('.copy-btn');if(!btn)return;"
             "var text=btn.getAttribute('data-copy-text')||'';if(!text)return;"
             "var done=function(){"
-            "btn.classList.add('copied');btn.textContent='✓';"
-            "setTimeout(function(){btn.classList.remove('copied');btn.textContent='📑';},1200);};"
+            "btn.classList.add('copied');btn.textContent='✓';};"
             "if(navigator.clipboard&&navigator.clipboard.writeText){"
             "navigator.clipboard.writeText(text).then(done).catch(function(){fallbackCopy(text);done();});"
             "}else{fallbackCopy(text);done();}"
@@ -141,12 +141,15 @@ class PodcastBaseHandler(BaseHandler):
         self.set_header("Content-Type", "text/html; charset=UTF-8")
         self.write("\n".join(html))
 
-    def render_feed_url(self, feed_url):
+    def render_feed_url(self, feed_url, title=None, book_id=None):
         safe_feed_url = escape(feed_url, quote=True)
+        copy_icon_svg = '<svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z" stroke="#6ea8fe" stroke-width="1.5"></path> <path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5" stroke="#6ea8fe" stroke-width="1.5"></path></g></svg>'
+
         return (
             f'<div class="feed-row"><a class="feed-url" href="{safe_feed_url}">{safe_feed_url}</a>'
             f'<button type="button" class="copy-btn" title="复制订阅地址" '
-            f'data-copy-text="{safe_feed_url}">📑</button></div>'
+            f'data-copy-text="{safe_feed_url}">{copy_icon_svg}'
+            '</button></div>'
         )
 
     def render_book_list(self, page_title, description, entries, token=None):
@@ -171,7 +174,7 @@ class PodcastBaseHandler(BaseHandler):
                 )
                 if token is not None:
                     feed_url = feed_url + f"?token={token}"
-                html.append(self.render_feed_url(feed_url))
+                html.append(self.render_feed_url(feed_url, title=f"{book_title} ({authors})", book_id=book.get("id")))
                 html.append("</li>")
             html.append("</ul>")
 
@@ -229,7 +232,7 @@ class PodcastIndex(PodcastBaseHandler):
                                 '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                             )
                             html.append(
-                                self.render_feed_url(feed_url)
+                                self.render_feed_url(feed_url, title=f"{book_title} ({authors_str})", book_id=book.get("id"))
                             )
                             html.append("</li>")
                         html.append("</ul>")
@@ -517,7 +520,7 @@ class PodcastTokenIndex(PodcastBaseHandler):
                             '<div class="book-meta">请复制以下XML订阅地址，并在您的Podcast播放器中添加订阅：</div>'
                         )
                         html.append(
-                            self.render_feed_url(feed_url)
+                            self.render_feed_url(feed_url, title=f"{book_title} ({authors_str})", book_id=book.get("id"))
                         )
                         html.append("</li>")
                     html.append("</ul>")
@@ -561,6 +564,50 @@ class PodcastTokenIndex(PodcastBaseHandler):
 
         title = f"{self._get_site_title()} - {user.name} 的个人订阅"
         self.render_html_page(title, "\n".join(html), show_back=True)
+
+
+class PodcastBookOpml(PodcastBaseHandler):
+    """OPML download for a single audiobook with all episodes embedded."""
+
+    def get(self, book_id):
+        self.check_podcast_enabled()
+        site_url = self._get_full_site_url()
+        provider = _get_provider(self)
+
+        token = self.get_argument("token", None)
+        if token:
+            user = self._get_user_by_token(token)
+            if not user:
+                token = None  # fall back to public audio URLs
+
+        try:
+            book_id = int(book_id)
+        except ValueError as exc:
+            raise web.HTTPError(400, reason="Invalid book ID") from exc
+
+        book_info = provider.get_book_info(book_id, site_url)
+        if not book_info:
+            raise web.HTTPError(404, reason="Book not found")
+
+        episodes = provider.get_episodes(book_id, site_url, token=token)
+        if not episodes:
+            raise web.HTTPError(404, reason="No audio files found for this book")
+
+        opml_bytes = build_book_opml(
+            book_info, episodes, site_url,
+            site_title=self._get_site_title(),
+            token=token,
+        )
+
+        raw_title = book_info.get("title", str(book_id))
+        safe_name = re.sub(r'[^\w\u4e00-\u9fff\-]', '_', raw_title).strip('_') or str(book_id)
+        encoded_filename = urllib.parse.quote(safe_name + ".xml", safe='')
+        self.set_header("Content-Type", "application/xml; charset=UTF-8")
+        self.set_header(
+            "Content-Disposition",
+            f"attachment; filename*=UTF-8''{encoded_filename}",
+        )
+        self.write(opml_bytes)
 
 
 class PodcastAudioFile(PodcastBaseHandler):
@@ -651,6 +698,7 @@ def routes():
         (r"/podcast/?", PodcastIndex),
         (r"/podcast/all", PodcastAll),
         (r"/podcast/book/([0-9]+)", PodcastBook),
+        (r"/podcast/book/([0-9]+)/opml", PodcastBookOpml),
         (r"/podcast/category/(.+)", PodcastCategory),
         (r"/podcast/tag/(.+)", PodcastTag),
         (r"/podcast/author/(.+)", PodcastAuthor),
