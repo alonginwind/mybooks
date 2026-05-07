@@ -46,9 +46,11 @@ class CoverGenerator:
         l, t = (diag - width) // 2, (diag - height) // 2
         mask = mask.crop((l, t, l + width, t + height))
         base.paste(top, (0, 0), mask)
-        if time.time() - start > 0.02:
-            logging.warning(f"[COVER] Gradient generation took {time.time() - start:.2f}s, disable it.")
+        cost = time.time() - start
+        if cost > 0.025:
             cls.ENABLE_GRADIENT = False
+        elif cost < 0.010:
+            cls.ENABLE_GRADIENT = True
         return base
 
     @classmethod
