@@ -76,7 +76,7 @@
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.updateAllMeta') }}</v-list-item-title>
                             </v-list-item>
-                            <v-list-item @click="updateWithDynamicCover">
+                            <v-list-item :disabled="!use_dynamic_cover" @click="updateWithDynamicCover">
                                 <v-list-item-icon>
                                     <v-icon>mdi-image-refresh-outline</v-icon>
                                 </v-list-item-icon>
@@ -529,6 +529,7 @@ export default {
         loading: false,
         scraping: false,
         options: { sortBy: ["id"], sortDesc: [true] },
+        use_dynamic_cover: false,
         progress: {
             count_total: 0,
             count_processed: 0,
@@ -1001,6 +1002,9 @@ export default {
             try {
                 const response = await this.$backend('/admin/settings');
                 if (response.err === 'ok' && response.settings) {
+                    if (response.settings.USE_DYNAMIC_COVER) {
+                        this.use_dynamic_cover = response.settings.USE_DYNAMIC_COVER;
+                    }
                     if (response.settings.BOOK_NAV) {
                         this.categories = response.settings.BOOK_NAV.split('\n').map(line => {
                             const parts = line.split('=');
