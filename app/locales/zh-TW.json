@@ -260,7 +260,8 @@
                 "publisher": "出版社",
                 "tags": "標籤",
                 "comments": "簡介",
-                "actions": "操作"
+                "actions": "操作",
+                "series": "叢書"
             }
         },
         "users": {

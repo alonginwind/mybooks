@@ -315,6 +315,23 @@
                 </v-edit-dialog>
             </template>
 
+            <template v-slot:item.series="{ item }">
+                <v-edit-dialog
+                    large
+                    :return-value.sync="item.series"
+                    @save="save(item, 'series')"
+                    :save-text="$t('admin.books.save')"
+                    :cancel-text="$t('admin.books.cancel')"
+                >
+                    <span v-if="item.series != null" class="three-lines" style="max-width: 110px; min-width: 60px; ">{{ item.series }}</span>
+                    <span v-else> - </span>
+                    <template v-slot:input>
+                        <div class="mt-4 text-h6">{{ $t('admin.books.editField') }}</div>
+                        <v-text-field v-model="item.series" :label="$t('admin.books.header.series')" counter></v-text-field>
+                    </template>
+                </v-edit-dialog>
+            </template>
+
             <template v-slot:item.publisher="{ item }">
                 <v-edit-dialog
                     large
@@ -669,6 +686,7 @@ export default {
                 { text: this.$t('admin.books.header.title'), sortable: true, value: "title" },
                 { text: this.$t('admin.books.header.author'), sortable: true, value: "author", width: "100px" },
                 { text: this.$t('admin.books.header.category'), sortable: false, value: "category", width: "80px" },
+                { text: this.$t('admin.books.header.series'), sortable: false, value: "series", width: "80px" },
                 { text: this.$t('admin.books.header.rating'), sortable: false, value: "rating", width: "60px" },
                 { text: this.$t('admin.books.header.publisher'), sortable: false, value: "publisher" },
                 { text: this.$t('admin.books.header.tags'), sortable: true, value: "tags", width: "100px" },

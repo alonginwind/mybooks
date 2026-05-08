@@ -257,7 +257,8 @@
                 "publisher": "Publisher",
                 "tags": "Tags",
                 "comments": "Description",
-                "actions": "Actions"
+                "actions": "Actions",
+                "series": "Series"
             }
         },
         "users": {

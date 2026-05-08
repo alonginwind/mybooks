@@ -260,7 +260,8 @@
                 "publisher": "出版社",
                 "tags": "标签",
                 "comments": "简介",
-                "actions": "操作"
+                "actions": "操作",
+                "series": "丛书"
             }
         },
         "users": {
