@@ -1455,6 +1455,9 @@ class BookEdit(BaseHandler):
             else:
                 logging.error("Too many characters in the external link, ignore it!")
 
+        if mi.authors:
+            # authors中如果有.,则替换为·
+            mi.authors = [a.replace(".", "·") for a in mi.authors]
         mi.timestamp = nowf()
         mi.title_sort = utils.get_title_sort(mi.title)
         # If the existing cover is dynamic generated, and the new title or author may cause the cover to be no longer suitable, we need to regenerate it
