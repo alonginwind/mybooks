@@ -48,7 +48,7 @@ from webserver.constants import COLUMN_CATEGORY, CALIBRE_COLUMN_CATEGORY
 from webserver.constants import CALIBRE_ERROR_FLAG, SUPPORTED_EBOOK_FORMATS
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT
 from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL, AUTO_FILL_META
-from webserver.constants import META_SOURCE_GOOGLE, META_SOURCE_AMAZON
+from webserver.constants import META_SOURCE_GOOGLE, META_SOURCE_AMAZON, META_SOURCE_DOUBAN
 from webserver.constants import COLUMN_EXT_LINK, CALIBRE_COLUMN_EXT_LINK
 from webserver.constants import CALIBRE_COLUMN_DYNAMIC_COVER, COLUMN_DYNAMIC_COVER
 

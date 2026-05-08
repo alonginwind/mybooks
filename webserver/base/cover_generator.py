@@ -80,7 +80,7 @@ class CoverGenerator:
                     t_font = a_font = ImageFont.load_default()
                     cls._title_font_map[title_size] = t_font
                     cls._author_font_map[author_size] = a_font
-                    logging.warning(f"[COVER] 字体文件不存在，使用默认字体(不可缩放)")
+                    logging.warning("[COVER] 字体文件不存在，使用默认字体(不可缩放)")
 
             title_lines = []
             current_line = ""
@@ -122,7 +122,8 @@ class CoverGenerator:
             data = output.getvalue()
 
             if debug:
-                with open("/tmp/cover_debug.jpg", "wb") as f: f.write(data)
+                with open("/tmp/cover_debug.jpg", "wb") as f:
+                    f.write(data)
             return data
 
         except Exception as e:
