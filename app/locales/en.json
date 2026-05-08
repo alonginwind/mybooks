@@ -179,6 +179,8 @@
             "clearInvalidItemsProcessing": "Clearing, this may take a while if there are many records",
             "clearInvalidItemsConfirm": "This will remove Item records that no longer exist in Calibre. Continue?",
             "aiUpdate": "AI Update Info",
+            "saveMetaToFile": "Batch Sync Info to File",
+            "saveMetaSuccess": "The task to sync metadata to files has started. You can check the progress in the top right corner.",
             "kindleConvert": "Kindle to EPUB",
             "kindleConvertSelectedConfirm": "This will convert {count} selected books that have Kindle formats (azw3/mobi) but no EPUB format to EPUB. This may take some time. Continue?",
             "kindleConvertAllConfirm": "This will scan all books and convert those with Kindle formats (azw3/mobi) but no EPUB format to EPUB. This may take a long time. Continue?",
@@ -551,6 +553,7 @@
                     "add": "Add"
                 },
                 "series": "Series Name",
+                "series_index": "Series Index",
                 "publisher": "Publisher",
                 "pubdate": "Publication Date",
                 "isbn": "ISBN",

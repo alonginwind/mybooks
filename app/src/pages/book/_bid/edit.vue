@@ -45,8 +45,19 @@
                                         </template>
                                     </v-combobox>
                                 </v-col>
-                                <v-col class='py-0' cols=12 sm=6>
+                                <v-col class='py-0' cols=8 sm=4>
                                     <v-text-field :label="$t('book.edit.fields.series')" v-model="book.series">{{ book.series }}</v-text-field>
+                                </v-col>
+                                <v-col class='py-0' cols=4 sm=2>
+                                    <v-text-field
+                                        :label="$t('book.edit.fields.series_index')"
+                                        v-model="book.series_index"
+                                        type="text"
+                                        inputmode="decimal"
+                                        pattern="^\\d+(\\.\\d{0,2})?$"
+                                        @input="onSeriesIndexInput"
+                                        @blur="onSeriesIndexBlur"
+                                    ></v-text-field>
                                 </v-col>
                                 <v-col class='py-0' cols=12 sm=6>
                                     <v-combobox
@@ -282,6 +293,32 @@ export default {
         languageName(code) {
             const found = this.languageOptions.find(opt => opt.code === code);
             return found ? found.name : code;
+        },
+        onSeriesIndexInput(value) {
+            if (value === null || value === undefined) {
+                this.book.series_index = "";
+                return;
+            }
+            let sanitized = String(value).replace(/[^\d.]/g, "");
+            if (sanitized.startsWith(".")) {
+                sanitized = "0" + sanitized;
+            }
+            const parts = sanitized.split(".");
+            const integerPart = parts[0] || "";
+            const decimalPart = parts.slice(1).join("").slice(0, 2);
+            this.book.series_index = decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
+        },
+        onSeriesIndexBlur() {
+            const value = this.book.series_index;
+            if (value === "" || value === null || value === undefined) {
+                return;
+            }
+            const num = Number(value);
+            if (Number.isNaN(num)) {
+                this.book.series_index = "";
+                return;
+            }
+            this.book.series_index = num.toFixed(2);
         },
     },
 }

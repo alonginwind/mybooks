@@ -1383,6 +1383,7 @@ class BookEdit(BaseHandler):
         "publisher",
         "isbn",
         "series",
+        "series_index",
         "rating",
         "languages",
     ]

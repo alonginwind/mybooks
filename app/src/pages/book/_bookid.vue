@@ -543,7 +543,7 @@
                                     :to="'/series/' + encodeURIComponent(book.series)"
                                 >
                                     <v-icon>explore</v-icon>
-                                    {{ $t('book.series') }}: {{ book.series }}
+                                    {{ $t('book.series') }}: {{ book.series }} {{ book.series_index ? '(#' + book.series_index + ')' : '' }}
                                 </v-chip>
                                 <v-chip rounded small dark color="grey" v-if="book.isbn">
                                     <v-icon>explore</v-icon>
@@ -1585,7 +1585,6 @@ export default {
     async created() {
         this.init(this.$route);
         this.mail_to = this.$store.state.user.kindle_email;
-        this.get_txt_parse_status();
 
         if (process.client) {
             this.mail_to = this.$cookies.get("last_mailto");
@@ -1606,6 +1605,7 @@ export default {
         }
     },
     async mounted() {
+        this.get_txt_parse_status();
         // 异步加载推荐图书
         this.loadSuggestionBooks();
         this.loadSameNameBooks();
@@ -1890,6 +1890,9 @@ export default {
             });
         },
         get_txt_parse_status(){
+          if (!this.hasTxt && !this.hasTxtZ) {
+            return;
+          }
           this.$backend(`/book/txt/init?id=${this.book.id}&test=1`,)
             .then(res => {
               if (res.err === "ok" && res.msg === "parsed") {

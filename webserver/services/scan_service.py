@@ -279,22 +279,36 @@ class ScanService(AsyncService):
             self.do_import_internal(filelist, user_id, task_id, imported_id)
             if task_id:
                 BackgroundService().complete_task(task_id=task_id)
-            logging.info("[IMPORT] Completed")
-            self.add_msg(
-                user_id=user_id,
-                status="success",
-                msg=_("图书导入完成: 共%d本，成功%d本，失败%d本") % (
-                    ScanService.static_import_files_cnt,
-                    ScanService.static_status_cnt.get(ScanFile.IMPORTED, 0),
-                    ScanService.static_status_cnt.get(ScanFile.INVALID, 0),
-                ),
-            )
+
+            if ScanService.static_abort_flag:
+                logging.info("[IMPORT] Cancelled by user")
+                self.add_msg(
+                    user_id=user_id,
+                    status="success",
+                    msg=_("图书导入被取消, 共%d本，成功%d本，失败%d本") % (
+                        ScanService.static_import_files_cnt,
+                        ScanService.static_status_cnt.get(ScanFile.IMPORTED, 0),
+                        ScanService.static_status_cnt.get(ScanFile.INVALID, 0),
+                    ),
+                )
+            else:
+                logging.info("[IMPORT] Completed")
+                self.add_msg(
+                    user_id=user_id,
+                    status="success",
+                    msg=_("图书导入完成: 共%d本，成功%d本，失败%d本") % (
+                        ScanService.static_import_files_cnt,
+                        ScanService.static_status_cnt.get(ScanFile.IMPORTED, 0),
+                        ScanService.static_status_cnt.get(ScanFile.INVALID, 0),
+                    ),
+                )
         except Exception as err:
             if task_id:
                 BackgroundService().complete_task(task_id=task_id, error_message=str(err))
             logging.error(f"[IMPORT] Failed: {err}")
             logging.error(traceback.format_exc())
         ScanService.static_is_importing = False
+        ScanService.static_abort_flag = False
 
     def _compute_hash(self, fpath):
         start = time.time()

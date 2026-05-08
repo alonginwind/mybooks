@@ -25,6 +25,7 @@ from webserver.services.batch_convert import BatchConvertService
 from webserver.services.batch_title_sort import BatchTitleSortUpdateService
 from webserver.services.metadata_update import MetaDataUpdateService
 from webserver.services.batch_generate_cover import DynamicCoverUpdateService
+from webserver.services.save_meta_to_files import SaveMetaToFilesService
 from webserver.services.mail import MailService
 from webserver.services.book_barn import BookBarnClient
 from webserver.services.background_service import BackgroundService, BackgroundTask
@@ -1021,6 +1022,23 @@ class AdminDeleteBooks(BaseHandler):
         return {"err": "ok", "msg": _("删除成功")}
 
 
+class AdminSaveMeta(BaseHandler):
+    @js
+    @is_admin
+    def post(self):
+        req = tornado.escape.json_decode(self.request.body)
+        idlist = req.get("idlist", [])
+        if not idlist:
+            return {"err": "params.error", "msg": _("参数错误")}
+
+        for bid in idlist:
+            if not isinstance(bid, int):
+                return {"err": "params.error.idlist", "msg": _("idlist参数错误")}
+
+        SaveMetaToFilesService().save_metadata(self.current_user.id, idlist)
+        return {"err": "ok", "msg": _("同步元数据到文件的任务已经开始执行，在右上角可以查看进度")}
+
+
 class ClearInvalidItems(BaseHandler):
     """Admin API: 清理在Calibre中已不存在的无效Items记录"""
 
@@ -1391,6 +1409,7 @@ def routes():
         (r"/api/admin/book/update_title_sort", AdminBookUpdateTitleSort),
         (r"/api/admin/bookbarn/token/apply", AdminBookbarnTokenApply),
         (r"/api/admin/books/delete", AdminDeleteBooks),
+        (r"/api/admin/books/save_meta", AdminSaveMeta),
         (r"/api/admin/clear/invalid/items", ClearInvalidItems),
         (r"/api/admin/audio/test", AudioTestConnection),
         (r"/api/admin/release/notes", ReleaseNotes),

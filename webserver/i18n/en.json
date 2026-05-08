@@ -448,5 +448,8 @@
   "本书已有TXTZ版本, 不需要转换": "This book already has a TXTZ version, no conversion needed",
   "本书不支持转换，仅支持TXT格式转换为TXTZ": "This book does not support conversion, only TXT format can be converted to TXTZ",
   "当前没有正在运行的任务": "No tasks are currently running",
-  "正在取消任务, 请稍后查看状态": "Cancelling task, please check the status later"
+  "正在取消任务, 请稍后查看状态": "Cancelling task, please check the status later",
+  "同步图书元数据到文件": "Sync book metadata to file",
+  "图书元数据保存已完成: 共%d本，成功%d本，失败%d本, 跳过%d本": "Book metadata save completed: %d total, %d successful, %d failed, %d skipped",
+  "同步元数据到文件的任务已经开始执行，在右上角可以查看进度": "The task of syncing metadata to file has started. You can check the progress in the top right corner"
 }

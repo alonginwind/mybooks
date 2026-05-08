@@ -1000,6 +1000,7 @@ export default {
                 'title_sort_update': this.$t('appHeader.taskTypeTitleSortUpdate'),
                 'metadata_update': this.$t('appHeader.taskTypeMetadataUpdate'),
                 'cover_update': this.$t('appHeader.taskTypeCoverUpdate'),
+                'save_meta': this.$t('appHeader.taskTypeSaveMeta'),
             };
             return typeMap[serviceType] || serviceType;
         },

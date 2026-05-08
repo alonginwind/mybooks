@@ -34,19 +34,25 @@
                             </v-btn>
                         </template>
                         <v-list>
-                            <v-list-item @click="show_clear_rare_tags_dialog">
+                            <v-list-item @click="showClearRareTagsDialog">
                                 <v-list-item-icon>
                                     <v-icon>mdi-tag-remove-outline</v-icon>
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.clearRareTags') }}</v-list-item-title>
                             </v-list-item>
-                            <v-list-item @click="show_kindle_convert_dialog">
+                            <v-list-item @click="showKindleConvertDialog">
                                 <v-list-item-icon>
-                                    <v-icon>mdi-book-sync</v-icon>
+                                    <v-icon>mdi-transfer</v-icon>
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.kindleConvert') }}</v-list-item-title>
                             </v-list-item>
-                            <v-list-item @click="show_update_title_sort_dialog">
+                            <v-list-item @click="saveMetaToFiles" :disabled="books_selected.length === 0">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-file-sync</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-title>{{ $t('admin.books.saveMetaToFile') }}</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item @click="showUpdateTitleSortDialog">
                                 <v-list-item-icon>
                                     <v-icon>mdi-sort-alphabetical-ascending</v-icon>
                                 </v-list-item-icon>
@@ -58,13 +64,13 @@
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.aiUpdate') }}</v-list-item-title>
                             </v-list-item>
-                            <v-list-item @click="show_exchange_type_dialog" :disabled="books_selected.length === 0">
+                            <v-list-item @click="showExchangeTypeDialog" :disabled="books_selected.length === 0">
                                 <v-list-item-icon>
                                     <v-icon>mdi-swap-horizontal</v-icon>
                                 </v-list-item-icon>
                                 <v-list-item-title>{{ $t('admin.books.exchangeType') }}</v-list-item-title>
                             </v-list-item>
-                            <v-list-item @click="show_clear_invalid_items_dialog">
+                            <v-list-item @click="showClearInvalidItemsDialog">
                                 <v-list-item-icon>
                                     <v-icon>mdi-database-remove-outline</v-icon>
                                 </v-list-item-icon>
@@ -87,7 +93,7 @@
                     <v-btn
                         :disabled="loading || scraping"
                         color="secondary"
-                        @click="show_dialog_auto_file"
+                        @click="showDialogAutoFile"
                         class="flex-shrink-0"
                         :icon="$vuetify.breakpoint.xs"
                         :small="$vuetify.breakpoint.xs"
@@ -708,27 +714,27 @@ export default {
                 });
         },
 
-        show_dialog_auto_file() {
+        showDialogAutoFile() {
             this.meta_dialog = true;
         },
 
-        show_exchange_type_dialog() {
+        showExchangeTypeDialog() {
             this.exchange_type_dialog = true;
         },
 
-        show_clear_rare_tags_dialog() {
+        showClearRareTagsDialog() {
             this.clear_rare_tags_dialog = true;
         },
 
-        show_kindle_convert_dialog() {
+        showKindleConvertDialog() {
             this.kindle_convert_dialog = true;
         },
 
-        show_update_title_sort_dialog() {
+        showUpdateTitleSortDialog() {
             this.update_title_sort_dialog = true;
         },
 
-        show_clear_invalid_items_dialog() {
+        showClearInvalidItemsDialog() {
             this.clear_invalid_items_dialog = true;
         },
 
@@ -870,6 +876,25 @@ export default {
                     this.loading = false;
                 });
         },
+
+        saveMetaToFiles() {
+            const book_ids = this.getSelectedBookIds();
+            if (!book_ids) return;
+
+            this.loading = true;
+            this.$backend("/admin/books/save_meta", {
+                method: "POST",
+                body: JSON.stringify({"idlist": book_ids}),
+            })
+                .then((rsp) => {
+                    this.handleApiResponse(rsp, this.$t("admin.books.saveMetaSuccess"));
+                    this.books_selected = [];
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+
         autoFill() {
             const idlist = this.getSelectedBookIds();
             this.$backend("/admin/book/fill", {
