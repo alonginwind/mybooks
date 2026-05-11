@@ -413,6 +413,10 @@ class OpdsHandler(BaseHandler):
         raise web.Finish()
 
     def check_opds_enabled(self):
+        if CONF.get("ENABLE_OPDS_AUTH", False) and self.current_user is None:
+            self.set_header("WWW-Authenticate", "Basic")
+            self.set_status(401)
+            raise web.Finish()
         if not CONF.get("ENABLE_OPDS_SERVICE", True):
             raise web.HTTPError(503, reason="OPDS service is not enabled")
 

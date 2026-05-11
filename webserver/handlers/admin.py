@@ -448,6 +448,7 @@ class AdminSettings(BaseHandler):
             "WEBDAV_SYNC_FOLDER",
             "ENABLE_AUDIO_CONVERSION_LOG",
             "ENABLE_OPDS_SERVICE",
+            "ENABLE_OPDS_AUTH",
             "ENABLE_PODCAST_SERVICE",
             "META_SELECTED_SOURCES",
             "PDF_TILE_WITH_FILE_NAME",
