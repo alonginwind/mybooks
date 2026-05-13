@@ -76,6 +76,7 @@ class DynamicCoverUpdateService(AsyncService):
     def _extract_file_cover(self, book_id, mi):
         """从书籍文件中提取内置封面"""
         from calibre.ebooks.metadata.meta import get_metadata
+        from calibre.utils.date import now as nowf
 
         books = self.db.get_data_as_dict(ids=[book_id])
         if not books:
@@ -106,6 +107,7 @@ class DynamicCoverUpdateService(AsyncService):
                 cover_fmt, cover_data = file_mi.cover_data
                 if cover_data:
                     mi.cover_data = (cover_fmt or "jpeg", cover_data)
+                    mi.timestamp = nowf()
                     self.db.set_metadata(book_id, mi, commit=True)
                     self.db.set_custom(book_id, 0, COLUMN_DYNAMIC_COVER)
                     logging.debug(f"[DynamicCover] Extracted file cover for book id={book_id}")

@@ -716,7 +716,7 @@ class BookRefer(BaseHandler):
         from calibre.ebooks.metadata.meta import get_metadata
         from calibre.utils.date import now as nowf
         book_name = os.path.basename(book_path)
-        logging.error("[RESET]book name = " + repr(book_name))
+        logging.info("[RESET]book name = " + repr(book_name))
         fmt = os.path.splitext(book_name)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
@@ -728,6 +728,7 @@ class BookRefer(BaseHandler):
             org_mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
             org_mi.title = utils.super_strip(org_mi.title)
             org_mi.authors = [utils.super_strip(org_mi.author_sort)]
+            logging.info(f"[RESET] get the book title from book file: {org_mi.title}")
             if org_mi.isbn:
                 org_mi.set("isbn", utils.super_strip(org_mi.isbn))
             else:
@@ -747,8 +748,11 @@ class BookRefer(BaseHandler):
         if org_mi.title and org_mi.title == CALIBRE_ERROR_FLAG:
             return {"err": "book.invalid", "msg": _("此书籍文件无法识别, 或者受DRM保护无法处理")}
 
-        if fmt in ["txt", "pdf"]:
-            org_mi.title = book_name.replace("." + fmt, "")
+        if fmt == "txt":
+            org_mi = book.get("title", book_name[:-4])
+            org_mi.authors = [_("佚名")]
+        elif fmt == "pdf":
+            org_mi.title = book.get("title", org_mi.title)
             org_mi.authors = [_("佚名")]
 
         if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
