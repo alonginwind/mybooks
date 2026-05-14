@@ -819,6 +819,7 @@
         "systemVersion": "系统版本",
         "userCount": "用户数",
         "syslog": "系统日志",
+        "toolbox": "工具集",
         "opdsIntroduction": "OPDS介绍",
         "webdavIntroduction": "WebDAV访问",
         "search": "搜索",
@@ -1019,6 +1020,14 @@
         "empty": "（暂无日志）",
         "fetchFailed": "获取日志失败",
         "pageTitle": "系统日志"
+    },
+    "toolbox": {
+        "pageTitle": "工具集",
+        "pageSubtitle": "系统可用工具列表",
+        "noTools": "暂无可用工具",
+        "version": "版本",
+        "author": "作者",
+        "publishDate": "发布日期"
     },
     "expected": {
         "pageTitle": "缺书登记",

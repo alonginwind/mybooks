@@ -621,6 +621,7 @@ export default {
                         { icon: "mdi-notebook", href: "/admin/all-expected", text: "expected.allPageTitle", color: "green"},
                         { icon: "mdi-message-text-outline", href: "/admin/user-memos", text: "memos.pageTitle", color: "blue"},
                         { icon: "mdi-math-log", href: "/syslog", text: "appHeader.syslog", color: "#FB9795"},
+                        { icon: "mdi-toolbox-outline", href: "/toolbox", text: "appHeader.toolbox", color: "#FB9795"},
                         { icon: "sms_failed", action: "openFeedback", text: "appHeader.feedback", color: "orange"},
                     ],
                 },

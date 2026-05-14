@@ -237,10 +237,31 @@ class EpubReader(BaseHandler):
                 self.write(f.read())
 
 
+class ToolIconHandler(BaseHandler):
+    def get(self, tool_id):
+        resource_path = CONF.get("resource_path", "")
+        toolbox_dir = os.path.join(resource_path, "toolbox")
+        icon_path = None
+        for ext in ("jpg", "png"):
+            candidate = os.path.join(toolbox_dir, f"{tool_id}.{ext}")
+            if os.path.exists(candidate):
+                icon_path = candidate
+                break
+        if icon_path is None:
+            icon_path = os.path.join(toolbox_dir, "default_tool.jpg")
+        if not os.path.exists(icon_path):
+            raise web.HTTPError(404, "Tool icon not found")
+        mime_type = mimetypes.guess_type(icon_path)[0] or "image/jpeg"
+        self.set_header("Content-Type", mime_type)
+        with open(icon_path, "rb") as f:
+            self.write(f.read())
+
+
 def routes():
     static_config = {"path": CONF["html_path"], "default_filename": "index.html"}
     return [
         (r"/get/pcover", ProxyImageHandler),
+        (r"/get/tool/([^/]+)/icon", ToolIconHandler),
         (r"/get/progress/([0-9]+)", ProgressHandler),
         (r"/get/extract/([0-9]+)/(.*)", EpubReader),
         (r"/get/(.*)/(.*)", ImageHandler),

@@ -1420,6 +1420,16 @@ class AdminSyslogDownload(BaseHandler):
         self.finish(content)
 
 
+class AdminToolList(BaseHandler):
+    @js
+    @is_admin
+    def get(self):
+        from webserver.toolbox.toolset import ToolSet
+        ToolSet.collect_tools()
+        tools = [t.to_dict() for t in ToolSet.all_tools()]
+        return {"err": "ok", "tools": tools}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -1449,4 +1459,5 @@ def routes():
         (r"/api/admin/book/update_all_dynamic_cover", AdminUpdateDynamicCover),
         (r"/api/admin/book/reset_cover", AdminResetCover),
         (r"/api/admin/syslog/download", AdminSyslogDownload),
+        (r"/api/admin/toolbox/list", AdminToolList),
     ]

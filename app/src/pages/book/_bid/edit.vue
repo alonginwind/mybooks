@@ -51,6 +51,7 @@
                                 <v-col class='py-0' cols=4 sm=2>
                                     <v-text-field
                                         :label="$t('book.edit.fields.series_index')"
+                                        :disabled="!book.series"
                                         v-model="book.series_index"
                                         type="text"
                                         inputmode="decimal"

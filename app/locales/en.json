@@ -814,6 +814,7 @@
         "systemVersion": "Revision",
         "userCount": "User Count",
         "syslog": "System Log",
+        "toolbox": "Toolbox",
         "opdsIntroduction": "About OPDS",
         "webdavIntroduction": "About WebDAV",
         "search": "Search",
@@ -1013,6 +1014,14 @@
         "empty": "(No logs available)",
         "fetchFailed": "Failed to fetch logs",
         "pageTitle": "System Log"
+    },
+    "toolbox": {
+        "pageTitle": "Toolbox",
+        "pageSubtitle": "Available system tools",
+        "noTools": "No tools available",
+        "version": "Version",
+        "author": "Author",
+        "publishDate": "Publish Date"
     },
     "expected": {
         "pageTitle": "Expected Books",
