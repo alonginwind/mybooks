@@ -222,7 +222,7 @@ class BatchAddService(AsyncService):
                 return None
 
             book_data = None
-            if META_SOURCE_DOUBAN in CONF["META_SOURCE"]:
+            if META_SOURCE_DOUBAN in CONF["META_SELECTED_SOURCES"]:
                 try:
                     api = douban.DoubanBookApi(
                         CONF["douban_apikey"],
