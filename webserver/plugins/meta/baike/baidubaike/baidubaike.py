@@ -23,6 +23,7 @@ CLASS_CONTENT = {
 CLASS_SUMMARY = ["J-summary"]
 CLASS_INFO = ["basicInfo"]
 CLASS_SUMMARY_PIC = ["summary-img"]
+OUTPUT_FOR_DEBUG = False
 
 
 class Page(object):
@@ -45,6 +46,11 @@ class Page(object):
         if self.http.status_code != 200:
             logging.warning(f"HTTP request failed with status code: {self.http.status_code}")
             return
+
+        # write to file for debug
+        if OUTPUT_FOR_DEBUG:
+            with open("/data/baidu_baike_debug.html", "w", encoding="utf-8") as f:
+                f.write(self.http.text)
 
         self.html = self.http.text
         self.soup = BeautifulSoup(self.html, "lxml")
@@ -73,7 +79,10 @@ class Page(object):
                 content_div = item.find(class_="info-content")
                 if title_div and content_div:
                     name = title_div.get_text(strip=True).replace(u"\xa0", "").strip()
-                    value = content_div.get_text(strip=True).replace(u"\xa0", "").strip()
+                    direct_text = "".join(
+                        text for text in content_div.find_all(string=True, recursive=False)
+                    )
+                    value = direct_text.replace(u"\xa0", "").strip()
                     info[name] = value
         return info
 
