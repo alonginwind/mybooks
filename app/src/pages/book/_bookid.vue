@@ -342,6 +342,10 @@
                                     <v-icon>photo</v-icon>
                                     {{ $t('book.setCover') }}
                                 </v-list-item>
+                                <v-list-item @click="generateCover">
+                                    <v-icon>mdi-panorama-variant-outline</v-icon>
+                                    {{ $t('book.generateCover') }}
+                                </v-list-item>
                                 <v-list-item @click="setSole">
                                     <v-icon>{{ book.sole ? 'public_off' : 'public' }}</v-icon>
                                     {{ book.sole ? $t('book.setPublic') : $t('book.setSole') }}
@@ -1958,6 +1962,19 @@ export default {
             this.$backend("/book/" + this.book.id + "/refer", {
                 method: "POST",
                 body: new URLSearchParams({reset: "yes"}),
+            }).then((rsp) => {
+                if (rsp.err === "ok") {
+                    this.$alert("success", this.$t('book.resetSuccessful'));
+                    this.$router.push("/book/" + this.book.id);
+                    location.reload();
+                } else {
+                    this.$alert("error", rsp.msg);
+                }
+            });
+        },
+        generateCover() {
+            this.$backend("/book/" + this.book.id + "/cover", {
+                method: "POST"
             }).then((rsp) => {
                 if (rsp.err === "ok") {
                     this.$alert("success", this.$t('book.resetSuccessful'));

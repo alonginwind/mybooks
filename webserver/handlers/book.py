@@ -923,6 +923,20 @@ class BookRefer(BaseHandler):
 
 
 class BookCover(BaseHandler):
+    def generate_default_cover(self, book_id, mi):
+        from calibre.utils.date import now as nowf
+        title = mi.title if mi.title else _("未知书籍")
+        author = mi.authors[0] if mi.authors else _("佚名")
+        cover_data = CoverGenerator.generate_cover(title, author)
+        if cover_data:
+            mi.cover_data = ("jpeg", cover_data)
+            mi.timestamp = nowf()
+            self.calibre_db.set_metadata(book_id, mi)
+            self.calibre_db_cache.set_field(CALIBRE_COLUMN_DYNAMIC_COVER, {book_id: 1})
+            return {"err": "ok", "msg": _("已生成默认封面")}
+        else:
+            return {"err": "cover.generate_failed", "msg": _("生成封面失败")}
+
     @js
     @auth
     def post(self, id):
@@ -934,7 +948,9 @@ class BookCover(BaseHandler):
 
         fileinfo = self.request.files.get('cover_data')
         if not fileinfo:
-            return {"err": "params.invalid", "msg": _("未上传封面文件")}
+            # 生成默认封面
+            return self.generate_default_cover(book_id, mi)
+
         fileinfo = fileinfo[0]
         # Prepare cover data as (format, bytes) tuple for Calibre API
         img_data = fileinfo['body']

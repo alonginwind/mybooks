@@ -595,6 +595,7 @@
         "cancelConversion": "Stop Processing",
         "defaultFailedReason": "Internal error, please check the logs",
         "downloadBook": "Download Book",
+        "generateCover": "Generate Simple Cover",
         "noDownloadableFiles": "No downloadable file formats available for this book",
         "push": "Push",
         "read": "Read",

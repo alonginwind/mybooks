@@ -427,6 +427,7 @@
         "cancelConversion": "停止處理",
         "defaultFailedReason": "內部錯誤，請檢查日誌",
         "downloadBook": "下載書籍",
+        "generateCover": "生成簡單封面",
         "noDownloadableFiles": "本書暫無可供下載的檔案格式",
         "push": "推送",
         "read": "閱讀",
