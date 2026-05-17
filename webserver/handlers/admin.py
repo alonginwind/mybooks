@@ -1430,6 +1430,23 @@ class AdminToolList(BaseHandler):
         return {"err": "ok", "tools": tools}
 
 
+class AdminResources(BaseHandler):
+    @js
+    @is_admin
+    def get(self):
+        friends = CONF.get("FRIENDS", [])
+        resources = [
+            {
+                "icon": f.get("icon", ""),
+                "title": f.get("text", ""),
+                "description": "下载资源测试和显示的形式因=枯pq 302ld,asdpf -基本上是链接的favicon和title, 以及一个简单的描述文本",
+                "link": f.get("href", ""),
+            }
+            for f in friends
+        ]
+        return {"err": "ok", "resources": resources}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -1460,4 +1477,5 @@ def routes():
         (r"/api/admin/book/reset_cover", AdminResetCover),
         (r"/api/admin/syslog/download", AdminSyslogDownload),
         (r"/api/admin/toolbox/list", AdminToolList),
+        (r"/api/admin/resources", AdminResources),
     ]
