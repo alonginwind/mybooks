@@ -1036,6 +1036,17 @@
         "fetchFailed": "Failed to fetch logs",
         "pageTitle": "System Log"
     },
+    "rareBookDownloader": {
+        "title": "Rare Book Downloader",
+        "placeholder": "Enter HKUST Library page URL",
+        "downloadBtn": "Download",
+        "close": "Close",
+        "errorEmptyUrl": "Please enter a URL",
+        "success": "Download task started, check progress in the top right corner",
+        "descPre": "Currently only supports downloading from the ",
+        "descLibrary": "HKUST Library",
+        "descPost": ". Browse the library to find the book you need, then paste the link here to download."
+    },
     "toolbox": {
         "pageTitle": "Toolbox",
         "pageSubtitle": "Available system tools",

@@ -1042,6 +1042,17 @@
         "fetchFailed": "获取日志失败",
         "pageTitle": "系统日志"
     },
+    "rareBookDownloader": {
+        "title": "古书下载",
+        "placeholder": "输入香港科技大学图书馆页面链接",
+        "downloadBtn": "下载",
+        "close": "关闭",
+        "errorEmptyUrl": "请输入URL",
+        "success": "下载任务已启动，右上角可查看进度",
+        "descPre": "目前仅支持从",
+        "descLibrary": "香港科技大学图书馆",
+        "descPost": "下载，可以先行浏览找到需要的电子书，将链接贴到这里进行下载。"
+    },
     "toolbox": {
         "pageTitle": "工具集",
         "pageSubtitle": "系统可用工具列表",
