@@ -7,6 +7,7 @@ import os
 from typing import Callable, Optional
 
 from webserver.i18n import _
+from webserver.models import Item
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
 
@@ -69,13 +70,50 @@ class RareBookDownloader(AsyncService):
             logging.info("[RareBookDownloader] start download: %s -> %s", url, output_dir)
             pdf_path = downloader.download(output_dir, callback=_progress_callback)
 
+            book_id = self._import_pdf(pdf_path, meta["title"], meta["author"])
             BackgroundService().complete_task(task_id)
             return {
                 "title": meta["title"],
                 "author": meta["author"],
                 "pdf_path": pdf_path,
+                "book_id": book_id,
             }
         except Exception as err:
             logging.error("[RareBookDownloader] download failed: %s", err)
             BackgroundService().complete_task(task_id, error_message=str(err))
             raise
+
+    def _import_pdf(self, pdf_path: str, title: str, author: str) -> int:
+        """将下载好的 PDF 导入 Calibre，成功后删除源文件，失败则保留。"""
+        from calibre.ebooks.metadata.book.base import Metadata
+        from webserver import utils
+
+        mi = Metadata(title, [author] if author else [_("佚名")])
+        mi.title_sort = utils.get_title_sort(title)
+
+        logging.info("[RareBookDownloader] importing PDF: %s", pdf_path)
+        try:
+            book_id = self.db.import_book(mi, [pdf_path])
+        except Exception as err:
+            logging.error("[RareBookDownloader] %s: %s", _("导入PDF失败，保留原文件"), err)
+            raise
+
+        if book_id is None:
+            logging.error("[RareBookDownloader] import_book returned None for %s", pdf_path)
+            raise RuntimeError(_("导入PDF失败，Calibre未返回书籍ID"))
+
+        try:
+            item = Item()
+            item.book_id = book_id
+            item.collector_id = 1  # system/admin user
+            item.save()
+        except Exception as err:
+            logging.error("[RareBookDownloader] failed to create Item record: %s", err)
+
+        try:
+            os.remove(pdf_path)
+            logging.info("[RareBookDownloader] deleted source PDF: %s", pdf_path)
+        except Exception as err:
+            logging.warning("[RareBookDownloader] failed to delete source PDF %s: %s", pdf_path, err)
+
+        return book_id
