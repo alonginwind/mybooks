@@ -378,25 +378,12 @@ def make_app():
     logging.info("Now, Running...")
     need_sync_item_time = AsyncService().setup(book_db, ScopedSession)
 
-    webdav_routes = []
-    if CONF.get("ENABLE_WEBDAV_SERVICE", False):
-        # Initialize WebDAV service
-        from webserver.webdav.server import create_webdav_app
-        from webserver.webdav.handler import WebDAVHandler
-
-        try:
-            logging.info("Initializing WebDAV service on /books path...")
-            webdav_app = create_webdav_app(cache, ScopedSession)
-
-            # Create routes with WebDAV at /books/*
-            webdav_routes = [
-                (r"/books/?(.*)", WebDAVHandler, dict(wsgi_app=webdav_app)),
-            ]
-            logging.info("WebDAV service initialized successfully")
-        except Exception as e:
-            logging.error(f"Failed to initialize WebDAV service: {e}")
-            logging.error(traceback.format_exc())
-            webdav_routes = []
+    # WebDAV route is always registered; the handler checks ENABLE_WEBDAV_SERVICE at
+    # request time and lazily initialises the WSGI app on first use.
+    from webserver.webdav.handler import WebDAVHandler
+    webdav_routes = [
+        (r"/books/?(.*)", WebDAVHandler, dict(cache=cache, session=ScopedSession)),
+    ]
 
     # Assemble routes carefully:
     # WebDAV must come before files.routes() because files has a catch-all (r"/(.*)")
@@ -416,18 +403,10 @@ def make_app():
     app_routes += meta.routes()
     app_routes += audio.routes()
 
-    # Podcast service routes (conditionally loaded)
-    podcast_routes = []
-    if CONF.get("ENABLE_PODCAST_SERVICE", False):
-        try:
-            from webserver.handlers.podcast import routes as podcast_route_func
-
-            podcast_routes = podcast_route_func()
-            logging.info("Podcast service initialized with %d routes", len(podcast_routes))
-        except Exception as e:
-            logging.error(f"Failed to initialize Podcast service: {e}")
-            logging.error(traceback.format_exc())
-    app_routes += podcast_routes
+    # Podcast routes are always registered; each handler calls check_podcast_enabled()
+    # at request time, so toggling ENABLE_PODCAST_SERVICE takes effect without restart.
+    from webserver.handlers.podcast import routes as podcast_route_func
+    app_routes += podcast_route_func()
 
     # Insert WebDAV routes BEFORE files.routes()
     app_routes += webdav_routes

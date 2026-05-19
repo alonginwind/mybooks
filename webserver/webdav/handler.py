@@ -1,13 +1,19 @@
 # -*- coding: UTF-8 -*-
 import logging
+import threading
 from tornado.web import RequestHandler
 from tornado.wsgi import WSGIContainer
+from webserver import loader
+
+CONF = loader.get_settings()
 
 
 class WebDAVHandler(RequestHandler):
     """
     Tornado request handler to bridge WebDAV WSGI app.
     支持WebDAV查询、下载和写入操作（sync目录可写）。
+    路由在启动时无条件注册；是否启用由 CONF["ENABLE_WEBDAV_SERVICE"] 运行时控制。
+    WSGI app 采用懒加载：首次请求时创建，此后缓存复用。
     """
 
     # Add WebDAV methods to supported methods list
@@ -16,14 +22,41 @@ class WebDAVHandler(RequestHandler):
         'MKCOL',       # 创建目录
     )
 
-    def initialize(self, wsgi_app):
+    # Lazily-initialized WSGI container; reset via reset_app() when needed.
+    _wsgi_container: "WSGIContainer | None" = None
+    _wsgi_container_lock: threading.Lock = threading.Lock()
+
+    @classmethod
+    def reset_app(cls) -> None:
+        """Discard the cached WSGI app so it is recreated on the next request."""
+        with cls._wsgi_container_lock:
+            cls._wsgi_container = None
+
+    def initialize(self, cache=None, session=None):
         """
-        Initialize the handler with a WSGI application.
+        Store references needed to lazily create the WebDAV WSGI app.
 
         Args:
-            wsgi_app: WsgiDAV application instance
+            cache: Calibre library cache (new_api)
+            session: SQLAlchemy scoped session factory
         """
-        self.wsgi_container = WSGIContainer(wsgi_app)
+        self._cache = cache
+        self._session = session
+
+    def _get_wsgi_container(self) -> "WSGIContainer | None":
+        """Return the cached WSGIContainer, creating it if necessary.
+
+        Returns None when the WebDAV service is currently disabled.
+        """
+        if not CONF.get("ENABLE_WEBDAV_SERVICE", False):
+            return None
+        with WebDAVHandler._wsgi_container_lock:
+            if WebDAVHandler._wsgi_container is None:
+                from webserver.webdav.server import create_webdav_app
+                wsgi_app = create_webdav_app(self._cache, self._session)
+                WebDAVHandler._wsgi_container = WSGIContainer(wsgi_app)
+                logging.info("[WebDAV] WSGI app initialized")
+        return WebDAVHandler._wsgi_container
 
     def prepare(self):
         """Called before any HTTP method handler."""
@@ -45,9 +78,13 @@ class WebDAVHandler(RequestHandler):
 
     def _handle_request(self):
         """Delegate the request to the WSGI application."""
-        # Create WSGI environ from Tornado request
+        container = self._get_wsgi_container()
+        if container is None:
+            self.set_status(404)
+            self.finish("WebDAV service is not enabled")
+            return
         try:
-            self.wsgi_container(self.request)
+            container(self.request)
         except Exception as e:
             logging.error(f"WebDAV handler error: {e}")
             import traceback
@@ -80,16 +117,3 @@ class WebDAVHandler(RequestHandler):
     def delete(self, *args, **kwargs):
         """HTTP DELETE method - 删除文件/目录"""
         pass
-
-
-def setup_webdav_handler(wsgi_app):
-    """
-    Create a Tornado request handler configured with the WebDAV WSGI app.
-
-    Args:
-        wsgi_app: WsgiDAV application instance
-
-    Returns:
-        Configured handler class
-    """
-    return lambda: WebDAVHandler(wsgi_app=wsgi_app)
