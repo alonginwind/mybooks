@@ -833,7 +833,7 @@
         "systemVersion": "系統版本",
         "userCount": "使用者數",
         "syslog": "系統日誌",
-        "toolbox": "工具集",
+        "toolbox": "工具箱",
         "resources": "圖書資源",
         "opdsIntroduction": "OPDS 介紹",
         "webdavIntroduction": "WebDAV 存取",
@@ -1049,10 +1049,10 @@
         "success": "下載任務已啟動，右上角可查看進度",
         "descPre": "目前僅支援從",
         "descLibrary": "香港科技大學圖書館",
-        "descPost": "下載，可以先行瀏覽找到需要的電子書，將連結貼到這裡進行下載。"
+        "descPost": "下載，可以先行瀏覽找到需要的電子書，將連結(例如https://lbezone.hkust.edu.hk/bib/b1148888)貼到這裡進行下載。"
     },
     "toolbox": {
-        "pageTitle": "工具集",
+        "pageTitle": "工具箱",
         "pageSubtitle": "系統可用工具列表",
         "noTools": "暫無可用工具",
         "version": "版本",

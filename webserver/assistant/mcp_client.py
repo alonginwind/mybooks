@@ -47,7 +47,6 @@ class MCPStreamClient:
             }
 
             response = await self._send_request(init_request)
-            print("MCP会话初始化成功")
             return response
         except Exception as e:
             print(f"MCP初始化失败: {e}")

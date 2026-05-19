@@ -1004,7 +1004,7 @@ export default {
                 'cover_update': this.$t('appHeader.taskTypeCoverUpdate'),
                 'save_meta': this.$t('appHeader.taskTypeSaveMeta'),
             };
-            return typeMap[serviceType] || serviceType;
+            return typeMap[serviceType] || "";
         },
         getTaskProgress(task) {
             return Math.round(task.progress);

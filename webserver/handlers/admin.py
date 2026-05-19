@@ -1446,7 +1446,7 @@ class AdminRareBookDownloader(BaseHandler):
         if host != "hkust.edu.hk" and not host.endswith(".hkust.edu.hk"):
             return {"err": "params.url.unsupported", "msg": _("不支持的URL，仅支持 hkust.edu.hk 及其子域名")}
 
-        RareBookDownloader().download(url)
+        RareBookDownloader().download(url, self.user_id())
         return {"err": "ok", "msg": _("古书下载任务已启动，右上角可以查看进度")}
 
 

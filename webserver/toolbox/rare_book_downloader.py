@@ -4,7 +4,7 @@
 import hashlib
 import logging
 import os
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 
 from webserver.i18n import _
 from webserver.models import Item
@@ -21,10 +21,10 @@ class RareBookDownloader(AsyncService):
         return {
             "tool_id": "rare_book_downloader",
             "name": "古书下载器",
-            "description": "从指定URL下载古书内容",
-            "revision": "2.0.0",
+            "description": "从书录古书的图书馆站点下载资源并导入到书库",
+            "revision": "0.1.0",
             "author": "PoxenStudio",
-            "publish_date": "2025-01-01"
+            "publish_date": "2025-05-18"
         }
 
     @staticmethod
@@ -35,7 +35,7 @@ class RareBookDownloader(AsyncService):
         raise ValueError(f"不支持的URL: {url}")
 
     @AsyncService.register_service
-    def download(self, url: str, callback: Optional[Callable[[int], None]] = None) -> Optional[dict]:
+    def download(self, url: str, user_id, callback: Optional[Callable[[int], None]] = None) -> Optional[dict]:
         """异步下载古书并转换为 PDF。
 
         :param url:      古书页面 URL
@@ -70,11 +70,11 @@ class RareBookDownloader(AsyncService):
             logging.info("[RareBookDownloader] start download: %s -> %s", url, output_dir)
             pdf_path = downloader.download(output_dir, callback=_progress_callback)
 
-            book_id = self._import_pdf(pdf_path, meta["title"], meta["author"])
+            book_id = self._import_pdf(user_id, pdf_path, meta.get("title", ""), meta.get("authors", []))
             BackgroundService().complete_task(task_id)
             return {
-                "title": meta["title"],
-                "author": meta["author"],
+                "title": meta.get("title", ""),
+                "authors": meta.get("authors", []),
                 "pdf_path": pdf_path,
                 "book_id": book_id,
             }
@@ -83,12 +83,25 @@ class RareBookDownloader(AsyncService):
             BackgroundService().complete_task(task_id, error_message=str(err))
             raise
 
-    def _import_pdf(self, pdf_path: str, title: str, author: str) -> int:
+    def _import_pdf(self, user_id, pdf_path: str, title: str, authors: List[str]) -> int:
         """将下载好的 PDF 导入 Calibre，成功后删除源文件，失败则保留。"""
+        from calibre.ebooks.metadata.meta import get_metadata
         from calibre.ebooks.metadata.book.base import Metadata
         from webserver import utils
 
-        mi = Metadata(title, [author] if author else [_("佚名")])
+        fmt = pdf_path.split(".")[-1].lower()
+        if fmt not in ['epub', 'pdf', 'azw3']:
+            raise RuntimeError("Unsupport file format!")
+
+        try:
+            with open(pdf_path, "rb") as stream:
+                mi = get_metadata(stream, stream_type=fmt, use_libprs_metadata=True)
+                mi.title = utils.super_strip(mi.title)
+                mi.authors = [utils.super_strip(s) for s in authors]
+        except Exception as e:
+            mi = Metadata(title, authors)
+            logging.error("[IMPORT] Error reading metadata from %s: %s", pdf_path, e)
+
         mi.title_sort = utils.get_title_sort(title)
 
         logging.info("[RareBookDownloader] importing PDF: %s", pdf_path)
@@ -105,7 +118,7 @@ class RareBookDownloader(AsyncService):
         try:
             item = Item()
             item.book_id = book_id
-            item.collector_id = 1  # system/admin user
+            item.collector_id = user_id  # system/admin user
             item.save()
         except Exception as err:
             logging.error("[RareBookDownloader] failed to create Item record: %s", err)

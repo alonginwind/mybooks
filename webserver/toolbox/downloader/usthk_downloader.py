@@ -17,6 +17,7 @@ from urllib.request import HTTPCookieProcessor, Request, build_opener
 from PIL import Image
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas as pdf_canvas
+from webserver.i18n import _
 
 
 LOG_PREFIX = "[USTHK_DOWNLOADER]"
@@ -42,7 +43,7 @@ class UsthkDownloader:
         self.url = url
         self._opener = self._build_opener()
         self._title: str = ""
-        self._author: str = ""
+        self._authors: list[str] = []
         self._canvases: Optional[List[str]] = None
 
     # ------------------------------------------------------------------
@@ -61,26 +62,26 @@ class UsthkDownloader:
         :return: {"title": str, "author": str}
         :raises ValueError: 如果页面中无法提取到书名
         """
-        canvases, title, author = self.fetch_canvases()
+        canvases, title, authors = self.fetch_canvases()
         if not title:
             raise ValueError(f"无法从页面获取书名: {self.url}")
         self._title = title
-        self._author = author
+        self._authors = authors
         self._canvases = canvases
-        return {"title": title, "author": author}
+        return {"title": title, "authors": authors}
 
-    def set_overrides(self, title: str = "", author: str = "") -> None:
+    def set_overrides(self, title: str = "", authors: List[str] = []) -> None:
         """覆盖已检测到的书名和作者名（供 CLI 使用）。"""
         if title:
             self._title = title
-        if author:
-            self._author = author
+        if authors:
+            self._authors = authors
 
-    def preload(self, canvases: List[str], title: str, author: str) -> None:
+    def preload(self, canvases: List[str], title: str, authors: List[str]) -> None:
         """预设书页列表及元数据，跳过自动抓取（供 CLI --title 覆盖使用）。"""
         self._canvases = canvases
         self._title = title
-        self._author = author
+        self._authors = authors
 
     def download(
         self,
@@ -109,7 +110,7 @@ class UsthkDownloader:
         canvases = self._canvases
         assert canvases is not None
         title = self._title
-        author = self._author
+        authors = self._authors
         total = len(canvases)
         if total == 0:
             raise RuntimeError("No files found")
@@ -171,9 +172,9 @@ class UsthkDownloader:
             return ""
 
         pdf_title = title or os.path.basename(os.path.abspath(output_dir))
-        pdf_author = author or "佚名"
+        pdf_authors = authors or ["佚名"]
         pdf_path = os.path.join(output_dir, f"{pdf_title}.pdf")
-        _create_pdf(output_dir, pdf_title, pdf_author, pdf_path, callback=callback)
+        _create_pdf(output_dir, pdf_title, pdf_authors, pdf_path, callback=callback)
         return pdf_path
 
     # ------------------------------------------------------------------
@@ -197,7 +198,7 @@ class UsthkDownloader:
         parsed = urlparse(self.url)
         body = self._get_body(self.url).decode("utf-8", errors="ignore")
 
-        title, author = _extract_book_info(body)
+        title, authors = _extract_book_info(body)
 
         matches = re.findall(r"view_book\([\"'](\S+)[\"']", body)
         if not matches:
@@ -216,7 +217,7 @@ class UsthkDownloader:
             for file_name in file_list:
                 canvases.append(f"https://{parsed.netloc}/obj/{source_path}/{file_name}")
 
-        return canvases, title, author
+        return canvases, title, authors
 
     def _download_to_temp(self, source_url: str, dest_dir: str) -> str:
         attempts = RETRY_COUNT + 1
@@ -269,15 +270,18 @@ def _extract_book_info(html: str):
     if m:
         title = m.group(1).strip()
 
-    author = ""
+    authors = []
     m = re.search(r'>Authors</strong>\s*<br[^/]*/?>\s*<ul[^>]*>(.*?)</ul>', html, re.DOTALL)
     if m:
         items = re.findall(r'<li>([^<]+)</li>', m.group(1))
         # Strip trailing date ranges like ", 962-1033" or ", 556-627"
         names = [re.sub(r',\s*\d[\d\-]*\s*$', '', item).strip() for item in items]
-        author = "、".join(n for n in names if n)
+        authors = names
 
-    return title, author
+    if not authors:
+        authors = [_("佚名")]
+
+    return title, authors
 
 
 def _file_extension_from_url(source_url: str) -> str:
@@ -308,7 +312,7 @@ def _resize_image_inplace(filepath: str, max_width: int, quality: float) -> None
 def _create_pdf(
     output_dir: str,
     title: str,
-    author: str,
+    authors: str,
     pdf_path: str,
     callback: Optional[Callable[[int], None]] = None,
 ) -> None:
@@ -331,7 +335,8 @@ def _create_pdf(
     _log(f"Merging {total} images into PDF: {pdf_path}")
     c = pdf_canvas.Canvas(pdf_path)
     c.setTitle(title)
-    c.setAuthor(author)
+    if len(authors) > 0:
+        c.setAuthor(authors[0])
     c.setCreator("Talebook(https://mybooks.top)")
 
     for idx, img_path in enumerate(images, start=1):
@@ -356,7 +361,7 @@ def _create_pdf(
 
 
 # ------------------------------------------------------------------
-# CLI entry point
+# CLI entry point for testing
 # ------------------------------------------------------------------
 
 def main() -> int:
@@ -395,6 +400,9 @@ def main() -> int:
 
     workers = max(1, min(args.workers, 10))
 
+    authors = []
+    if args.author:
+        authors = [args.author]
     try:
         d = UsthkDownloader(args.url)
         try:
@@ -403,10 +411,11 @@ def main() -> int:
             if not args.title:
                 raise
             # title cannot be detected from page, but user provided --title override
-            canvases, _, page_author = d.fetch_canvases()
-            d.preload(canvases, args.title, args.author or page_author or "佚名")
+            canvases, _, page_authors = d.fetch_canvases()
+            authors = page_authors
+            d.preload(canvases, args.title, authors)
 
-        d.set_overrides(title=args.title, author=args.author)
+        d.set_overrides(title=args.title, authors=authors)
 
         def cli_progress(p: int) -> None:
             _log(f"Progress: {p}%")
