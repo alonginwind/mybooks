@@ -2729,7 +2729,6 @@ class BookSendToDevice(BaseHandler):
             logging.error(f"[SEND_TO_DEVICE] 发送失败: {e}")
             return {"err": "upload.error", "msg": _("发送过程出错，请查看日志获取详细信息")}
 
-
     def _send_to_ftp(self, book, book_id, device_url, ftp_username, ftp_password, ftp_path):
         """通过FTP上传发送书籍。每次调用创建独立FTP连接，多个并发请求互不影响。"""
         # 查找合适的文件格式（优先级：epub > azw3 > pdf > txt）

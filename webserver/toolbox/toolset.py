@@ -2,6 +2,7 @@
 工具管理类，所有工具进行注册
 """
 
+
 class Tool:
     def __init__(self, id: str, name: str, description: str, revision: str, author: str, publish_date: str = "", page: str = ""):
         self._id = id
