@@ -92,7 +92,7 @@ export default {
       }
       this.loading = true;
       try {
-        const rsp = await this.$backend('/admin/toolbox/rare_book_downloader', {
+        const rsp = await this.$backend('/toolbox/rare_book_downloader', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: trimmed }),

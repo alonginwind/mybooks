@@ -77,7 +77,7 @@ export default {
       res.setHeader("Cache-Control", "no-cache");
     }
     try {
-      const data = await app.$backend("/admin/toolbox/list");
+      const data = await app.$backend("/toolbox/list");
       if (data.err !== "ok") {
         return { tools: [], error: data.msg || "error" };
       }
