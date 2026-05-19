@@ -729,10 +729,6 @@ export default {
                 rsp.sys.footer = this.$t('footer.base_message');
                 this.$store.commit("set_footer", rsp.sys.footer);
             }
-            if (rsp.sys.header === '') {
-                rsp.sys.header = this.$t('appHeader.defaultHeader');
-                this.$store.commit("set_header", rsp.sys.header);
-            }
             if (rsp.user.is_login) {
                 if (process.client && localStorage.getItem('drawerSidebar') === null) {
                     this.sidebar = this.$vuetify.breakpoint.lgAndUp;
