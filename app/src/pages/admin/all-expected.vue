@@ -47,7 +47,12 @@
           <v-btn text @click="closeUploadDialog">{{ $t('expected.cancel') }}</v-btn>
         </v-toolbar>
         <v-card-text class="pt-4">
-          <v-file-input v-model="uploadFile" :label="$t('expected.selectFile')" prepend-icon="mdi-book-open-variant"></v-file-input>
+          <v-radio-group v-model="uploadBookType" row class="mt-0">
+            <v-radio :label="$t('expected.ebook')" value="ebook"></v-radio>
+            <v-radio :label="$t('expected.physicalBook')" value="physical"></v-radio>
+          </v-radio-group>
+          <v-file-input v-if="uploadBookType === 'ebook'" v-model="uploadFile" :label="$t('expected.selectFile')" prepend-icon="mdi-book-open-variant"></v-file-input>
+          <v-text-field v-else ref="isbnField" v-model="uploadIsbn" :label="$t('expected.isbnNumber')" :rules="debouncedIsbnRules" prepend-icon="mdi-barcode" clearable @input="clearValidationCache"></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -80,6 +85,13 @@ export default {
       uploading: false,
       uploadItem: null,
       uploadFile: null,
+      uploadBookType: 'ebook',
+      uploadIsbn: '',
+      _cachedIsbn: '',
+      _cachedIsValidResult: false,
+      _shouldValidate: false,
+      _debouncedRules: null,
+      showValidationErrors: false,
     };
   },
   head() {
@@ -99,6 +111,19 @@ export default {
       if (!this.selectedUserId || String(this.selectedUserId) === '0') return this.items;
       return this.items.filter(item => String(item.reader_id) === String(this.selectedUserId));
     },
+    isValidIsbn() {
+      if (this.uploadIsbn === this._cachedIsbn) {
+        return this._cachedIsValidResult;
+      }
+      this._cachedIsbn = this.uploadIsbn;
+      if (!this.uploadIsbn) {
+        this._cachedIsValidResult = false;
+        return false;
+      }
+      const cleanIsbn = this.uploadIsbn.replace(/[-\s]/g, '');
+      this._cachedIsValidResult = /^[0-9]{9}[0-9X]$/.test(cleanIsbn) || /^[0-9]{13}$/.test(cleanIsbn);
+      return this._cachedIsValidResult;
+    },
     headers() {
       return [
         { text: this.$t('expected.colReaderName'), value: 'reader_name', sortable: true, width: '20%' },
@@ -109,6 +134,74 @@ export default {
         { text: this.$t('expected.colActions'), value: 'actions', sortable: false },
       ];
     },
+    // 防抖验证规则，减少频繁验证
+    debouncedIsbnRules() {
+        if (!this._debouncedRules) {
+            const debounce = (func, wait) => {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func.apply(this, args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            };
+
+            const validateWithDebounce = debounce(() => {
+                this._shouldValidate = true;
+                this.$nextTick(() => {
+                    this.$refs.isbnField && this.$refs.isbnField.validate();
+                });
+            }, 300);
+
+            this._debouncedRules = [
+                v => {
+                    // 如果没有输入内容且没有手动触发验证，不显示错误
+                    if (!v && !this.showValidationErrors) {
+                        return true;
+                    }
+                    if (!this._shouldValidate && v) {
+                        validateWithDebounce();
+                        return true; // 暂时通过验证，等待防抖完成
+                    }
+                    return !!v || this.$t('upload.isbnRequired');
+                },
+                v => {
+                    // 如果没有输入内容且没有手动触发验证，不显示错误
+                    if (!v && !this.showValidationErrors) {
+                        return true;
+                    }
+                    if (!this._shouldValidate && v) {
+                        return true; // 暂时通过验证，等待防抖完成
+                    }
+                    return (v && v.length >= 10) || this.$t('upload.isbnMinLength');
+                },
+                v => {
+                    // 如果没有输入内容且没有手动触发验证，不显示错误
+                    if (!v && !this.showValidationErrors) {
+                        return true;
+                    }
+                    if (!this._shouldValidate && v) {
+                        return true; // 暂时通过验证，等待防抖完成
+                    }
+                    return (v && /^[0-9\-X]+$/.test(v)) || this.$t('upload.isbnInvalidFormat');
+                },
+                v => {
+                    // 如果没有输入内容且没有手动触发验证，不显示错误
+                    if (!v && !this.showValidationErrors) {
+                        return true;
+                    }
+                    if (!this._shouldValidate && v) {
+                        return true; // 暂时通过验证，等待防抖完成
+                    }
+                    return this.isValidIsbn || this.$t('upload.invalidIsbn');
+                }
+            ];
+        }
+        return this._debouncedRules;
+    }
   },
   mounted() {
     this.fetchItems();
@@ -152,12 +245,31 @@ export default {
     openUploadDialog(item) {
       this.uploadItem = item;
       this.uploadFile = null;
+      this.uploadIsbn = '';
+      this.uploadBookType = 'ebook';
+      this.showValidationErrors = false;
+      this._debouncedRules = null;
+      this._shouldValidate = false;
       this.showUploadDialog = true;
     },
     closeUploadDialog() {
       this.showUploadDialog = false;
       this.uploadItem = null;
       this.uploadFile = null;
+      this.uploadIsbn = '';
+      this.uploadBookType = 'ebook';
+      this.showValidationErrors = false;
+      this._debouncedRules = null;
+      this._shouldValidate = false;
+    },
+    clearValidationCache() {
+      this._shouldValidate = false;
+      this._cachedIsbn = null;
+      this._cachedIsValidResult = false;
+      if (this.uploadIsbn && this.showValidationErrors) {
+        this.showValidationErrors = false;
+        this._debouncedRules = null;
+      }
     },
     parseSizeString(sizeStr) {
       if (!sizeStr || sizeStr === '0' || sizeStr === '0MB' || sizeStr === '0KB') return 0;
@@ -167,12 +279,38 @@ export default {
       return parseInt(size);
     },
     async submitUpload() {
-      if (!this.uploadFile) {
-        this.$alert('error', this.$t('upload.selectFile'));
-        return;
-      }
       this.uploading = true;
       try {
+        if (this.uploadBookType === 'physical') {
+          const isbn = (this.uploadIsbn || '').trim();
+          if (!isbn) {
+            this.$alert('error', this.$t('expected.isbnRequired'));
+            return;
+          }
+          const rsp = await this.$backend('/book/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isbn }),
+          });
+          if (rsp && rsp.err === 'ok') {
+            const item = this.uploadItem;
+            this.closeUploadDialog();
+            await this.$backend('/user/expected', {
+              method: 'DELETE',
+              body: JSON.stringify({ id: item.id }),
+            });
+            this.items = this.items.filter(i => i.id !== item.id);
+            this.$alert('success', this.$t('expected.physicalBookSuccess'));
+          } else {
+            this.$alert('error', (rsp && rsp.msg) || this.$t('upload.uploadFailed'));
+          }
+          return;
+        }
+
+        if (!this.uploadFile) {
+          this.$alert('error', this.$t('upload.selectFile'));
+          return;
+        }
         const chunkThreshold = this.parseSizeString(
           (process.client && localStorage.getItem('chunk_upload_size')) || '0'
         );

@@ -1086,7 +1086,12 @@
         "upload": "Upload",
         "uploadDialogTitle": "Upload Book",
         "selectFile": "Select book file",
-        "uploadSuccess": "Book uploaded successfully, expected record has been removed"
+        "uploadSuccess": "Book uploaded successfully, expected record has been removed",
+        "ebook": "E-Book",
+        "physicalBook": "Physical Book",
+        "isbnNumber": "ISBN Number",
+        "isbnRequired": "Please enter ISBN number",
+        "physicalBookSuccess": "Physical book added successfully, expected record has been removed"
     },
     "memos": {
         "pageTitle": "Memo Management",

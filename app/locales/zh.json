@@ -1069,7 +1069,7 @@
         "loadError": "加载资源列表失败"
     },
     "expected": {
-        "pageTitle": "缺书登记",
+        "pageTitle": "缺书管理",
         "allPageTitle": "缺书管理",
         "title": "缺书登记",
         "add": "添加",
@@ -1092,7 +1092,12 @@
         "upload": "入库",
         "uploadDialogTitle": "入库书籍",
         "selectFile": "选择书籍文件",
-        "uploadSuccess": "书籍入库成功，缺书登记已自动删除"
+        "uploadSuccess": "书籍入库成功，缺书登记已自动删除",
+        "ebook": "电子书",
+        "physicalBook": "实体书",
+        "isbnNumber": "ISBN编号",
+        "isbnRequired": "请输入ISBN编号",
+        "physicalBookSuccess": "实体书入库成功，缺书登记已自动删除"
     },
     "memos": {
         "pageTitle": "留言管理",

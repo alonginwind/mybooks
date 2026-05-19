@@ -1066,7 +1066,7 @@
         "loadError": "載入資源列表失敗"
     },
     "expected": {
-        "pageTitle": "缺書登記",
+        "pageTitle": "缺書管理",
         "allPageTitle": "缺書管理",
         "title": "缺書登記",
         "add": "新增",
@@ -1089,7 +1089,12 @@
         "upload": "入庫書籍",
         "uploadDialogTitle": "入庫書籍",
         "selectFile": "選擇書籍檔案",
-        "uploadSuccess": "書籍入庫成功，缺書登記已自動刪除"
+        "uploadSuccess": "書籍入庫成功，缺書登記已自動刪除",
+        "ebook": "電子書",
+        "physicalBook": "實體書",
+        "isbnNumber": "ISBN編號",
+        "isbnRequired": "請輸入ISBN編號",
+        "physicalBookSuccess": "實體書入庫成功，缺書登記已自動刪除"
     },
     "memos": {
         "pageTitle": "留言管理",
