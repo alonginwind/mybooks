@@ -411,7 +411,7 @@
         "emailLabel": "Email*",
         "kindleSenderNote": "* 請先將本站信箱加入至 Kindle 發件人中:",
         "convertToAudio": "有聲書",
-        "convertToAudioNote": "轉換為有聲書需要花費一段時間，請耐心等待。",
+        "convertToAudioNote": "將使用EPUB文件進行有聲書轉換，需要花費一段時間，請耐心等待。",
         "audioGenerated": "開始轉換，請稍後重新整理頁面查看",
         "audioList": "有聲書音訊列表",
         "conversionFailed": "前一次轉換失敗:",

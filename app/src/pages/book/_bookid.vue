@@ -465,7 +465,7 @@
                                     </v-chip>
                                 </span>
                                 <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">{{ $t('book.bookCount') }}: {{book.book_count}}</span>
-                                <template v-for="(file, index) in book.files.slice(0, 2)" :key="'file-size-' + index">
+                                <template v-for="(file, index) in book.files.slice(0, 3)" :key="'file-size-' + index">
                                     <span
                                         color="grey--text"
                                         style="font-weight: bold"
@@ -1408,7 +1408,7 @@ export default {
         // 获取要发送的邮件格式（优先级：EPUB > AZW3 > PDF > MOBI > TXT）
         selectedEmailFormat: function() {
             if (!this.book || !this.book.files) return '';
-            const formatPriority = ['epub', 'azw3', 'pdf', 'mobi', 'txt'];
+            const formatPriority = ['epub', 'azw3', 'pdf', 'mobi', 'txt', 'docx'];
             for (const format of formatPriority) {
                 const file = this.book.files.find(f =>
                     f.format.toLowerCase() === format

@@ -23,6 +23,10 @@ CONF = loader.get_settings()
 
 
 class ConvertService(AsyncService):
+    def get_fmt(self, path):
+        fmt = os.path.splitext(path)[1]
+        return fmt[1:].lower() if fmt else ""
+
     def get_path_of_fmt(self, book, fmt):
         """for mock test"""
         from calibre.utils.filenames import ascii_filename
@@ -50,9 +54,11 @@ class ConvertService(AsyncService):
 
     def do_ebook_convert(self, old_path, new_path, log_path):
         """convert book, and block, and wait"""
+        new_fmt = self.get_fmt(new_path)
+
         args = [EBOOK_CONVERT_CMD, old_path, new_path]
         args += ["--book-producer", "PoxenStudio/Talebook(https://mybooks.top)"]
-        if new_path.lower().endswith(".epub"):
+        if new_fmt == "epub":
             args += ["--epub-version", "2"]
             if old_path.lower().endswith(".txt"):
                 args += ["--chapter-mark", "pagebreak",
@@ -60,10 +66,10 @@ class ConvertService(AsyncService):
                          "--flow-size", "260"]
             else:
                 args += ["--flow-size", "0"]
-        elif new_path.lower().endswith(".azw3"):
+        elif new_fmt == "azw3":
             args += ["--embed-font-family", "Lato"]
             args += ["--enable-heuristics", "--output-profile", "kindle"]
-        elif new_path.lower().endswith(".pdf"):
+        elif new_fmt == "pdf":
             cn_font_name = "\"WenQuanYi Micro Hei,文泉驛微米黑,文泉驿微米黑\""
             args += ["--paper-size=a5"]
             args += ["--pdf-page-margin-left=15"]
@@ -86,7 +92,9 @@ class ConvertService(AsyncService):
         with open(log_path, "w") as log:
             cmd = " ".join("'%s'" % v for v in args)
             logging.info("CMD: %s" % cmd)
-            p = subprocess.Popen(args, stdout=log, stderr=subprocess.PIPE)
+            env = os.environ.copy()
+            env["QTWEBENGINE_DISABLE_SANDBOX"] = "1"
+            p = subprocess.Popen(args, stdout=log, stderr=subprocess.PIPE, env=env)
             try:
                 _, stde = p.communicate(timeout=timeout)
                 logging.info("ebook-convert finish: %s, err: %s" % (new_path, bytes.decode(stde)))

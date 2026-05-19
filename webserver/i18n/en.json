@@ -212,7 +212,7 @@
   "批量更新分类失败": "Batch update classification failed",
   "批量更新标签时发生错误": "Error updating tags in bulk",
   "找不到对应的上传器: %s": "No uploader found for: %s",
-  "抱歉，在线阅读器暂不支持该格式的书籍": "Sorry, the online reader does not support books in this format at the moment",
+  "抱歉，在线阅读器暂不支持该格式的书籍，可以转为epub或者pdf后阅读": "Sorry, the online reader does not support books in this format at the moment",
   "抱歉，这本书不存在": "Sorry, this book does not exist",
   "拉取图书信息异常，请重试": "Failed to fetch book information. Please try again",
   "推荐成功": "Recommended successfully",

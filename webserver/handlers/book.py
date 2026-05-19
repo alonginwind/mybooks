@@ -452,7 +452,11 @@ class BookConverter(BaseHandler):
         else:
             fmt = "epub"
 
-        fpath = paths[0]
+        if 'docx' in fmts:
+            # docx is preferred than pdf
+            fpath = paths[fmts.index('docx')]
+        else:
+            fpath = paths[0]
 
         service = ConvertService()
         if service.is_book_converting(book):
@@ -476,7 +480,7 @@ class BookToPDF(BaseHandler):
         fmts = []
         paths = []
         has_pdf = False
-        for fmt in ["epub", "azw3", "mobi", "azw", "pdf"]:
+        for fmt in ["epub", "azw3", "mobi", "azw", "pdf", "docx"]:
             book_path = book.get("fmt_%s" % fmt, None)
             if not book_path:
                 continue
@@ -2081,7 +2085,7 @@ class BookUpload(BaseHandler):
         name = self._sanitize_uploaded_filename(name)
         if not name:
             return {"err": "params.filename", "msg": _("文件名不合法")}
-        logging.error("upload book name = " + repr(name))
+        logging.info("upload book name = " + repr(name))
         fmt = os.path.splitext(name)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
@@ -2257,7 +2261,7 @@ class BookUploadChunk(BaseHandler):
         filename = self._sanitize_uploaded_filename(filename)
         if not filename:
             return {"err": "params.filename", "msg": _("文件名不合法")}
-        logging.error("upload book name = " + repr(filename))
+        logging.info("upload book name = " + repr(filename))
         fmt = os.path.splitext(filename)[1]
         fmt = fmt[1:] if fmt else None
         if not fmt:
@@ -2442,7 +2446,14 @@ class BookRead(BaseHandler):
                 "CANDLE_READER_SERVER": CONF["CANDLE_READER_SERVER"],
             })
 
-        if "fmt_pdf" in book:
+        has_converted_pdf = False
+        if 'fmt_docx' in book and 'fmt_pdf' not in book:
+            fpath = book.get("fmt_docx", None)
+            if fpath:
+                ConvertService().convert_and_save(self.user_id(), book, fpath, "pdf")
+                has_converted_pdf = True
+
+        if "fmt_pdf" in book or has_converted_pdf:
             # PDF类书籍需要检查下载权限。
             if not CONF["ALLOW_GUEST_DOWNLOAD"] and not self.current_user:
                 return self.redirect("/login")
@@ -2459,7 +2470,7 @@ class BookRead(BaseHandler):
             txt_reader_url = f'/book/{book_id}/readtxt'
             return self.redirect(txt_reader_url)
 
-        raise web.HTTPError(404, reason=_("抱歉，在线阅读器暂不支持该格式的书籍"))
+        raise web.HTTPError(404, reason=_("抱歉，在线阅读器暂不支持该格式的书籍，可以转为epub或者pdf后阅读"))
 
 
 class TxtRead(BaseHandler):
