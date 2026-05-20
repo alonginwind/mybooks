@@ -245,7 +245,7 @@ export TALEBOOK_PASSWORD="your_password"
 | `isbn` | string | ❌ | ISBN 编号 |
 | `series` | string | ❌ | 系列/丛书名 |
 | `rating` | number | ❌ | 评分（0–10） |
-| `languages` | array | ❌ | 语言代码列表，如 `["zho"]`（中文）、`["eng"]`（英文） |
+| `languages` | array | ❌ | 语言代码列表，如 `["zho"]`（中文）、`["eng"]`（英文）、`["zht"]`（繁体中文） |
 | `pubdate` | string | ❌ | 出版日期，格式：`"2024-01-15"` / `"2024-01"` / `"2024"` |
 | `comments` | string | ❌ | 书籍简介，支持 HTML，请勿将 `<>` 转义为 `&lt;&gt;` |
 | `category` | string | ❌ | 自定义分类（最长 80 字符；传 `"清除"` 或 `"clear"` 清空分类） |

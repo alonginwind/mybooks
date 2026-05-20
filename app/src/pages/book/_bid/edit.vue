@@ -144,6 +144,7 @@
 <script>
 const languageCodes = {
     "zho": "中文",
+    "zha": "繁體中文",
     "eng": "English",
     "fra": "French",
     "deu": "German",

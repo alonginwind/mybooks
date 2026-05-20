@@ -17,6 +17,7 @@ class LanguageNameUtil:
     """工具类，用于转换calibre language code to name and vice versa"""
     languages = {"English": "eng",
                  "中文": "zho",
+                 "繁體中文": "zha",
                  "French": "fra",
                  "German": "deu",
                  "Spanish": "spa",

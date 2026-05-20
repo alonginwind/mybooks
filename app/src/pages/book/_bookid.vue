@@ -514,6 +514,18 @@
                                             <v-list-item-title :class="cat === $t('book.clearCategory') ? 'red--text' : ''">{{ cat }}</v-list-item-title>
                                         </v-list-item>
                                     </v-list>
+                                </v-menu><v-menu offset-y>
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-chip rounded smallF color="green" class="white--text" v-bind="attrs" v-on="on" :disabled="categories.length === 0">
+                                            <v-icon>language</v-icon>
+                                            {{ $t('book.languages') }} : {{ book.languages || '') }}
+                                            <v-icon color="white" class="ml-1">edit</v-icon>
+                                        </v-chip>
+                                    </template>
+                                    <v-list dense>
+                                        <v-list-item v-for="(lang, index) in languageOptions" :key="index" @click="setLanguage(lang)">
+                                        </v-list-item>
+                                    </v-list>
                                 </v-menu>
                             </div>
                             <div class="tag-chips">
@@ -1227,6 +1239,51 @@
 <script>
 import BookCards from "~/components/BookCards.vue";
 import QRCode from "qrcode";
+const languageCodes = {
+    "zho": "中文",
+    "zha": "繁體中文",
+    "eng": "English",
+    "fra": "French",
+    "deu": "German",
+    "spa": "Spanish",
+    "rus": "Russian",
+    "jpn": "Japanese",
+    "ita": "Italian",
+    "por": "Portuguese",
+    "kor": "Korean",
+    "nld": "Dutch",
+    "ara": "Arabic",
+    "hin": "Hindi",
+    "tur": "Turkish",
+    "vie": "Vietnamese",
+    "tha": "Thai",
+    "ell": "Greek",
+    "pol": "Polish",
+    "ces": "Czech",
+    "ron": "Romanian",
+    "swe": "Swedish",
+    "fin": "Finnish",
+    "dan": "Danish",
+    "hun": "Hungarian",
+    "ukr": "Ukrainian",
+    "heb": "Hebrew",
+    "slk": "Slovak",
+    "srp": "Serbian",
+    "hrv": "Croatian",
+    "bul": "Bulgarian",
+    "cat": "Catalan",
+    "ind": "Indonesian",
+    "msi": "Malay",
+    "fil": "Filipino",
+    "nor": "Norwegian",
+    "tam": "Tamil",
+    "ben": "Bengali",
+    "lit": "Lithuanian",
+    "est": "Estonian",
+    "slv": "Slovenian",
+    "glg": "Galician",
+    "eus": "Basque"
+};
 
 export default {
     components: {
@@ -1617,7 +1674,7 @@ export default {
         currentAudioFile: null,
         // Progress polling timer
         progressTimer: null,
-
+        languageOptions: Object.entries(languageCodes).map(([code, name]) => ({ code, name })),
         email_rules: function (email) {
             var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
             return (email !== this.kindle_sender && re.test(email)) || "Invalid email format";
@@ -2736,6 +2793,22 @@ export default {
                 console.error('更新分类失败:', error);
                 this.$alert('error', this.$t('message.networkError'));
             }
+        },
+
+        async setLanguage(lang) {
+            this.book.languages = lang;
+            this.$backend("/book/" + this.book.id + "/edit", {
+                method: "POST",
+                body: JSON.stringify({ languages: lang }),
+            })
+            .then(rsp => {
+                if (rsp.err === 'ok') {
+                    this.$alert("success", this.$t('book.edit.saveSuccess'));
+                    this.$router.push("/book/" + this.book.id);
+                } else {
+                    this.$alert("error", rsp.msg);
+                }
+            });
         },
 
         // 从localStorage加载设备偏好设置
