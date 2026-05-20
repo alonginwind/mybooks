@@ -409,6 +409,12 @@ def make_app():
     from webserver.handlers.podcast import routes as podcast_route_func
     app_routes += podcast_route_func()
 
+    # WAP routes: server-side rendered HTML pages for Kindle browsers.
+    # Must be registered BEFORE static_files.routes() so they take precedence
+    # over the Vue SPA assets served at /wap/*.
+    from webserver.handlers import wap as wap_handler
+    app_routes += wap_handler.routes()
+
     # Insert WebDAV routes BEFORE files.routes()
     app_routes += webdav_routes
     # files.routes() contains catch-all r"/(.*)" so must be last
