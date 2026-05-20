@@ -297,3 +297,33 @@ class BaseTool(AsyncService):
                 self.__class__.__name__, book_id, err,
             )
             raise RuntimeError(_("删除书籍失败: %s") % str(err)) from err
+
+    # 遍历书籍相关操作
+
+    def get_all_book_ids(self) -> List[int]:
+        """返回书库中所有书籍的 ID 列表（已排序）。"""
+        ids = list(self.db.new_api.all_book_ids())
+        ids.sort()
+        return ids
+
+    def get_book_metadata(self, book_id: int):
+        """返回指定书籍的 Calibre Metadata 对象。
+
+        :param book_id: Calibre 书籍 ID。
+        :return: calibre.ebooks.metadata.book.base.Metadata 对象。
+        """
+        return self.db.get_metadata(book_id, index_is_id=True)
+
+    def set_book_language(self, book_id: int, language: str) -> None:
+        """将指定书籍的语言字段更新为给定语言代码。
+
+        :param book_id:  Calibre 书籍 ID。
+        :param language: 语言代码（例如 "zha"、"zh"、"en"）。
+        """
+        mi = self.get_book_metadata(book_id)
+        mi.languages = language
+        self.db.set_metadata(book_id, mi, force_changes=True)
+        logging.info(
+            "[%s] Set language of book_id=%d to %s",
+            self.__class__.__name__, book_id, language,
+        )

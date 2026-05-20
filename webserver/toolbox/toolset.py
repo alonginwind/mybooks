@@ -88,8 +88,10 @@ class ToolSet:
     def collect_tools():
         from .rare_book_downloader import RareBookDownloader
         from .merge_formats_tool import MergeFormatsTool
+        from .review_cht_books_tool import ReviewTraditionalChineseTool
         ToolSet.register(RareBookDownloader.info())
         ToolSet.register(MergeFormatsTool.info())
+        ToolSet.register(ReviewTraditionalChineseTool.info())
 
     @staticmethod
     def register(info: dict):

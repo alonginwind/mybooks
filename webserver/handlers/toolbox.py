@@ -62,9 +62,20 @@ class AdminMergeFormatsMerge(BaseHandler):
         }
 
 
+class AdminReviewChtBooks(BaseHandler):
+    @js
+    @is_admin
+    def post(self):
+        from webserver.toolbox.review_cht_books_tool import ReviewTraditionalChineseTool
+
+        ReviewTraditionalChineseTool().review(self.user_id())
+        return {"err": "ok", "msg": _("繁体中文检测任务已启动，右上角可以查看进度")}
+
+
 def routes():
     return [
         (r"/api/toolbox/list", AdminToolList),
         (r"/api/toolbox/rare_book_downloader", AdminRareBookDownloader),
         (r"/api/toolbox/merge_formats/merge", AdminMergeFormatsMerge),
+        (r"/api/toolbox/review_cht_books", AdminReviewChtBooks),
     ]
