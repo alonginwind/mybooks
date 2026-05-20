@@ -90,13 +90,21 @@
     },
     "listMeta": {
         "ratingSuffix": " stars",
-        "showAll": "Show all...",
+        "showAll": "Show All...",
         "allTags": "All Tags",
         "allSeries": "All Series",
         "allRatings": "All Ratings",
         "allAuthors": "All Authors",
         "allPublishers": "All Publishers",
         "allLanguages": "All Languages"
+    },
+    "nav": {
+        "categories": "Categories",
+        "languages": "Languages",
+        "authors": "Authors",
+        "reading": "Reading",
+        "favorites": "Favorites",
+        "wants": "Want to Read"
     },
     "login": {
         "welcome": "Welcome",

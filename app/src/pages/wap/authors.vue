@@ -33,6 +33,7 @@ import WapFooter from '~/components/WapFooter.vue';
 import WapBookCards from '~/components/WapBookCards.vue';
 
 export default {
+  layout: 'wap',
   components: {
     WapHeader,
     WapFooter,

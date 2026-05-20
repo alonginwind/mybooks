@@ -98,6 +98,14 @@
         "allPublishers": "全部出版社",
         "allLanguages": "所有語言"
     },
+    "nav": {
+        "categories": "分類",
+        "languages": "語言",
+        "authors": "作者",
+        "reading": "正在閱讀",
+        "favorites": "收藏",
+        "wants": "待讀"
+    },
     "login": {
         "welcome": "歡迎訪問",
         "register": "註冊",
