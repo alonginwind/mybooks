@@ -18,7 +18,7 @@ from webserver.version import VERSION
 import tornado
 from tornado import web
 
-from webserver import loader, utils
+from webserver import loader
 from webserver.base.formatter import BookFormatter
 from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import BizKey, ReaderPaidBook, ReaderLog, Message
