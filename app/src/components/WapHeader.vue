@@ -32,7 +32,7 @@ export default {
   },
   methods: {
     handleLogin() {
-      this.$router.push('/login');
+      this.$router.push('/wap/login');
     },
     handleLogout() {
       this.$router.push('/logout');

@@ -572,7 +572,8 @@
         "clear": "清除音訊",
         "restore": "恢復生成",
         "ok": "確定",
-        "delete": "刪除"
+        "delete": "刪除",
+        "backToHome": "返回首頁"
     },
     "settings": {
         "trash_management": "檔案清理",

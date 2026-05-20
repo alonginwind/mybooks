@@ -574,7 +574,8 @@
         "clear": "清除音频",
         "restore": "恢复生成",
         "delete": "删除",
-        "ok": "确定"
+        "ok": "确定",
+        "backToHome": "返回首页"
     },
     "settings": {
             "trash_management": "文件清理",

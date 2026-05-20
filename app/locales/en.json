@@ -746,7 +746,8 @@
         "clear": "Clear",
         "restore": "Restore",
         "ok": "OK",
-        "delete": "Delete"
+        "delete": "Delete",
+        "backToHome": "Back to Home"
     },
     "user": {
         "avatar": "Avatar",
