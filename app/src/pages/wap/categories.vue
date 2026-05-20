@@ -50,9 +50,20 @@ export default {
     };
   },
   async created() {
+    await this.initUserInfo();
     await this.fetchCategories();
   },
   methods: {
+    async initUserInfo() {
+      try {
+        const rsp = await this.$backend('/user/info');
+        if (rsp.err === 'ok') {
+          this.$store.commit('login', rsp);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    },
     async fetchCategories() {
       try {
         const rsp = await this.$backend('/categories');

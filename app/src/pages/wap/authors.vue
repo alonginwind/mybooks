@@ -58,9 +58,20 @@ export default {
     }
   },
   async created() {
+    await this.initUserInfo();
     await this.fetchAuthors();
   },
   methods: {
+    async initUserInfo() {
+      try {
+        const rsp = await this.$backend('/user/info');
+        if (rsp.err === 'ok') {
+          this.$store.commit('login', rsp);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    },
     async fetchAuthors() {
       try {
         const rsp = await this.$backend('/author?show=all');

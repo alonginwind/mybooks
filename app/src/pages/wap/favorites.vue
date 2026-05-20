@@ -36,9 +36,20 @@ export default {
     };
   },
   async created() {
+    await this.initUserInfo();
     await this.fetchBooks();
   },
   methods: {
+    async initUserInfo() {
+      try {
+        const rsp = await this.$backend('/user/info');
+        if (rsp.err === 'ok') {
+          this.$store.commit('login', rsp);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    },
     async fetchBooks() {
       const start = (this.page - 1) * this.page_size;
       try {

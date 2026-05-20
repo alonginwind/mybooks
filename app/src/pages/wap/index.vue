@@ -79,10 +79,22 @@ export default {
     if (process.client && localStorage.getItem('searchCategory')) {
       this.searchCategory = localStorage.getItem('searchCategory');
     }
+    // 初始化用户信息
+    this.initUserInfo();
     // Load recent books as default results
     this.loadRecentBooks();
   },
   methods: {
+    async initUserInfo() {
+      try {
+        const rsp = await this.$backend('/user/info');
+        if (rsp.err === 'ok') {
+          this.$store.commit('login', rsp);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    },
     loadRecentBooks() {
       this.$backend('/index').then(rsp => {
         if (rsp.err === 'ok') {

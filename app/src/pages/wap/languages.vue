@@ -58,9 +58,20 @@ export default {
     }
   },
   async created() {
+    await this.initUserInfo();
     await this.fetchLanguages();
   },
   methods: {
+    async initUserInfo() {
+      try {
+        const rsp = await this.$backend('/user/info');
+        if (rsp.err === 'ok') {
+          this.$store.commit('login', rsp);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    },
     async fetchLanguages() {
       try {
         const rsp = await this.$backend('/language?show=all');
