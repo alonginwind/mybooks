@@ -31,7 +31,7 @@ from webserver.services.book_barn import BookBarnClient
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import Reader, Item
-from webserver.utils import SimpleBookFormatter
+from webserver.base.formatter import SimpleBookFormatter
 from webserver.base.trash_manager import TrashManager
 from webserver.version import VERSION
 from webserver.handlers.audio import AudioUtils

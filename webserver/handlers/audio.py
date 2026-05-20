@@ -19,6 +19,7 @@ import tornado
 from tornado import web
 
 from webserver import loader, utils
+from webserver.base.formatter import BookFormatter
 from webserver.handlers.base import BaseHandler, auth, js, is_admin
 from webserver.models import BizKey, ReaderPaidBook, ReaderLog, Message
 from webserver.worker.epub2audio_worker import EpubToAudioWorker
@@ -353,7 +354,7 @@ class AudioBooks(BaseHandler):
 
             books_result = []
             for book in books:
-                book_data = utils.BookFormatter(self, book).format()
+                book_data = BookFormatter(self, book).format()
                 book_data["has_audio"] = True
                 book_data["audio_count"] = audios_cnt_map.get(book["id"], 0)
                 books_result.append(book_data)

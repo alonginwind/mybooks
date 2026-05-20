@@ -11,6 +11,7 @@
    检查 title 是否含有仅属于繁体的常见 Unicode 字符。
 """
 import logging
+import time
 import traceback
 from typing import Callable, Optional
 
@@ -132,6 +133,7 @@ class ReviewTraditionalChineseTool(BaseTool):
                             "updated": total_updated,
                         },
                     )
+                    time.sleep(0.5)
 
         except Exception as err:
             logging.error("[ReviewTraditionalChineseTool] review failed: %s", err)

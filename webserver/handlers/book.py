@@ -29,6 +29,7 @@ import tornado.escape
 from tornado import web
 
 from webserver import loader, utils
+from webserver.base.formatter import BookFormatter, ReadingStateFormatter
 from webserver.base.cover_generator import CoverGenerator
 from webserver.services.autofill import AutoFillService
 from webserver.services.ai_fillinfo import AIFillInfoService
@@ -58,7 +59,7 @@ CONF = loader.get_settings()
 
 class Index(BaseHandler):
     def fmt(self, b):
-        return utils.BookFormatter(self, b).format()
+        return BookFormatter(self, b).format()
 
     @js
     def get(self):
@@ -120,9 +121,9 @@ class BookDetail(BaseHandler):
 
             # 创建阅读状态映射
             if reading_state:
-                book["state"] = utils.ReadingStateFormatter.format_reading_state(reading_state)
+                book["state"] = ReadingStateFormatter.format_reading_state(reading_state)
             else:
-                book["state"] = utils.ReadingStateFormatter.format_reading_state(None)
+                book["state"] = ReadingStateFormatter.format_reading_state(None)
         else:
             logging.info("User not logged in, skipping reading state.")
 
@@ -142,7 +143,7 @@ class BookDetail(BaseHandler):
         return {
             "err": "ok",
             "kindle_sender": CONF["smtp_username"],
-            "book": utils.BookFormatter(self, book).format(with_files=True, with_perms=True),
+            "book": BookFormatter(self, book).format(with_files=True, with_perms=True),
             "audios": AudioUtils.get_audios(bid, self.current_user.id if self.current_user else None),
         }
 
@@ -1025,8 +1026,8 @@ class BookFavorite(BaseHandler):
             book = books_dict.get(book_id)
             if not book:
                 continue
-            book_data = utils.BookFormatter(self, book).format()
-            book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state_dict[book_id])
+            book_data = BookFormatter(self, book).format()
+            book_data["state"] = ReadingStateFormatter.format_reading_state(state_dict[book_id])
             favorite_books.append(book_data)
 
         return {"err": "ok",
@@ -1089,8 +1090,8 @@ class BookWantToRead(BaseHandler):
             book = books_dict.get(book_id)
             if not book:
                 continue
-            book_data = utils.BookFormatter(self, book).format()
-            book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state_dict[book_id])
+            book_data = BookFormatter(self, book).format()
+            book_data["state"] = ReadingStateFormatter.format_reading_state(state_dict[book_id])
             favorite_books.append(book_data)
 
         return {"err": "ok",
@@ -1123,8 +1124,8 @@ class BookReading(BaseHandler):
             book = books_dict.get(book_id)
             if not book:
                 continue
-            book_data = utils.BookFormatter(self, book).format()
-            book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state_dict[book_id])
+            book_data = BookFormatter(self, book).format()
+            book_data["state"] = ReadingStateFormatter.format_reading_state(state_dict[book_id])
             reading_books.append(book_data)
 
         return {"err": "ok",
@@ -1160,7 +1161,7 @@ class PrintBooks(BaseHandler):
 
             books_result = []
             for book in books:
-                book_data = utils.BookFormatter(self, book).format()
+                book_data = BookFormatter(self, book).format()
                 books_result.append(book_data)
 
             return {"err": "ok",
@@ -1207,7 +1208,7 @@ class BookSoled(BaseHandler):
 
             books_result = []
             for book in books:
-                book_data = utils.BookFormatter(self, book).format()
+                book_data = BookFormatter(self, book).format()
                 books_result.append(book_data)
 
             return {"err": "ok",
@@ -1245,8 +1246,8 @@ class BookReadDone(BaseHandler):
             book = books_dict.get(book_id)
             if not book:
                 continue
-            book_data = utils.BookFormatter(self, book).format()
-            book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state_dict[book_id])
+            book_data = BookFormatter(self, book).format()
+            book_data["state"] = ReadingStateFormatter.format_reading_state(state_dict[book_id])
             read_done_books.append(book_data)
 
         return {"err": "ok",
@@ -1311,8 +1312,8 @@ class BookReadingStats(BaseHandler):
             book = self.get_book(state.book_id, raise_exception=False)
             if not book:
                 continue
-            book_data = utils.BookFormatter(self, book).format()
-            book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state)
+            book_data = BookFormatter(self, book).format()
+            book_data["state"] = ReadingStateFormatter.format_reading_state(state)
             month_read_done_books.append(book_data)
 
         # 当前在读的书籍列表
@@ -1326,8 +1327,8 @@ class BookReadingStats(BaseHandler):
             book = self.get_book(state.book_id, raise_exception=False)
             if not book:
                 continue
-            book_data = utils.BookFormatter(self, book).format()
-            book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state)
+            book_data = BookFormatter(self, book).format()
+            book_data["state"] = ReadingStateFormatter.format_reading_state(state)
             current_reading_books.append(book_data)
 
         return {
@@ -1399,7 +1400,7 @@ class BookReadingState(BaseHandler):
             ReadingState.reader_id == user_id
         ).first()
 
-        return utils.ReadingStateFormatter.format_reading_state_with_api_format(reading_state)
+        return ReadingStateFormatter.format_reading_state_with_api_format(reading_state)
 
 
 class BookEdit(BaseHandler):
@@ -1945,6 +1946,9 @@ class BookUpload(BaseHandler):
     def _add_new_book(self, mi, fpaths):
         dynamic_cover = False
         mi.title_sort = utils.get_title_sort(mi.title)
+        if utils.is_traditional_chinese(mi.title):
+            mi.languages = constants.TRADITIONAL_CHINESE_CODE
+
         if CONF.get("USE_DYNAMIC_COVER", False):
             fmt, cover_data = mi.cover_data
             if fmt is None and cover_data is not None:
@@ -2180,6 +2184,9 @@ class BookUploadChunk(BaseHandler):
     def _add_new_book(self, mi, fpaths):
         dynamic_cover = False
         mi.title_sort = utils.get_title_sort(mi.title)
+        if utils.is_traditional_chinese(mi.title):
+            mi.languages = constants.TRADITIONAL_CHINESE_CODE
+
         if CONF.get("USE_DYNAMIC_COVER", False):
             fmt, cover_data = mi.cover_data
             if fmt is None and cover_data is not None:

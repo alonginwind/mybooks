@@ -16,6 +16,7 @@ from jinja2 import Environment, FileSystemLoader
 from sqlalchemy import func as sql_func
 from tornado import web
 from webserver import loader, utils
+from webserver.base.formatter import BookFormatter
 
 # import social_tornado.handlers
 from webserver.models import Item, Message, Reader
@@ -1177,4 +1178,4 @@ class ListHandler(BaseHandler):
         return self.get_book_list(all_books, ids, title, sort_fields)
 
     def fmt(self, b, include_comments=True):
-        return utils.BookFormatter(self, b).format(include_comments=include_comments)
+        return BookFormatter(self, b).format(include_comments=include_comments)

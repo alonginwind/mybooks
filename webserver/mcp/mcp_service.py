@@ -22,7 +22,7 @@ from mcp.types import Tool, TextContent
 from webserver.constants import CALIBRE_COLUMN_CATEGORY, COLUMN_CATEGORY, AUTO_FILL_META
 from webserver.constants import CALIBRE_ERROR_FLAG, CALIBRE_COLUMN_BOOK_TYPE, BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL
 from webserver.handlers.base import BaseHandler
-from webserver.utils import MCPBookFormatter
+from webserver.base.formatter import MCPBookFormatter
 from webserver.services.book_search import BookSearch
 from webserver.services.autofill import AutoFillService
 from webserver import loader, utils

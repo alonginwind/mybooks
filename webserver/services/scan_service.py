@@ -39,7 +39,7 @@ from sqlalchemy.exc import IntegrityError
 from webserver.base.cover_generator import CoverGenerator
 from webserver.services import AsyncService
 from webserver.models import Item, ScanFile, Reader
-from webserver import utils
+from webserver import utils, constants
 from webserver.services.autofill import AutoFillService
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_CATEGORY, CALIBRE_ERROR_FLAG
 from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL, CALIBRE_COLUMN_DYNAMIC_COVER
@@ -438,6 +438,8 @@ class ScanService(AsyncService):
                         if data:
                             mi.cover_data = ("jpeg", data)
                             dynamic_cover = True
+                if utils.is_traditional_chinese(mi.title):
+                    mi.languages = constants.TRADITIONAL_CHINESE_CODE
                 row.book_id = self.db.import_book(mi, [fpath], notify=False, import_hooks=False)
                 if row.book_id is not None and dynamic_cover:
                     self.db.set_field(CALIBRE_COLUMN_DYNAMIC_COVER, {row.book_id: 1})
