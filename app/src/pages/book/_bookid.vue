@@ -45,7 +45,7 @@
                     <v-card-actions>
                         <v-btn color="" text @click="dialog_epub2audio = false">{{ $t('common.cancel') }}</v-btn>
                         <v-spacer></v-spacer>
-                        <v-btn color="primary" text @click="generateAudio">{{ $t('common.start') }}</v-btn>
+                        <v-btn color="primary" text @click="generateAudio()">{{ $t('common.start') }}</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
@@ -1462,31 +1462,31 @@ export default {
                     voice_name: "zh-CN-liaoning-XiaobeiNeural",
                     display_name: this.$t('voice.xiaobei'),
                     gender: "female",
-                    sample_file: "female/zh-CN-liaoning-XiaobeiNeural.mp3"
+                    sample_file: "chinese/female/zh-CN-liaoning-XiaobeiNeural.mp3"
                 },
                 {
                     voice_name: "zh-CN-XiaoxiaoNeural",
                     display_name: this.$t('voice.xiaoxiao'),
                     gender: "female",
-                    sample_file: "female/zh-CN-XiaoxiaoNeural.mp3"
+                    sample_file: "chinese/female/zh-CN-XiaoxiaoNeural.mp3"
                 },
                 {
                     voice_name: "zh-CN-XiaoyiNeural",
                     display_name: this.$t('voice.xiaoyi'),
                     gender: "female",
-                    sample_file: "female/zh-CN-XiaoyiNeural.mp3"
+                    sample_file: "chinese/female/zh-CN-XiaoyiNeural.mp3"
                 },
                 {
                     voice_name: "zh-HK-HiuGaaiNeural",
                     display_name: this.$t('voice.xiaojia'),
                     gender: "female",
-                    sample_file: "female/zh-HK-HiuGaaiNeural.mp3"
+                    sample_file: "chinese/female/zh-HK-HiuGaaiNeural.mp3"
                 },
                 {
                     voice_name: "zh-CN-YunjianNeural",
                     display_name: this.$t('voice.yunjian'),
                     gender: "male",
-                    sample_file: "male/zh-CN-YunjianNeural.mp3"
+                    sample_file: "chinese/male/zh-CN-YunjianNeural.mp3"
                 },
                 {
                     voice_name: "zh-CN-YunxiNeural",
@@ -1498,13 +1498,48 @@ export default {
                     voice_name: "zh-CN-YunyangNeural",
                     display_name: this.$t('voice.yunyang'),
                     gender: "male",
-                    sample_file: "male/zh-CN-YunyangNeural.mp3"
+                    sample_file: "chinese/male/zh-CN-YunyangNeural.mp3"
                 },
                 {
                     voice_name: "zh-HK-WanLungNeural",
                     display_name: this.$t('voice.yunlong'),
                     gender: "male",
-                    sample_file: "male/zh-HK-WanLungNeural.mp3"
+                    sample_file: "chinese/male/zh-HK-WanLungNeural.mp3"
+                },
+                {
+                    voice_name: "en-US-AndrewNeural",
+                    display_name: this.$t('voice.andrew'),
+                    gender: "male",
+                    lang: "en-US",
+                    sample_file: "english/male/en-US-AndrewNeural.mp3"
+                },
+                {
+                    voice_name: "en-GB-RyanNeural",
+                    display_name: this.$t('voice.ray'),
+                    gender: "male",
+                    lang: "en-US",
+                    sample_file: "english/male/en-GB-RyanNeural.mp3"
+                },
+                {
+                    voice_name: "en-GB-SoniaNeural",
+                    display_name: this.$t('voice.sonia'),
+                    gender: "female",
+                    lang: "en-GB",
+                    sample_file: "english/female/en-GB-SoniaNeural.mp3"
+                },
+                {
+                    voice_name: "en-US-AnaNeural",
+                    display_name: this.$t('voice.ana'),
+                    gender: "female",
+                    lang: "en-US",
+                    sample_file: "english/female/en-US-AnaNeural.mp3"
+                },
+                {
+                    voice_name: "en-US-EmmaNeural",
+                    display_name: this.$t('voice.emma'),
+                    gender: "female",
+                    lang: "en-US",
+                    sample_file: "english/female/en-US-EmmaNeural.mp3"
                 }
             ];
         }
@@ -1940,9 +1975,13 @@ export default {
                 localStorage.setItem("last_used_voice_name", this.voice_name);
             }
 
+            // Get the voice in voiceOptions according to the voice name
+            const selectedVoice = this.voice_options.find(v => v.voice_name === this.voice_name);
+            const voiceLang = (selectedVoice && selectedVoice.lang) || "zh-CN";
+
             this.$backend(`/audio/${this.book.id}/conversion`, {
                 method: "POST",
-                body: JSON.stringify({voice: this.voice_name}),
+                body: JSON.stringify({voice: this.voice_name, language: voiceLang}),
             }).then((rsp) => {
                 if (rsp.err === "ok") {
                     this.epub2audio_processing = true;
@@ -2340,7 +2379,7 @@ export default {
             this.playing_sample = voice_option.voice_name;
 
             // 创建音频对象并播放
-            const audioUrl = `/static/epub_to_audio/samples/chinese/${voice_option.sample_file}`;
+            const audioUrl = `/static/epub_to_audio/samples/${voice_option.sample_file}`;
             this.currentAudio = new Audio(audioUrl);
 
             this.currentAudio.addEventListener('ended', () => {
@@ -2459,6 +2498,7 @@ export default {
             }
         },
         async clearConversion() {
+            this.stopCurrentAudio();
             try {
                 let endpoint;
                 let successMessage;
@@ -2490,6 +2530,8 @@ export default {
                     if (is_delete) {
                         // Reset audio status
                         this.audios = {count: 0, files: [], status: "unavailable"};
+                    } else {
+                        this.audios.status = this.AUDIO_STATUS.CONVERTED;
                     }
                 } else {
                     this.$alert("error", response.msg || this.$t('message.operationFailed'));

@@ -925,7 +925,12 @@
         "yunjian": "Male | Yunjian",
         "yunxi": "Male | Yunxi",
         "yunyang": "Male | Yunyang",
-        "yunlong": "Male | Yunlong (Hong Kong)"
+        "yunlong": "Male | Yunlong (Hong Kong)",
+        "andrew": "Male | Andrew（US）",
+        "ray": "Male | Ray（GB）",
+        "sonia": "Female | Sonia（GB）",
+        "ana": "Female | Ana（US）",
+        "emma": "Female | Emma（US）"
     },
     "message": {
         "unclassified": "Unclassified",

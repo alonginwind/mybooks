@@ -931,7 +931,12 @@
         "yunjian": "男声 | 云健",
         "yunxi": "男声 | 云希",
         "yunyang": "男声 | 云扬",
-        "yunlong": "男声 | 云龙（香港）"
+        "yunlong": "男声 | 云龙（香港）",
+        "andrew": "男声 | Andrew（美式英语）",
+        "ray": "男声 | Ray（英式英语）",
+        "sonia": "女声 | Sonia（英式英语）",
+        "ana": "女声 | Ana（美式英语）",
+        "emma": "女声 | Emma（美式英语）"
     },
     "message": {
         "unclassified": "未分类",
