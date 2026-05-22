@@ -2573,6 +2573,15 @@ class BookSuggestion(ListHandler):
 
 
 class BookSendToDevice(BaseHandler):
+    def _blocked_local_ip(self, device_url):
+        if not device_url:
+            return False
+        if device_url.startswith("127."):
+            return True
+        if device_url.lower().startswith("http://127.") or device_url.lower().startswith("https://127."):
+            return True
+        return False
+
     @js
     def post(self, bid):
         """发送书籍到指定设备"""
@@ -2600,7 +2609,7 @@ class BookSendToDevice(BaseHandler):
             ftp_username = data.get("ftp_username", "")
             ftp_password = data.get("ftp_password", "")
             ftp_path = data.get("ftp_path", "")
-        except:
+        except Exception:
             return {"err": "params.invalid", "msg": _("请求参数格式错误")}
 
         # 支持的设备类型
@@ -2624,8 +2633,12 @@ class BookSendToDevice(BaseHandler):
         if device_type == "kindle":
             return self._send_to_kindle(book, book_id, mailbox)
         elif device_type == "ftp":
+            if self._blocked_local_ip(device_url):
+                return {"err": "params.invalid", "msg": _("不允许直接发送到本机")}
             return self._send_to_ftp(book, book_id, device_url, ftp_username, ftp_password, ftp_path)
         else:
+            if self._blocked_local_ip(device_url):
+                return {"err": "params.invalid", "msg": _("不允许直接发送到本机")}
             return self._send_to_other_device(book, book_id, device_type, device_url)
 
     def _send_to_kindle(self, book, book_id, mail_to):
