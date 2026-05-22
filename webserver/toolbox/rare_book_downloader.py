@@ -17,7 +17,7 @@ class RareBookDownloader(BaseTool):
         return {
             "tool_id": "rare_book_downloader",
             "name": "古书下载器",
-            "description": "从书录古书的图书馆站点下载资源并导入到书库",
+            "description": "从收录古书的图书馆站点下载资源并导入到书库",
             "revision": "0.1.0",
             "author": "PoxenStudio",
             "publish_date": "2025-05-18",
