@@ -14,7 +14,7 @@
                     :alt="title"
                     class="resource-card__image"
                 >
-                <v-icon v-else size="40" :color="$vuetify.theme.dark ? '#4a9eca' : 'white'">
+                <v-icon v-else size="40" :color="$vuetify.theme.dark ? 'white' : 'black'">
                     {{ 'mdi-open-in-new' }}
                 </v-icon>
             </div>

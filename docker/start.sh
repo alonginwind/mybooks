@@ -67,7 +67,7 @@ if [ "x$permission" != "x$PUID:$PGID" ]; then
     echo "[PoxenStudio/Talebook] permission updated!"
 fi
 
-# 设置系统文件的权限（数量较少）
+# 设置系统文件的权限
 chown -R talebook:talebook \
   /data/log/ \
   /root/.config/calibre \

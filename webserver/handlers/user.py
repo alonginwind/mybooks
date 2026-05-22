@@ -5,7 +5,6 @@ import datetime
 import json
 import logging
 import re
-import mimetypes
 import os
 import traceback
 from urllib.parse import urlparse
@@ -1233,31 +1232,6 @@ class UserMemo(BaseHandler):
             return {"err": "db.error", "msg": _("删除失败")}
 
 
-class FaviconHandler(BaseHandler):
-    """提供友情链接及资源 favicon 文件的 HTTP 访问"""
-
-    def prepare(self):
-        # 跳过 BaseHandler 的登录检查等，favicon 无需认证
-        self.set_hosts()
-
-    def get(self, filename):
-        from webserver.services.resource_service import FRIENDS_FAVICON_DIR
-
-        # 安全检查：只允许简单文件名
-        if "/" in filename or "\\" in filename or ".." in filename:
-            raise web.HTTPError(400, "Invalid filename")
-
-        filepath = os.path.join(FRIENDS_FAVICON_DIR, filename)
-        if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-            raise web.HTTPError(404)
-
-        content_type = mimetypes.guess_type(filename)[0] or "image/x-icon"
-        self.set_header("Content-Type", content_type)
-        self.set_header("Cache-Control", "public, max-age=86400")
-        with open(filepath, "rb") as f:
-            self.write(f.read())
-
-
 def routes():
     return [
         (r"/api/welcome", Welcome),
@@ -1280,6 +1254,5 @@ def routes():
         (r"/api/user/devices", UserDevices),
         (r"/api/user/expected", UserExpectedItems),
         (r"/api/user/history/clear", UserHistoryClear),
-        (r"/api/user/memo", UserMemo),
-        (r"/api/favicon/(.*)", FaviconHandler),
+        (r"/api/user/memo", UserMemo)
     ]

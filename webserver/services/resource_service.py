@@ -17,16 +17,16 @@ FRIENDS_FAVICON_DIR = os.path.join(RESOURCES_DIR, "friends")
 
 
 class ResourceService(AsyncService):
-    _last_check_times = {}
-    _checking = False
+    _last_check_times: dict[int, float] = {}
+    _checking: bool = False
 
     def __init__(self):
         super().__init__()
         os.makedirs(FRIENDS_FAVICON_DIR, exist_ok=True)
 
     @staticmethod
-    def get_favicon_path(domain):
-        return os.path.join(FRIENDS_FAVICON_DIR, "%s.ico" % domain)
+    def get_favicon_path(domain, ext=".ico"):
+        return os.path.join(FRIENDS_FAVICON_DIR, "%s%s" % (domain, ext))
 
     @staticmethod
     def check_favicon(uri):
@@ -34,12 +34,18 @@ class ResourceService(AsyncService):
             domain = urlparse(uri).netloc
         else:
             domain = uri
+
+        is_svg = False
         path = ResourceService.get_favicon_path(domain)
         if not os.path.exists(path):
-            return None
+            path = ResourceService.get_favicon_path(domain, ".svg")
+            if not os.path.exists(path):
+                return None
+            is_svg = True
+
         if os.path.getsize(path) == 0:
             return ""
-        return "/api/favicon/%s.ico" % domain
+        return "/api/favicon/%s.%s" % (domain, "svg" if is_svg else "ico")
 
     @staticmethod
     def clear_favicons():
@@ -66,10 +72,8 @@ class ResourceService(AsyncService):
         self._last_check_times[flag] = time.time()
 
         for url in urls:
-            logging.info("Processing favicon URL: %s", url)
             domain = urlparse(url).netloc
             if not domain:
-                logging.info("Invalid URL, skipping: %s", url)
                 continue
 
             path = ResourceService.get_favicon_path(domain)
@@ -89,6 +93,9 @@ class ResourceService(AsyncService):
                     allow_redirects=True,
                 )
                 if resp.status_code == 200 and len(resp.content) > 0:
+                    is_svg = resp.headers.get("Content-Type", "").lower() == "image/svg+xml"
+                    if is_svg:
+                        path = ResourceService.get_favicon_path(domain, ".svg")
                     with open(path, "wb") as f:
                         f.write(resp.content)
                     logging.info("Saved favicon for %s (%d bytes)", domain, len(resp.content))
@@ -98,3 +105,4 @@ class ResourceService(AsyncService):
                     logging.info("No favicon found for %s (status=%s), created empty marker", domain, resp.status_code)
             except Exception as e:
                 logging.warning("Failed to download favicon for %s: %s", domain, e)
+        self._checking = False
