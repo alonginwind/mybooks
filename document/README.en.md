@@ -7,13 +7,15 @@
 An enhanced personal books management web server built on Calibre + Vue, beautiful and easy to use. ([Chinese](../README.md))
 
 ## A Simple and Practical Personal Library System
-This project is developed based on [mybooks](https://github.com/PoxenStudio/mybooks). It focuses on personal and family management of eBooks and physical books, plus multi-account reading management. It is not intended for public book-site operation.
+This project focuses on personal and family management of eBooks and physical books, plus multi-account reading management. It is not intended for public book-site operation.
 
 The long-term direction is to integrate AI for extended reading and knowledge organization, building a personal knowledge base.
 
 ![Example](example.jpg)
 
 This system is not an eBook reader itself. Its core value is library management. You can choose any reader app you like. On desktop, Koodo Reader is recommended.
+
+Acknowledgments: Since June 2025, we have been developing this project based on talebook v25.06.26. We sincerely thank Rex and several other contributors for their excellent project and front-end/back-end framework, and we also appreciate the Calibre project for providing such a powerful core for eBook management. This project will remain open-source and free, and we hope it will continue to be a great helper for book lovers.
 
 **Important notice: In mainland China, operating a public online publishing/book site as an individual is not permitted. This project is intended for personal use only.**
 

@@ -8,15 +8,17 @@
 An enhanced personal books management webserver built on Calibre + Vue, beautiful and easy-to-use. ([English](document/README.en.md))
 
 ## 简单好用的个人图书管理系统
-本项目基于[talebook](https://github.com/talebook/talebook)开发, 专注于个人及家庭电子书、实体书管理，以及多账号的阅读管理，不适用于站点搭建。后续目标是结合AI提供更多的扩展阅读内容，形成个人的知识库。
+本项目专注于个人及家庭私有电子书、实体书管理，以及多账号的阅读管理，不适用于站点搭建。后续目标是结合AI提供更多的扩展阅读内容，形成个人的知识库。
 ![Example](document/example.jpg)
 
 本系统与电子书阅读器不同，主要功能在于对电子书的管理功能。阅读器可以灵活选择，移动端比较多，在PC端推荐Koodo Reader。
 
+致谢: 我们自2025年6月开始基于[talebook v25.06.26](https://github.com/talebook/talebook)开发，感谢Rex等几位朋友贡献的优秀项目和前后端框架，也要感谢Calibre项目提供了强大的电子书管理的核心功能。本项目仍然会坚持开源免费，期望能持续成为书友们的好帮手。
+
 **友情提醒：中国境内网站，个人是不允许进行在线出版的，维护公开的书籍网站是违法违规的行为！建议仅作为个人使用！**
 
 ### 项目介绍
-项目已从PoxenStudio/Talebook改名为MyBooks, 避免与talebook/talebook混淆。
+从v3.45.0开始，此项目从PoxenStudio/Talebook改名为MyBooks, 避免与talebook/talebook混淆。
 
 MyBooks特性包括:
 * 支持WAP简版页面，供精简浏览器访问
