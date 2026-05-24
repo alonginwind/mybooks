@@ -1,4 +1,4 @@
-[![GitHub License](https://img.shields.io/github/license/mybooks?style=flat-square)](https://github.com/poxenstudio/mybooks/blob/master/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/poxenstudio/mybooks?style=flat-square)](https://github.com/poxenstudio/mybooks/blob/master/LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/poxenstudio/mybooks.svg)](https://hub.docker.com/r/poxenstudio/talebook)
 ![GitHub stars](https://img.shields.io/github/stars/PoxenStudio/mybooks.svg?logo=github)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/PoxenStudio/mybooks?logo=github)
@@ -13,7 +13,7 @@ An enhanced personal books management webserver built on Calibre + Vue, beautifu
 
 本系统与电子书阅读器不同，主要功能在于对电子书的管理功能。阅读器可以灵活选择，移动端比较多，在PC端推荐Koodo Reader。
 
-致谢: 我们自2025年6月开始基于[talebook v25.06.26](https://github.com/talebook/talebook)开发，感谢Rex等几位朋友贡献的优秀项目和前后端框架，也要感谢Calibre项目提供了强大的电子书管理的核心功能。本项目仍然会坚持开源免费，期望能持续成为书友们的好帮手。
+致谢: 我们自2025年6月开始基于[talebook v25.06.26](https://github.com/talebook/talebook)开发，感谢Rex等几位朋友贡献的优秀项目和前后端框架，也要感谢Calibre项目提供了强大的电子书管理的核心功能。本项目仍然会坚持开源免费, 遵循项目的开源协议，期望能持续成为书友们的好帮手。
 
 **友情提醒：中国境内网站，个人是不允许进行在线出版的，维护公开的书籍网站是违法违规的行为！建议仅作为个人使用！**
 
