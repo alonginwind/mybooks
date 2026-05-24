@@ -750,6 +750,11 @@ class BookRefer(BaseHandler):
                 org_mi.set("series", utils.super_strip(org_mi.series))
             else:
                 org_mi.set("series", "")
+            if org_mi.series_index:
+                try:
+                    org_mi.set("series_index", float(org_mi.series_index))
+                except Exception:
+                    org_mi.set("series_index", 1.0)
         if org_mi.title and org_mi.title == CALIBRE_ERROR_FLAG:
             return {"err": "book.invalid", "msg": _("此书籍文件无法识别, 或者受DRM保护无法处理")}
 
