@@ -61,7 +61,7 @@ class BookAIClient:
         self.client = OpenAI(
             api_key=api_key,
             base_url=CONF.get("AI_API_URL", DEEPSEEK_API_BASE),
-            timeout=30.0,
+            timeout=60.0,
         )
         self.model = CONF.get("AI_MODEL", "deepseek-chat")
 
