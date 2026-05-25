@@ -94,7 +94,6 @@ class ConvertService(AsyncService):
             logging.info("CMD: %s" % cmd)
             env = os.environ.copy()
             env["QTWEBENGINE_DISABLE_SANDBOX"] = "1"
-            env["GLIBC_TUNABLES"] = "glibc.pthread.rseq=0"
             p = subprocess.Popen(args, stdout=log, stderr=subprocess.PIPE, env=env)
             try:
                 _, stde = p.communicate(timeout=timeout)
