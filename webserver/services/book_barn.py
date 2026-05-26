@@ -318,15 +318,16 @@ class BookBarnService(AsyncService):
 
             if self.checked_day is not None:
                 today = datetime.datetime.now().strftime("%Y-%m-%d")
-                if self.checked_day <= today:
+                if self.checked_day == today:
                     # Has checked for today update
+                    logging.info(f"[BARN] skip, had been checked today: {today}")
                     time.sleep(30 * 60)
                     continue
 
             current_token = CONF.get("BOOKBARN_TOKEN", "")
             if len(current_token) == 0:
-                time.sleep(30 * 60)
                 logging.info("[BARN]Daily books checking, not set token")
+                time.sleep(30 * 60)
                 continue
             if self.token != current_token:
                 self.token = current_token
@@ -350,15 +351,17 @@ class BookBarnService(AsyncService):
                     if len(self.admin_uids) > 0:
                         for uid in self.admin_uids:
                             self.add_msg(uid, "error", _(f"[书栈]书栈Token无效, 加入taleboook公众号私信管理员或者更新Token! 错误信息: {err}"))
+                logging.info(f"[BARN] Failed to check the token, result: {err}")
                 time.sleep(30 * 60)
                 continue
-            else:
-                token_invalid_message = False
 
+            token_invalid_message = False
             book_list = self.client.getBookList(self.token)
             if book_list is None:
                 self.client.resetChecking(self.token)
+                logging.info("[BARN] Not received any book, reset the checking")
             else:
+                logging.info(f"[BARN] Received {len(book_list)} books")
                 self.client.setCheckingAction(self.token)
                 self.process_daily_books(book_list)
                 self.client.setCheckingDone(self.token)

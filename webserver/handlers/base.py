@@ -262,9 +262,9 @@ class BaseHandler(web.RequestHandler):
             .first()
         )
         if not user:
-            logging.warning("Invalid podcast token: %s", token)
+            logging.warning("Not login yet")
             return False
-        logging.info("Valid podcast token: %s for user %s", token, user.username)
+        logging.debug("Valid podcast token: %s for user %s", token, user.username)
         self.login_user(user)
         return True
 
