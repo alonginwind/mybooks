@@ -321,10 +321,11 @@ class MyBooksDavProvider(DAVProvider):
             "分类": "分类",
             "标签": "标签",
             "作者": "作者",
+            "最新": "最新",
             "我的收藏": "我的收藏",
             "我的待读": "我的待读",
             "我的在读": "我的在读",
-            "我的已读": "我的已读"
+            "我的已读": "我的已读",
         }
 
         # 读取WEBDAV_SYNC_FOLDER配置
@@ -467,6 +468,8 @@ class MyBooksDavProvider(DAVProvider):
             return self.handle_tags(path, environ, parts)
         elif section == "作者":
             return self.handle_authors(path, environ, parts)
+        elif section == "最新":
+            return self.handle_recent(path, environ, parts)
         elif section == "我的收藏":
             return self.handle_favorite(path, environ, parts)
         elif section == "我的待读":
@@ -722,6 +725,32 @@ class MyBooksDavProvider(DAVProvider):
         except Exception as e:
             logging.error(f"Error getting reading state books: {e}")
             return []
+
+    def handle_recent(self, path, environ, parts):
+        """处理最新添加书籍"""
+        if len(parts) == 1:
+            try:
+                sql = "SELECT id FROM books ORDER BY timestamp DESC LIMIT 100"
+                book_ids = [v[0] for v in self.cache.backend.conn.get(sql)]
+            except Exception as e:
+                logging.error(f"Error getting recent books: {e}")
+                book_ids = []
+            return BooksCollection(path, environ, "最新", self, book_ids)
+        elif len(parts) == 2:
+            try:
+                filename = unquote(parts[1])
+                book_id = self._parse_book_id_from_filename(filename)
+                if book_id is None:
+                    return None
+                mi = self.cache.get_metadata(book_id, get_cover=False)
+                if not mi:
+                    return None
+                item = self._build_book_item(book_id, mi)
+                return TalebookResource(path, environ, item, self.cache)
+            except Exception as e:
+                logging.error(f"Error getting book {parts[1]}: {e}")
+                return None
+        return None
 
     def handle_favorite(self, path, environ, parts):
         """处理收藏书籍"""
