@@ -442,12 +442,37 @@ export default {
       }
     },
 
-    loadTrack(index) {
+    loadTrack(index, initialTime = null) {
       if (index >= 0 && index < this.audioFiles.length) {
         this.currentTrackIndex = index;
         const audio = this.audioFiles[index];
-        this.$refs.audioPlayer.src = audio.url;
-        this.$refs.audioPlayer.load();
+        const player = this.$refs.audioPlayer;
+        if (!player) return;
+
+        const isSameFile = (player.getAttribute('src') === audio.url || player.src === audio.url) && audio.url;
+        const targetTime = (initialTime !== null ? initialTime : 0) + (audio.start_time || 0);
+
+        if (isSameFile) {
+          player.currentTime = targetTime;
+          if (audio.start_time !== undefined && audio.end_time !== undefined) {
+            this.duration = audio.end_time - audio.start_time;
+          } else {
+            this.duration = player.duration || 0;
+          }
+        } else {
+          player.src = audio.url;
+          player.load();
+          const onLoadedMetadata = () => {
+            player.currentTime = targetTime;
+            if (audio.start_time !== undefined && audio.end_time !== undefined) {
+              this.duration = audio.end_time - audio.start_time;
+            } else {
+              this.duration = player.duration || 0;
+            }
+            player.removeEventListener('loadedmetadata', onLoadedMetadata);
+          };
+          player.addEventListener('loadedmetadata', onLoadedMetadata);
+        }
       }
     },
 
@@ -512,7 +537,11 @@ export default {
 
     seekTo(value) {
       if (this.$refs.audioPlayer && this.duration > 0) {
-        const seekTime = (value / 100) * this.duration;
+        const audio = this.currentAudio;
+        let seekTime = (value / 100) * this.duration;
+        if (audio && audio.start_time !== undefined) {
+          seekTime += audio.start_time;
+        }
         this.$refs.audioPlayer.currentTime = seekTime;
       }
     },
@@ -560,13 +589,30 @@ export default {
 
     // 音频事件处理
     onLoadedMetadata() {
-      this.duration = this.$refs.audioPlayer.duration;
+      const audio = this.currentAudio;
+      if (audio && audio.end_time !== undefined && audio.start_time !== undefined) {
+        this.duration = audio.end_time - audio.start_time;
+      } else {
+        this.duration = this.$refs.audioPlayer.duration || 0;
+      }
       this.$refs.audioPlayer.playbackRate = this.playbackRate;
     },
 
     onTimeUpdate() {
-      if (!this.isDragging) {
-        this.currentTime = this.$refs.audioPlayer.currentTime;
+      if (!this.isDragging && this.$refs.audioPlayer) {
+        const audio = this.currentAudio;
+        const playerTime = this.$refs.audioPlayer.currentTime;
+        
+        if (audio && audio.end_time !== undefined) {
+          if (playerTime >= audio.end_time) {
+            this.onTrackEnded();
+            return;
+          }
+          this.currentTime = Math.max(0, playerTime - (audio.start_time || 0));
+        } else {
+          this.currentTime = playerTime;
+        }
+        
         if (this.duration > 0) {
           this.progress = (this.currentTime / this.duration) * 100;
         }
@@ -666,26 +712,8 @@ export default {
           // 恢复播放位置
           this.currentTrackIndex = progressData.trackIndex;
 
-          // 加载对应的音频文件
-          this.loadTrack(this.currentTrackIndex);
-
-          // 等待音频加载完成后设置时间位置
-          this.$nextTick(() => {
-            if (this.$refs.audioPlayer) {
-              const onCanPlay = () => {
-                this.$refs.audioPlayer.currentTime = progressData.currentTime;
-                this.$refs.audioPlayer.removeEventListener('canplay', onCanPlay);
-              };
-
-              if (this.$refs.audioPlayer.readyState >= 2) {
-                // 如果音频已经加载完成
-                this.$refs.audioPlayer.currentTime = progressData.currentTime;
-              } else {
-                // 等待音频加载完成
-                this.$refs.audioPlayer.addEventListener('canplay', onCanPlay);
-              }
-            }
-          });
+          // 加载对应的音频文件并传入保存的时间
+          this.loadTrack(this.currentTrackIndex, progressData.currentTime);
 
           // 显示恢复提示信息
           if (this.$refs.audioPlayer && progressData.currentTime > 10) {
@@ -743,10 +771,6 @@ export default {
       this.currentTrackIndex = 0;
       this.currentTime = 0;
       this.loadTrack(0);
-
-      if (this.$refs.audioPlayer) {
-        this.$refs.audioPlayer.currentTime = 0;
-      }
 
       console.log('Started from beginning');
     },

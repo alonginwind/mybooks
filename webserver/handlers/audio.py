@@ -267,8 +267,10 @@ class AudioDetail(BaseHandler):
                 chapter_urls.append(
                     {
                         "filename": title,
-                        "url": f"{self.site_url}/api/audio/{book_id}/{file}#t={start},{end}",
+                        "url": f"{self.site_url}/api/audio/{book_id}/{file}",
                         "size": chapter_size,
+                        "start_time": start,
+                        "end_time": end
                     }
                 )
             return chapter_urls
