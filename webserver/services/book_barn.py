@@ -3,6 +3,7 @@ import requests
 import logging
 import json
 import os
+import platform
 import shutil
 import time
 import re
@@ -16,8 +17,7 @@ from webserver.version import VERSION
 from webserver.models import Reader, Item
 from webserver.constants import AUTO_FILL_META
 from webserver.i18n import _
-import platform
-
+from webserver.constants import UPGRABLE_REVISION
 
 # 设置 requests 库的日志级别为 ERROR，减少冗余日志
 logging.getLogger("requests").setLevel(logging.ERROR)
@@ -302,10 +302,12 @@ class BookBarnService(AsyncService):
             if self.checked_release_time is None or self.checked_release_time < time.time():
                 self.checked_release_time = time.time() + 8 * 60 * 60
                 latest_release = self.client.checkLatestRelease(self.token)
+                CONF[UPGRABLE_REVISION] = ""
                 if latest_release is not None:
                     logging.info(f"[BARN]New version available: {latest_release['rev']}, released on {latest_release['date']}")
                     if self.admin_uids is None or len(self.admin_uids) == 0:
                         self.get_admin_uids()
+                    CONF[UPGRABLE_REVISION] = latest_release
                     if len(self.admin_uids) > 0:
                         message = f"有新版本发布: {latest_release['rev']}，发布日期: {latest_release['date']}，\
                                     更新内容: {latest_release['notes']}，请重新构建容器以获取更新。"

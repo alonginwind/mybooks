@@ -19,6 +19,7 @@ from webserver.handlers.base import BaseHandler, auth, js
 from webserver.handlers.audio import AudioUtils
 from webserver.models import Device, ExpectedItem, Memo, Message, Reader, StickyItem
 from webserver.version import VERSION
+from webserver.constants import UPGRABLE_REVISION
 
 CONF = loader.get_settings()
 COOKIE_REDIRECT = "login_redirect"
@@ -457,6 +458,7 @@ class UserInfo(BaseHandler):
             "users": count_all_users,
             "active": count_hot_users,
             "version": VERSION,
+            "upgrable": CONF.get(UPGRABLE_REVISION, ""),
             "title": CONF["site_title"] if "site_title" in CONF else "MyBooks",
             "language": CONF["site_language"] if "site_language" in CONF else "",
             "theme": CONF["site_theme"] if "site_theme" in CONF else "light",
