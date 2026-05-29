@@ -582,16 +582,16 @@
         "backToHome": "返回首页"
     },
     "settings": {
-            "trash_management": "文件清理",
-            "trash_description": "Calibre回收站(<b>library/.caltrash</b>)用于存放已删除的书籍文件，默认删除后7天自动清理。上传目录(<b>upload</b>)下是上传时创建的文件，在入库完成后仍然存在。少于10M不需要清理。",
-            "trash_calibre_size": "Calibre回收站：",
-            "trash_upload_size": "上传目录：",
-            "trash_current_size": "当前回收站大小：",
-            "trash_clear_button": "清理文件",
-            "trash_clear_confirm_title": "清理文件",
-            "trash_clear_confirm_message": "确定要清理回收站(library/.caltrash)及上传目录(upload)吗？此操作不可恢复。",
-            "trash_clear_confirm_button": "确认清理",
-            "trash_unknown": "未知",
+        "trash_management": "文件清理",
+        "trash_description": "Calibre回收站(<b>library/.caltrash</b>)用于存放已删除的书籍文件，默认删除后7天自动清理。上传目录(<b>upload</b>)下是上传时创建的文件，在入库完成后仍然存在。少于10M不需要清理。",
+        "trash_calibre_size": "Calibre回收站：",
+        "trash_upload_size": "上传目录：",
+        "trash_current_size": "当前回收站大小：",
+        "trash_clear_button": "清理文件",
+        "trash_clear_confirm_title": "清理文件",
+        "trash_clear_confirm_message": "确定要清理回收站(library/.caltrash)及上传目录(upload)吗？此操作不可恢复。",
+        "trash_clear_confirm_button": "确认清理",
+        "trash_unknown": "未知",
         "basic_info": "基础信息",
         "language_switch": "语言切换",
         "theme_switch": "网站配色切换",
@@ -756,7 +756,9 @@
         "url_rule_error": "请输入有效的 HTTP/HTTPS URL",
         "model_name_rule_error": "模型名称只能包含字母、数字、下划线、连字符或点，且不能以连字符或点开头/结尾，也不能有连续的特殊字符",
         "api_key_rule_error": "API密钥只能包含字母、数字、连字符或点",
-        "api_key_length_error": "长度必须在16到128个字符之间"
+        "api_key_length_error": "长度必须在16到128个字符之间",
+        "test_ai_settings": "测试AI设置",
+        "testing": "测试中"
     },
     "user": {
         "avatar": "头像",

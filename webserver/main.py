@@ -520,8 +520,8 @@ def main():
     http_server = tornado.httpserver.HTTPServer(app, xheaders=True, max_buffer_size=get_upload_size())
     http_server.listen(options.port, options.host)
     tornado.ioloop.IOLoop.instance().start()
-    from flask.ext.sqlalchemy import _EngineDebuggingSignalEvents
 
+    from flask.ext.sqlalchemy import _EngineDebuggingSignalEvents
     _EngineDebuggingSignalEvents(app._engine, app.import_name).register()
 
 

@@ -490,6 +490,18 @@
                 @click:append="generateMCPToken"
                 readonly
               ></v-text-field>
+              <v-btn
+                :disabled="!settings['AI_ENABLED'] || testingAI"
+                color="green"
+                class="white--text mt-3"
+                @click="testAISettings"
+              >
+                <span v-if="testingAI" class="flex items-center gap-2">
+                  <img :src="site_url + '/icons/loading.svg'" width="20" height="20" />
+                  {{ $t('settings.testing') }}
+                </span>
+                <span v-else>{{ $t('settings.test_ai_settings') }}</span>
+              </v-btn>
             </template>
 
             <template v-if="card.show_socials">
@@ -1298,6 +1310,7 @@ export default {
     cards: [],
     appliedToken: false,
     testingConnection: false,
+    testingAI: false,
     deviceTypes: [],
     deviceSchemas: [
       { text: "HTTP", value: "http" },
@@ -1591,6 +1604,28 @@ export default {
           element.click();
         }
       }
+    },
+    testAISettings() {
+      const data = {
+        api_url: this.settings['AI_API_URL'],
+        api_key: this.settings['AI_DEEPSEEK_API_KEY'],
+        api_model: this.settings['AI_MODEL'],
+      };
+      this.testingAI = true;
+      this.$backend("/admin/ai/test", {
+        method: "POST",
+        body: JSON.stringify(data)
+      }).then((rsp) => {
+        if (rsp && rsp.err === "ok") {
+          this.$alert("success", rsp.msg);
+        } else {
+          this.$alert("error", rsp.msg);
+        }
+      }).catch((err) => {
+        this.$alert("error", err.message || this.$t("settings.test_ai_failed"));
+      }).finally(() => {
+        this.testingAI = false;
+      });
     },
   },
 };

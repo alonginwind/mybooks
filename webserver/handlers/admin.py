@@ -36,6 +36,7 @@ from webserver.base.setting_saver import SettingsSaver
 from webserver.base.trash_manager import TrashManager
 from webserver.version import VERSION
 from webserver.handlers.audio import AudioUtils
+from webserver.assistant.book_ai_client import BookAIClient
 from webserver.constants import (
     CALIBRE_COLUMN_BOOK_TYPE,
     BOOK_TYPE_PHYSICAL,
@@ -1394,6 +1395,27 @@ class AdminResources(BaseHandler):
         return {"err": "ok", "resources": resources}
 
 
+class AdminAITestConnection(BaseHandler):
+    @js
+    @is_admin
+    def post(self):
+        data = tornado.escape.json_decode(self.request.body)
+        api_url = data.get("api_url", None)
+        api_key = data.get("api_key", None)
+        api_model = data.get("api_model", None)
+        if not api_url or not api_key or not api_model:
+            return {"err": "params.error", "msg": _("缺少必要的参数，请确认API信息填写完整")}
+
+        try:
+            result, msg = BookAIClient().test_connection()
+            if result:
+                return {"err": "ok", "msg": _("AI服务连接测试成功")}
+            return {"err": "error", "msg": _("AI服务连接测试失败: %s") % msg}
+        except Exception as e:
+            logging.error(f"AI服务连接测试异常: {e}")
+            return {"err": "error", "msg": _("AI服务连接测试异常: %s") % str(e)}
+
+
 def routes():
     return [
         (r"/api/admin/ssl", AdminSSL),
@@ -1424,4 +1446,5 @@ def routes():
         (r"/api/admin/book/reset_cover", AdminResetCover),
         (r"/api/admin/syslog/download", AdminSyslogDownload),
         (r"/api/admin/resources", AdminResources),
+        (r"/api/admin/ai/test", AdminAITestConnection),
     ]

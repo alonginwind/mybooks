@@ -7,6 +7,7 @@ from openai import OpenAI
 from webserver import loader
 from webserver.constants import DEEPSEEK_API_BASE
 from webserver.services.book_search import BookSearch
+from webserver.i18n import _
 
 CONF = loader.get_settings()
 
@@ -37,33 +38,34 @@ class BookAIClient:
     SYSTEM_PROMPT = (
         "你是一个专业的图书信息分析助手。"
         "用户会提供书名、作者等基础信息，以及从互联网搜索到的参考信息（可能包含多个来源）。"
-        "请综合所有参考信息，生成书籍的分类、标签、内容摘要和作者介绍。\n"
-        "注意：原始书名中可能含多余字符如()【】等，需自行去除。作者和ISBN可能有误，以参考信息中的内容为准。\n"
-        "标签只需要保留2个。如果信息不足，无法准确确定一本书，或无法返回指定信息，就留空。\n"
-        "图书的作者可能是错误的，如果参考信息是确定的，请更新作者信息。\n"
-        "请严格按照 JSON 格式输出，不要添加任何额外内容。\n"
-        "输出格式：\n"
-        "{\n"
-        '  "category": "书籍分类（单个，如：小说、历史、科技、文学、传记、哲学、艺术、经济等）",\n'
-        '  "tags": ["标签1", "标签2"],\n'
-        '  "authors": ["作者1", "作者2"],\n'
-        '  "pubdate": "出版年月（如：2026-05或2026）",\n'
-        '  "summary": "书籍主要内容总结（800字以内）",\n'
-        '  "author_intro": "作者介绍（200字以内，无充分信息时留空字符串）"\n'
+        "请综合所有参考信息，生成书籍的分类、标签、内容摘要和作者介绍。"
+        "注意：原始书名中可能含多余字符如()【】等，需自行去除。作者和ISBN可能有误，以参考信息中的内容为准。"
+        "标签只需要保留2个。如果信息不足，无法准确确定一本书，或无法返回指定信息，就留空。"
+        "图书的作者可能是错误的，如果参考信息是确定的，请更新作者信息。"
+        "请严格按照 JSON 格式输出，不要添加任何额外内容。"
+        "输出格式："
+        "{"
+        '  "category": "书籍分类（单个，如：小说、历史、科技、文学、传记、哲学、艺术、经济等）",'
+        '  "tags": ["标签1", "标签2"],'
+        '  "authors": ["作者1", "作者2"],'
+        '  "pubdate": "出版年月（如：2026-05或2026）",'
+        '  "summary": "书籍主要内容总结（800字以内）",'
+        '  "author_intro": "作者介绍（200字以内，无充分信息时留空字符串）"'
         "}"
     )
 
-    def __init__(self):
-        api_key = CONF.get("AI_DEEPSEEK_API_KEY", "")
-        if not api_key:
-            raise ValueError("AI_DEEPSEEK_API_KEY is not configured")
+    def __init__(self, url: str = None, key: str = None, model: str = None):
+        api_key = key if key else CONF.get("AI_DEEPSEEK_API_KEY", "")
+        api_url = url if url else CONF.get("AI_API_URL", DEEPSEEK_API_BASE)
+        if not api_key or not api_url:
+            raise ValueError("API_KEY or API_URL is not configured")
 
         self.client = OpenAI(
             api_key=api_key,
-            base_url=CONF.get("AI_API_URL", DEEPSEEK_API_BASE),
+            base_url=api_url,
             timeout=60.0,
         )
-        self.model = CONF.get("AI_MODEL", "deepseek-chat")
+        self.model = model if model else CONF.get("AI_MODEL", "deepseek-chat")
 
     @staticmethod
     def _is_valid_isbn(isbn: str) -> bool:
@@ -114,6 +116,31 @@ class BookAIClient:
                 block.append(f"作者介绍：{result_author_intro[:300]}")
             parts.append("\n".join(block))
         return "\n\n".join(parts)
+
+    def test_connection(self) -> tuple[bool, str]:
+        try:
+            logging.info("[BookAI] Testing connection to AI service at %s", self.client.base_url)
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "system", "content": "Check the connect, please answer with JSON format {\"response\": \"pong\"} if you can receive this message."}],
+                response_format={"type": "json_object"},
+                temperature=0.0,
+                max_tokens=10,
+            )
+            content = response.choices[0].message.content
+            if not content:
+                logging.warning("[BookAI] Empty response for testing connection")
+                return False, _("AI服务返回了空响应")
+            data = json.loads(content)
+            matched = data.get("response", "").lower() == "pong"
+            if matched:
+                logging.info("[BookAI] Connection test successful")
+                return True, ""
+            logging.warning("[BookAI] Connection test failed, unexpected response: %s", content)
+            return False, _("AI服务返回了意外的响应") + ": " + content
+        except Exception as e:
+            logging.error("[BookAI] Connection test failed: %s", e)
+            return False, str(e)
 
     def get_book_info(
         self,
