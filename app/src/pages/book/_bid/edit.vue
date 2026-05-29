@@ -72,13 +72,10 @@
                                         :filter="publisherFilter"
                                     ></v-combobox>
                                 </v-col>
-                                <v-col class='py-0' cols=12 sm=6>
+                                <v-col class='py-0' cols=12 sm=3>
                                     <v-text-field :label="$t('book.edit.fields.pubdate')" v-model="book.pubdate">{{ book.pubdate }}</v-text-field>
                                 </v-col>
-                                <v-col class='py-0' cols=12 sm=6>
-                                    <v-text-field :label="$t('book.edit.fields.isbn')" v-model="book.isbn">{{ book.isbn }}</v-text-field>
-                                </v-col>
-                                <v-col class='py-0' cols=12 sm=6>
+                                <v-col class='py-0' cols=12 sm=3>
                                     <v-select
                                         :label="$t('book.edit.fields.language')"
                                         v-model="book.languages"
@@ -91,10 +88,29 @@
                                     >
                                     </v-select>
                                 </v-col>
-                                <v-col class='py-0' cols=12>
+                                <v-col class='py-0' cols=12 sm=6>
+                                    <v-text-field :label="$t('book.edit.fields.isbn')" v-model="book.isbn">{{ book.isbn }}</v-text-field>
+                                </v-col>
+                                <v-col class='py-0' cols=12 sm=4 v-if="book.book_type === 1">
+                                    <v-text-field :label="$t('book.edit.fields.location')" v-model="book.location">{{ book.location }}</v-text-field>
+                                </v-col>
+                                <v-col class='py-0' cols=12 sm=2 v-if="book.book_type === 1">
+                                    <v-text-field
+                                        :label="$t('book.edit.fields.book_count')"
+                                        :disabled="!book.is_physical"
+                                        v-model="book.book_count"
+                                        type="text"
+                                        inputmode="numeric"
+                                        pattern="^\\d+$"
+                                        @input="onSeriesIndexInput"
+                                        @blur="onSeriesIndexBlur"
+                                    ></v-text-field>
+                                </v-col>
+                                <v-col class='py-0' cols=6>
                                     <!-- TAGS -->
-                                    <v-combobox v-model="book.tags" :items="tagNames" :label="$t('book.edit.fields.tags')"
-                                                :search-input.sync="tag_input" :loading="tags_loading" :filter="tagFilter" hide-selected multiple small-chips>
+                                    <v-combobox v-model="book.tags" :items="tagNames" :label="$t('book.edit.fields.tags.label')"
+                                                :search-input.sync="tag_input" :loading="tags_loading" :filter="tagFilter"
+                                                hide-selected multiple small-chips>
                                         <template v-slot:no-data>
                                             <v-list-item>
                                                 <span v-if="!tag_input">{{ $t('book.edit.fields.tags.noData') }}</span>

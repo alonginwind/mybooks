@@ -412,10 +412,13 @@
                 "ext_link": "圖書連結",
                 "ext_link_invalid": "無效的連結",
                 "tags": {
+                    "label": "標籤",
                     "noData": "請輸入新的標籤名稱",
                     "add": "新增標籤"
                 },
-                "comments": "內容簡介"
+                "comments": "內容簡介",
+                "book_count": "館藏數量",
+                "location": "館藏位置"
             }
         },
         "pushToKindle": "推送到 Kindle",
@@ -505,6 +508,7 @@
         "download": "下載",
         "bookPhysical": "實體書",
         "bookCount": "館藏數",
+        "location": "位置",
         "chooseVoice": "選擇聲音",
         "recommendedBooks": "其它書籍",
         "recommendedBooksDesc": "根據當前圖書的標籤和作者推薦",

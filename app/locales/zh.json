@@ -412,10 +412,13 @@
                 "ext_link": "图书链接",
                 "ext_link_invalid": "无效的链接",
                 "tags": {
+                    "label": "标签",
                     "noData": "请输入新的标签名称",
                     "add": "添加标签"
                 },
-                "comments": "内容简介"
+                "comments": "内容简介",
+                "book_count": "在库数量",
+                "location": "存放位置"
             }
         },
         "pushToKindle": "推送到Kindle",
@@ -507,6 +510,7 @@
         "download": "下载",
         "bookPhysical": "实体书",
         "bookCount": "在库数",
+        "location":"位置",
         "chooseVoice": "选择声音",
         "recommendedBooks": "其它书籍",
         "recommendedBooksDesc": "根据当前图书的标签和作者推荐",

@@ -591,10 +591,13 @@
                 "ext_link": "Book Link",
                 "ext_link_invalid": "Please enter a URL starting with http:// or https://",
                 "tags": {
+                    "label": "Tags",
                     "noData": "Please enter a new tag name",
                     "add": "Add Tag"
                 },
-                "comments": "Content Summary"
+                "comments": "Content Summary",
+                "book_count": "Book Count",
+                "location": "Location"
             }
         },
         "pushToKindle": "Push to Kindle",
@@ -686,6 +689,7 @@
         "download": "Download",
         "bookPhysical": "Physical Book",
         "bookCount": "Count",
+        "location": "Location",
         "chooseVoice": "Choose voice",
         "recommendedBooks": "Others",
         "recommendedBooksDesc": "Recommended based on tags and authors",

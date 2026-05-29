@@ -465,6 +465,7 @@
                                     </v-chip>
                                 </span>
                                 <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">{{ $t('book.bookCount') }}: {{book.book_count}}</span>
+                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">, {{ $t('book.location') }}: {{book.location}}</span>
                                 <template v-for="(file, index) in book.files.slice(0, 3)" :key="'file-size-' + index">
                                     <span
                                         color="grey--text"
