@@ -1090,6 +1090,12 @@ export default {
             type: "checkbox",
           },
           {
+            icon: "mdi-checkbox-marked-circle-plus-outline",
+            key: "BATCH_ADD_IN_FORCE",
+            label: "settings.batch_add_in_force",
+            type: "checkbox",
+          },
+          {
             icon: "mdi-shape-plus",
             key: "IMPORT_CATEGORY_WITH_FOLDER",
             label: "settings.category_with_folder",

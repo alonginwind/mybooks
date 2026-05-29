@@ -475,5 +475,6 @@
   "正在取消任务, 请稍后查看状态": "Cancelling task, please check the status later",
   "同步图书元数据到文件": "Sync book metadata to file",
   "图书元数据保存已完成: 共%d本，成功%d本，失败%d本, 跳过%d本": "Book metadata save completed: %d total, %d successful, %d failed, %d skipped",
-  "同步元数据到文件的任务已经开始执行，在右上角可以查看进度": "The task of syncing metadata to file has started. You can check the progress in the top right corner"
+  "同步元数据到文件的任务已经开始执行，在右上角可以查看进度": "The task of syncing metadata to file has started. You can check the progress in the top right corner",
+  "[无效]:": "[INCOMPLETE]:"
 }

@@ -13,6 +13,7 @@ from webserver import loader
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT
 from webserver.constants import META_SOURCE_DOUBAN, CALIBRE_COLUMN_LOCATION
 from webserver.constants import BOOK_TYPE_PHYSICAL, AUTO_FILL_META
+from webserver.i18n import _
 from webserver.models import Item, ScanFile
 from webserver.services import AsyncService
 from webserver.plugins.meta import douban
@@ -254,8 +255,15 @@ class BatchAddService(AsyncService):
 
             if not book_data:
                 logging.error("No book data found for ISBN: %s", isbn)
-                self._record_invalid_isbn(csv_filename, isbn, title, author)
-                return None
+                if not CONF.get("BATCH_ADD_IN_FORCE", False):
+                    self._record_invalid_isbn(csv_filename, isbn, title, author)
+                    return None
+                # 添加为无效的ISBN书籍
+                from calibre.ebooks.metadata.book.base import Metadata
+                from calibre.utils.date import now as nowf
+                book_data = Metadata(_("[无效]:") + isbn, [_("佚名")])
+                book_data.isbn = isbn
+                book_data.timestamp = nowf()
 
             # 创建书籍
             book_id = self.db.create_book_entry(book_data)

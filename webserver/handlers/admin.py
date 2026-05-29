@@ -401,6 +401,7 @@ class AdminSettings(BaseHandler):
             "ENABLE_TXT_TO_TXTZ_PLUGIN",
             "SEND_MAIL_FOR_NEW_BOOKS",
             "USE_DYNAMIC_COVER",
+            "BATCH_ADD_IN_FORCE",
         ]
 
         current_icon = CONF.get(

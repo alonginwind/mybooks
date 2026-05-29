@@ -103,6 +103,7 @@ settings = {
     "UPDATE_CATEGORY_WITH_FOLDER_RENAME": False,
     "SEND_MAIL_FOR_NEW_BOOKS" : False,
     "REMOVE_IMPORTED_FILE": False,
+    "BATCH_ADD_IN_FORCE": False,
 
     "PDF_TILE_WITH_FILE_NAME": False,
 
