@@ -51,6 +51,7 @@ from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COU
 from webserver.constants import BOOK_TYPE_EBOOK, BOOK_TYPE_PHYSICAL, AUTO_FILL_META
 from webserver.constants import META_SOURCE_GOOGLE, META_SOURCE_AMAZON, META_SOURCE_DOUBAN, META_SELECTED_SOURCES
 from webserver.constants import COLUMN_EXT_LINK, CALIBRE_COLUMN_EXT_LINK
+from webserver.constants import CALIBRE_COLUMN_LOCATION, COLUMN_LOCATION
 from webserver.constants import CALIBRE_COLUMN_DYNAMIC_COVER, COLUMN_DYNAMIC_COVER
 
 
@@ -1487,6 +1488,13 @@ class BookEdit(BaseHandler):
                 self.calibre_db_cache.set_field(CALIBRE_COLUMN_EXT_LINK, {bid: ext_link})
             else:
                 logging.error("Too many characters in the external link, ignore it!")
+        if COLUMN_LOCATION in data:
+            location = data[COLUMN_LOCATION].strip()
+            if len(location) < 64:
+                mi.set(CALIBRE_COLUMN_LOCATION, location)
+                self.calibre_db_cache.set_field(CALIBRE_COLUMN_LOCATION, {bid: location})
+            else:
+                logging.error("Too many characters in the location, ignore it!")
 
         if mi.authors:
             # authors中如果有.,则替换为·

@@ -70,7 +70,6 @@ class BatchAddService(AsyncService):
             return total
         except Exception as err:
             logging.error(f"Batch add failed: {err}")
-            import traceback
             logging.error(traceback.format_exc())
             return 0
         finally:
@@ -79,7 +78,7 @@ class BatchAddService(AsyncService):
             try:
                 if os.path.exists(csv_path):
                     os.unlink(csv_path)
-            except:
+            except Exception:
                 pass
 
     def do_batch_add(self, csv_path, csv_filename, user_id):
@@ -97,7 +96,7 @@ class BatchAddService(AsyncService):
                         raw_data.decode(test_encoding)
                         encoding = test_encoding
                         break
-                    except:
+                    except Exception:
                         continue
         except Exception as e:
             logging.error(f"Error detecting file encoding for {csv_path}: {e}")

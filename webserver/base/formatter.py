@@ -5,6 +5,7 @@ from webserver.i18n import _
 from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT
 from webserver.constants import CALIBRE_COLUMN_EXT_LINK, CALIBRE_COLUMN_CATEGORY
 from webserver.constants import BOOK_TYPE_EBOOK, CALIBRE_COLUMN_DYNAMIC_COVER
+from webserver.constants import CALIBRE_COLUMN_LOCATION, BOOK_TYPE_PHYSICAL
 
 
 class SimpleBookFormatter:
@@ -47,6 +48,7 @@ class SimpleBookFormatter:
         book_type = self.val(CALIBRE_COLUMN_BOOK_TYPE, self.book.get("book_type", BOOK_TYPE_EBOOK))
         book_count = self.val(CALIBRE_COLUMN_PHY_COUNT, self.book.get("book_count", 1))
         ext_link = self.val(CALIBRE_COLUMN_EXT_LINK, '').strip()
+        location = self.val(CALIBRE_COLUMN_LOCATION, '').strip() if book_type == BOOK_TYPE_PHYSICAL else ""
         dynamic_cover = self.book.get(CALIBRE_COLUMN_DYNAMIC_COVER, 0)
         return {
             "id": b["id"],
@@ -80,6 +82,7 @@ class SimpleBookFormatter:
             'ext_link': ext_link,
             'files': self.get_files(),
             'dynamic_cover': dynamic_cover,
+            'location': location,
         }
 
 

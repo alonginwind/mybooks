@@ -35,6 +35,10 @@ CALIBRE_COLUMN_PHY_COUNT = "#book_count"
 COLUMN_EXT_LINK = "ext_link"
 CALIBRE_COLUMN_EXT_LINK = "#ext_link"
 
+# 实体书的位置
+COLUMN_LOCATION = "location"
+CALIBRE_COLUMN_LOCATION = "#location"
+
 # 动态封面
 COLUMN_DYNAMIC_COVER = "dynamic_cover"
 CALIBRE_COLUMN_DYNAMIC_COVER = "#dynamic_cover"
