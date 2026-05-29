@@ -376,7 +376,7 @@
         "batch_add_dialog_rule1": "• 使用 Tab 鍵（定位字元）分隔欄位",
         "batch_add_dialog_rule2": "• 第一行為欄位名（表頭）",
         "batch_add_dialog_rule3": "• 必須包含 isbn 欄位",
-        "batch_add_dialog_rule4": "• 可選欄位：title（書名）、author（作者）、coverUrl（封面連結）",
+        "batch_add_dialog_rule4": "• 可選欄位：title（書名）、author（作者）、coverUrl（封面連結）及 location（位置）",
         "batch_add_select_file": "選擇 CSV 檔案",
         "batch_add_start": "開始匯入",
         "batch_add_processing": "正在處理...",

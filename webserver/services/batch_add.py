@@ -10,7 +10,8 @@ import requests
 import traceback
 
 from webserver import loader
-from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT, META_SOURCE_DOUBAN
+from webserver.constants import CALIBRE_COLUMN_BOOK_TYPE, CALIBRE_COLUMN_PHY_COUNT
+from webserver.constants import META_SOURCE_DOUBAN, CALIBRE_COLUMN_LOCATION
 from webserver.constants import BOOK_TYPE_PHYSICAL, AUTO_FILL_META
 from webserver.models import Item, ScanFile
 from webserver.services import AsyncService
@@ -116,6 +117,9 @@ class BatchAddService(AsyncService):
             title = row.get('title', '').strip()
             author = row.get('author', '').strip()
             cover_url = row.get('coverUrl', '').strip()
+            if not cover_url:
+                cover_url = row.get('cover', '').strip()  # 兼容cover_url字段
+            location = row.get('location', '').strip()
 
             logging.info("Processing row %d/%d: ISBN=%s, title=%s", idx + 1, len(rows), isbn, title)
 
@@ -142,7 +146,8 @@ class BatchAddService(AsyncService):
                 if title and author:
                     # 使用提供的信息添加
                     book_id = self._add_book_with_metadata(
-                        isbn, title, author, cover_url, user_id, csv_filename
+                        isbn, title, author, cover_url, location,
+                        user_id, csv_filename
                     )
                 else:
                     # 只有ISBN，从豆瓣获取信息
@@ -287,7 +292,7 @@ class BatchAddService(AsyncService):
             self._record_invalid_isbn(csv_filename, isbn, title, author)
             return None
 
-    def _add_book_with_metadata(self, isbn, title, author, cover_url, user_id, csv_filename):
+    def _add_book_with_metadata(self, isbn, title, author, cover_url, location, user_id, csv_filename):
         """使用提供的元数据添加书籍"""
         try:
             # 先检查ISBN是否已存在
@@ -331,6 +336,8 @@ class BatchAddService(AsyncService):
             try:
                 self.db.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
                 self.db.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: 1})
+                if location:
+                    self.db.set_field(CALIBRE_COLUMN_LOCATION, {book_id: location})
             except Exception as e:
                 logging.error(f"Failed to set custom fields for book ID {book_id}: {e}")
 

@@ -378,7 +378,7 @@
         "batch_add_dialog_rule1": "• Fields separated by Tab character",
         "batch_add_dialog_rule2": "• First row contains field names (header)",
         "batch_add_dialog_rule3": "• Must include isbn field",
-        "batch_add_dialog_rule4": "• Optional fields: title, author, coverUrl",
+        "batch_add_dialog_rule4": "• Optional fields: title, author, coverUrl, and location.",
         "batch_add_select_file": "Select CSV File",
         "batch_add_start": "Start Import",
         "batch_add_processing": "Processing...",

@@ -376,7 +376,7 @@
         "batch_add_dialog_rule1": "• 使用Tab键（制表符）分隔字段",
         "batch_add_dialog_rule2": "• 第一行为字段名（表头）",
         "batch_add_dialog_rule3": "• 必须包含 isbn 字段",
-        "batch_add_dialog_rule4": "• 可选字段：title（书名）、author（作者）、coverUrl（封面链接）",
+        "batch_add_dialog_rule4": "• 可选字段：title（书名）、author（作者）、coverUrl（封面链接）,及location（存放位置）",
         "batch_add_select_file": "选择CSV文件",
         "batch_add_start": "开始导入",
         "batch_add_processing": "正在处理...",
