@@ -31,7 +31,6 @@ export default {
   },
   computed: {
     page_size() {
-      // 客户端环境下才能访问 localStorage
       if (process.client) {
         const stored = localStorage.getItem('defaultPageSize');
         if (stored) {
@@ -39,17 +38,19 @@ export default {
         }
       }
       return this.$store?.state?.default_page_size || 60;
+    },
+    pageDisplayTitle() {
+      return this.getPageTitle();
     }
   },
   data: () => ({
     title: "",
-    pageDisplayTitle: "", // 用于页面显示的标题
     page: 1,
     books: [],
     total: 0,
     page_cnt: 0,
     inited: false,
-    isAudioPage: false, // 标识是否为音频页面
+    isAudioPage: false,
   }),
   async asyncData({route, app, res}) {
     if (res !== undefined) {
@@ -58,80 +59,8 @@ export default {
     return app.$backend(route.fullPath);
   },
   head() {
-    let displayTitle = "";
-
-    switch (this.$route.path) {
-      case "/hot":
-        displayTitle = this.$t('listBook.hotBooks');
-        break;
-
-      case "/search":
-        displayTitle = this.$t('listBook.search');
-        break;
-
-      case "/all":
-        displayTitle = this.$t('listBook.allBooks');
-        break;
-
-      case "/favorites":
-        displayTitle = this.$t('listBook.favoritesBooks');
-        break;
-
-      case "/wants":
-        displayTitle = this.$t('listBook.wantsBooks');
-        break;
-
-      case "/reading":
-        displayTitle = this.$t('listBook.readingBooks');
-        break;
-
-      case "/read-done":
-        displayTitle = this.$t('listBook.readDoneBooks');
-        break;
-
-      case "/printbooks":
-        displayTitle = this.$t('listBook.physicalBooks');
-        break;
-
-      case "/audiobooks":
-        displayTitle = this.$t('listBook.audioBooks');
-        break;
-
-      case "/soledbooks":
-        displayTitle = this.$t('listBook.soledBooks');
-        break;
-
-      default:
-        if (this.$route.params.meta !== undefined) {
-          var name = decodeURIComponent(this.$route.params.name);
-          var titles = {
-            tag: this.$t('listBook.tagBooks', { name }),
-            series: this.$t('listBook.seriesBooks', { name }),
-            rating: this.$t('listBook.ratingBooks', { name }),
-            author: this.$t('listBook.authorBooks', { name }),
-            publisher: this.$t('listBook.publisherBooks', { name }),
-            favorites: this.$t('listBook.favoritesBooks', { name }),
-            wants: this.$t('listBook.wantsBooks', { name }),
-            reading: this.$t('listBook.readingBooks', { name }),
-            readDone: this.$t('listBook.readDoneBooks', { name }),
-          }
-          var meta = this.$route.path.split("/")[1];
-          if (titles[meta] !== undefined) {
-            displayTitle = titles[meta];
-          }
-        }
-
-        if (!displayTitle) {
-          displayTitle = this.title;
-        }
-        break;
-    }
-
-    // 设置页面显示的标题
-    this.pageDisplayTitle = displayTitle;
-
     return {
-      title: displayTitle,
+      title: this.getPageTitle(),
     }
   },
   created() {
@@ -143,7 +72,6 @@ export default {
     }
     this.page_cnt = Math.max(1, Math.ceil(this.total / this.page_size))
 
-    // 检查是否为音频页面
     this.checkIfAudioPage();
   },
 
@@ -151,15 +79,85 @@ export default {
     this.init(to, next);
   },
   methods: {
+    getPageTitle() {
+      let displayTitle = "";
+
+      switch (this.$route.path) {
+        case "/hot":
+          displayTitle = this.$t('listBook.hotBooks');
+          break;
+
+        case "/search":
+          displayTitle = this.$t('listBook.search');
+          break;
+
+        case "/all":
+          displayTitle = this.$t('listBook.allBooks');
+          break;
+
+        case "/favorites":
+          displayTitle = this.$t('listBook.favoritesBooks');
+          break;
+
+        case "/wants":
+          displayTitle = this.$t('listBook.wantsBooks');
+          break;
+
+        case "/reading":
+          displayTitle = this.$t('listBook.readingBooks');
+          break;
+
+        case "/read-done":
+          displayTitle = this.$t('listBook.readDoneBooks');
+          break;
+
+        case "/printbooks":
+          displayTitle = this.$t('listBook.physicalBooks');
+          break;
+
+        case "/audiobooks":
+          displayTitle = this.$t('listBook.audioBooks');
+          break;
+
+        case "/soledbooks":
+          displayTitle = this.$t('listBook.soledBooks');
+          break;
+
+        default:
+          if (this.$route.params.meta !== undefined) {
+            var name = decodeURIComponent(this.$route.params.name);
+            var titles = {
+              tag: this.$t('listBook.tagBooks', { name }),
+              series: this.$t('listBook.seriesBooks', { name }),
+              rating: this.$t('listBook.ratingBooks', { name }),
+              author: this.$t('listBook.authorBooks', { name }),
+              publisher: this.$t('listBook.publisherBooks', { name }),
+              favorites: this.$t('listBook.favoritesBooks', { name }),
+              wants: this.$t('listBook.wantsBooks', { name }),
+              reading: this.$t('listBook.readingBooks', { name }),
+              readDone: this.$t('listBook.readDoneBooks', { name }),
+            }
+            var meta = this.$route.path.split("/")[1];
+            if (titles[meta] !== undefined) {
+              displayTitle = titles[meta];
+            }
+          }
+
+          if (!displayTitle) {
+            displayTitle = this.title;
+          }
+          break;
+      }
+
+      return displayTitle;
+    },
     checkIfAudioPage() {
-      // 检查当前路径是否为音频页面
       this.isAudioPage = this.$route.path === '/audiobooks';
     },
     init(route, next) {
       this.inited = true;
       this.$store.commit('navbar', true);
 
-      // 更新音频页面状态
       this.isAudioPage = route.path === '/audiobooks';
 
       this.$backend(route.fullPath)
