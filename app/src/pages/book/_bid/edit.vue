@@ -97,7 +97,7 @@
                                 <v-col class='py-0' cols=12 sm=2 v-if="book.book_type === 1">
                                     <v-text-field
                                         :label="$t('book.edit.fields.book_count')"
-                                        :disabled="!book.is_physical"
+                                        :disabled="book.book_type != 1"
                                         v-model="book.book_count"
                                         type="text"
                                         inputmode="numeric"
