@@ -936,9 +936,7 @@ class BaseHandler(web.RequestHandler):
         if not book:
             return {"err": "book.not_found", "msg": _("书籍不存在")}
 
-        logging.info(
-            f"[SAVE_META] save meta for book id:{book_id}, fmt:{fmt if fmt else 'ALL'}"
-        )
+        logging.info(f"[SAVE_META] save meta for book id:{book_id}, fmt:{fmt if fmt else 'ALL'}")
 
         # 检查是否有支持的格式（可按 fmt 过滤）
         supported_formats = []

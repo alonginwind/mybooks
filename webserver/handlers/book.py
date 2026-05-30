@@ -31,6 +31,7 @@ from tornado import web
 from webserver import loader, utils
 from webserver.base.formatter import BookFormatter, ReadingStateFormatter
 from webserver.base.cover_generator import CoverGenerator
+from webserver.base.image_helper import ImageHelper
 from webserver.services.autofill import AutoFillService
 from webserver.services.ai_fillinfo import AIFillInfoService
 from webserver.services.book_search import BookSearch
@@ -975,6 +976,68 @@ class BookCover(BaseHandler):
         self.calibre_db.set_metadata(book_id, mi)
         self.calibre_db_cache.set_field(CALIBRE_COLUMN_DYNAMIC_COVER, {book_id: 0})
         return {"err": "ok"}
+
+
+class BookCropCover(BaseHandler):
+    @js
+    @auth
+    def post(self):
+        from calibre.utils.date import now as nowf
+        data = tornado.escape.json_decode(self.request.body) if self.request.body else {}
+        book_ids = []
+        if "id" in data:
+            book_ids.append(int(data["id"]))
+        elif "ids" in data:
+            book_ids.extend([int(x) for x in data["ids"]])
+        else:
+            req_id = self.get_argument("id", None)
+            if req_id:
+                book_ids.append(int(req_id))
+            else:
+                req_ids = self.get_arguments("ids")
+                if req_ids:
+                    book_ids.extend([int(x) for x in req_ids])
+
+        if not book_ids:
+            return {"err": "params.invalid", "msg": _("请指定书籍ID")}
+
+        updated_count = 0
+        failed_count = 0
+
+        for book_id in book_ids:
+            if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
+                failed_count += 1
+                continue
+            try:
+                # 获取当前封面
+                cover_data = self.calibre_db.cover(book_id, index_is_id=True)
+                if not cover_data:
+                    logging.info("Book %d cover data is empty, skipped cropping." % book_id)
+                    failed_count += 1
+                    continue
+
+                new_cover_bytes = ImageHelper.crop_white_borders(cover_data)
+                if new_cover_bytes:
+                    mi = self.calibre_db.get_metadata(book_id, index_is_id=True)
+                    if mi:
+                        mi.cover_data = ("jpeg", new_cover_bytes)
+                        mi.timestamp = nowf()
+                        self.calibre_db.set_metadata(book_id, mi)
+                        self.calibre_db_cache.set_field(CALIBRE_COLUMN_DYNAMIC_COVER, {book_id: 0})
+                        updated_count += 1
+            except Exception as e:
+                logging.error(f"Error cropping cover for book {book_id}: {e}")
+                logging.error(traceback.format_exc())
+                failed_count += 1
+
+        return {
+            "err": "ok",
+            "msg": _("处理完成，成功更新 %d 本，跳过/失败 %d 本。") % (updated_count, len(book_ids) - updated_count),
+            "data": {
+                "updated": updated_count,
+                "failed": len(book_ids) - updated_count
+            }
+        }
 
 
 class BookFavorite(BaseHandler):
@@ -3102,8 +3165,7 @@ class BookAddStamp(BaseHandler):
             args = tornado.escape.json_decode(self.request.body)
             stamp_position = args.get("position", CONF.get("STAMP_POSITION", "bottom-right"))
 
-            helper = utils.ImageHelper()
-            new_cover_data = helper.add_stamp_to_image(cover_data, stamp_path, stamp_position)
+            new_cover_data = ImageHelper().add_stamp_to_image(cover_data, stamp_path, stamp_position)
             if not new_cover_data:
                 return {"err": "stamp.failed", "msg": _("添加图章失败")}
 
@@ -3317,6 +3379,7 @@ def routes():
         (r"/api/book/([0-9]+)/totxtz", BookToTxtZ),
         (r"/api/book/([0-9]+)/setsole", BookSetSole),
         (r"/api/book/([0-9]+)/cover", BookCover),
+        (r"/api/book/crop_cover", BookCropCover),
         (r"/api/book/([0-9]+)/favorite", BookFavorite),
         (r"/api/book/([0-9]+)/wants", BookWantToRead),
         (r"/api/book/([0-9]+)/readstate", BookReadingState),

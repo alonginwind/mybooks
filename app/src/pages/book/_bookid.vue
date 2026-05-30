@@ -310,6 +310,14 @@
                                     <v-icon>mdi-file-upload-outline</v-icon>
                                     {{ $t('book.uploadNewFormat') }}
                                 </v-list-item>
+                                <v-list-item @click="generateCover">
+                                    <v-icon>mdi-panorama-variant-outline</v-icon>
+                                    {{ $t('book.generateCover') }}
+                                </v-list-item>
+                                <v-list-item @click="cropCover">
+                                    <v-icon>mdi-crop-free</v-icon>
+                                    {{ $t('book.cropCover') }}
+                                </v-list-item>
                             </v-list>
                         </v-menu>
                     </template>
@@ -341,10 +349,6 @@
                                 <v-list-item @click="dialog_set_cover = true">
                                     <v-icon>photo</v-icon>
                                     {{ $t('book.setCover') }}
-                                </v-list-item>
-                                <v-list-item @click="generateCover">
-                                    <v-icon>mdi-panorama-variant-outline</v-icon>
-                                    {{ $t('book.generateCover') }}
                                 </v-list-item>
                                 <v-list-item @click="setSole">
                                     <v-icon>{{ book.sole ? 'public_off' : 'public' }}</v-icon>
@@ -2080,22 +2084,35 @@ export default {
                 method: "POST"
             }).then((rsp) => {
                 if (rsp.err === "ok") {
-                    this.$alert("success", this.$t('book.resetSuccessful'));
-                    this.$router.push("/book/" + this.book.id);
                     location.reload();
                 } else {
                     this.$alert("error", rsp.msg);
                 }
             });
         },
+        cropCover() {
+            this.$backend("/book/crop_cover", {
+                method: "POST",
+                body: JSON.stringify({id: this.book.id}),
+            }).then((rsp) => {
+                if (rsp.err === "ok") {
+                    var updated = rsp.data.updated || 0;
+                    if (updated > 0) {
+                        location.reload();
+                    } else {
+                        this.$alert("success", this.$t('book.noNeedCrop'));
+                    }
+                } else {
+                    this.$alert("error", rsp.msg);
+                }
+            });
+        },
         updateTags() {
-            // this.$router.push("/book/" + this.book.id + "/tags");
             this.$backend("/book/" + this.book.id + "/tags", {
                 method: "POST"
             }).then((rsp) => {
                 if (rsp.err === "ok") {
                     this.$alert("success", this.$t('book.updateTagsSuccessful'));
-                    this.$router.push("/book/" + this.book.id);
                     location.reload();
                 } else {
                     this.$alert("error", rsp.msg);
