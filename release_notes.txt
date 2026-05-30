@@ -1,4 +1,4 @@
-<b>Rev: v3.45.1</b><br/>
+<b>Rev: v3.46.0</b><br/>
 <b>日期: 2026-05-31</b><br/>
 <br/>
 <b>1.产品名称更名为MyBooks(镜像:poxenstudio/mybooks)</b><br/>
