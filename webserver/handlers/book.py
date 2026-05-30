@@ -2142,6 +2142,7 @@ class BookUpload(BaseHandler):
         if fmt == "txt":
             mi.title = utils.remove_zlibrary_suffix(name.replace("." + fmt, ""))
             title, author = utils.guess_title_author_from_filename(mi.title)
+            mi.title = title if title else mi.title
             mi.authors = [author] if author else [_("佚名")]
         elif fmt == "pdf":
             if CONF["PDF_TILE_WITH_FILE_NAME"]:

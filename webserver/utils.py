@@ -225,6 +225,7 @@ if __name__ == "__main__":
         "《三体》作者：刘慈欣",
         "《平凡的世界（》作者：路遥",
         "《无人生还》(作者：阿加莎·克里斯蒂)",
+        "《通天之路》（校对版全本）作者：无罪"
     ]
     for filename in test_cases:
         title, author = guess_title_author_from_filename(filename)
