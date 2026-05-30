@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import logging
 import re
-import traceback
 
 
 # 匹配包含z-library的括号内容，例如 (z-library.sk, 1lib.sk, z-lib.sk)
