@@ -5,7 +5,7 @@
             <div class="watermark">PoxenStudio/MyBooks</div>
 
             <v-divider class='mt-10 mb-3'></v-divider>
-            <p class='mb-0 text-center footer-text' v-html="footer_text"></p>
+            <p class='mb-0 text-center footer-text' v-html="footer_text" v-if="footer_text"></p>
             <p>
                 <v-btn small text target="_blank" href="https://github.com/PoxenStudio/mybooks">Project</v-btn>
                 | <v-btn small text target="_blank" href="/podcast">Podcast</v-btn>
@@ -40,6 +40,12 @@
 <script>
 export default {
     name: 'AppFooter',
+    props: {
+        footer: {
+            type: String,
+            default: '',
+        },
+    },
     data: function () {
         return {
             releaseNotesDialog: false,
@@ -48,10 +54,13 @@ export default {
     },
     computed: {
         footer_text: function () {
-            if (this.$store.state.sys.footer != undefined) {
-                return this.$store.state.sys.footer;
-            }
-            return this.footer;
+            const storeFooter = this.$store && this.$store.state && this.$store.state.sys
+                ? this.$store.state.sys.footer
+                : undefined;
+            const raw = storeFooter !== undefined ? storeFooter : (this.footer || '');
+            if (raw == null) return '';
+            const trimmed = String(raw).trim();
+            return trimmed === '' ? '' : raw;
         },
         version: function () {
             return this.$store.state.sys.version || '';
@@ -72,9 +81,6 @@ export default {
         closeReleaseNotesDialog() {
             this.releaseNotesDialog = false;
         },
-    },
-    footer: function () {
-        return this.$t('footer.base_message');
     },
 }
 </script>

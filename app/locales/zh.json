@@ -830,9 +830,6 @@
     "books": "本",
     "booksUnit": "本书"
   },
-  "footer": {
-    "base_message": "基于Calibre构建, 任何问题或建议请前往下方MyBooks主页扫码公众号私信联系。"
-  },
   "appHeader": {
     "home": "首页",
     "admin": "系统管理",
@@ -885,10 +882,7 @@
     "not_login": "未登录",
     "message_notification": "消息通知",
     "clear_messages": "全部清空",
-    "defaultFooter": "本站基于Calibre构建，感谢开源界的力量。所有资源搜集于互联网，如有侵权请邮件联系。",
-    "defaultHeader": "欢迎访问！如果你喜欢此项目，请前往 Github <a target=\"_blank\" href=\"https://github.com/PoxenStudio/mybooks\"> 给 mybooks 点击一个Star！</a>",
-    "favorites": "收藏",
-    "wants": "待读",
+    "defaultFooter": "本
     "reading": "在读",
     "readDone": "已读",
     "gongzhonghao": "关注公众号",
