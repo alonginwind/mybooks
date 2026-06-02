@@ -118,7 +118,7 @@ WebDAV URL地址: `http://<ip or domain>:<port>/books`
 
 
 ## 项目首页
-[PoxenStudio Talebook](https://mybooks.top)
+[PoxenStudio MyBooks](https://mybooks.top)
 
 ## 联系邮箱
 📧 [poxenstudio@gmail.com](mailto:poxenstudio@gmail.com)
