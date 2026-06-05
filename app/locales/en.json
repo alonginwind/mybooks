@@ -747,6 +747,8 @@
     "directory": "Directory",
     "next": "Next Chapter",
     "error": "Error",
+    "error_page_not_found": "404 Not Found",
+    "error_server_starting": "Service is starting, please try again later",
     "parsed": "Parsed",
     "queue": "In Queue",
     "queueMessage": "Waiting for {queLen} conversions ahead, added to the background queue",

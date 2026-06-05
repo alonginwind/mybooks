@@ -25,11 +25,13 @@ export default {
     //this.$store.commit("puremode", true);
   },
 
-  data() {
-    return {
-      pageNotFound: "404 Not Found",
-      otherError: "An error occurred",
-    };
+  computed: {
+    pageNotFound() {
+      return this.$t("error_page_not_found");
+    },
+    otherError() {
+      return this.$t("error_server_starting");
+    },
   },
   head() {
     const title = this.error.statusCode === 404 ? this.pageNotFound : this.otherError;

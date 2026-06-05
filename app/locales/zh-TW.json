@@ -567,6 +567,8 @@
     "directory": "目錄",
     "next": "下一章",
     "error": "錯誤",
+    "error_page_not_found": "404 Not Found",
+    "error_server_starting": "服務正在啟動中，稍後重試",
     "parsed": "已解析",
     "queue": "佇列中",
     "queueMessage": "前方等待 {queLen} 個轉換待完成，已步入後台佇列",
