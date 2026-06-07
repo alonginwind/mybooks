@@ -15,7 +15,7 @@ class TextProcessor(BaseTool):
     def info():
         return {
             "tool_id": "text_processor",
-            "name": "文字处理工具",
+            "name": "文本处理工具",
             "description": "将文本自动转换为带段落、关键词高亮和书名号加粗的 HTML，支持实时预览与代码导出",
             "revision": "0.1.0",
             "author": "OLShopping",

@@ -23,6 +23,37 @@
         <button class="tp-btn danger" @click="clearAll">🗑️ {{ $t('textProcessor.clearBtn') }}</button>
       </div>
 
+      <!-- 图书搜索 / 更新栏 -->
+      <div class="tp-book-bar">
+        <div class="tp-book-search-wrap">
+          <input
+            type="text"
+            class="tp-book-search-input"
+            v-model="bookQuery"
+            :placeholder="$t('textProcessor.bookSearchPlaceholder')"
+            @keyup.enter="searchBook"
+          >
+          <button class="tp-btn" :disabled="bookSearching" @click="searchBook">🔍 {{ $t('textProcessor.searchBtn') }}</button>
+          <div v-if="bookResults.length || (bookSearched && !bookSearching)" class="tp-book-results">
+            <div
+              v-for="book in bookResults"
+              :key="book.id"
+              class="tp-book-result-item"
+              :class="{ selected: selectedBook && selectedBook.id === book.id }"
+              @click="selectBook(book)"
+            >
+              <span class="tp-book-result-title">{{ book.title }}</span>
+              <span class="tp-book-result-author">{{ (book.authors || []).join(', ') }}</span>
+            </div>
+            <div v-if="bookResults.length === 0" class="tp-book-no-results text-muted">{{ $t('textProcessor.noResults') }}</div>
+          </div>
+        </div>
+        <span v-if="selectedBook" class="tp-selected-book-chip" :title="selectedBook.title">📖 {{ selectedBook.title }}</span>
+        <button class="tp-btn accent" :disabled="!selectedBook || updating" @click="updateBook">
+          💾 {{ updating ? $t('textProcessor.updatingBtn') : $t('textProcessor.updateBookBtn') }}
+        </button>
+      </div>
+
       <!-- 设置面板 -->
       <div class="tp-settings-panel" :class="{ visible: settingsVisible }">
         <label>
@@ -130,6 +161,13 @@ export default {
 
     bottomCollapsed: false,
 
+    bookQuery: '',
+    bookResults: [],
+    bookSearching: false,
+    bookSearched: false,
+    selectedBook: null,
+    updating: false,
+
     toastMsg: '',
     toastVisible: false,
     toastTimer: null,
@@ -210,6 +248,68 @@ export default {
       this.rules.splice(index, 1);
       this.saveRules();
       this.processText();
+    },
+
+    // ==================== 图书搜索 / 简介更新 ====================
+    async searchBook() {
+      const q = (this.bookQuery || '').trim();
+      if (!q) return;
+      this.bookSearching = true;
+      this.bookSearched = false;
+      this.bookResults = [];
+      try {
+        const rsp = await this.$backend(`/search?title=title:${encodeURIComponent(q)}`);
+        this.bookResults = rsp.err === 'ok' ? (rsp.books || []) : [];
+      } catch (e) {
+        this.bookResults = [];
+      } finally {
+        this.bookSearching = false;
+        this.bookSearched = true;
+      }
+    },
+    selectBook(book) {
+      this.selectedBook = book;
+      this.bookResults = [];
+      this.bookSearched = false;
+      this.bookQuery = book.title;
+
+      this.inputText = this.stripHtmlToPlainText(book.comments || '');
+      this.inputCount = this.countText(this.inputText);
+      this.processText();
+    },
+    stripHtmlToPlainText(html) {
+      if (!html) return '';
+      if (!/<[a-z][\s\S]*>/i.test(html)) return html;
+
+      let text = html
+        .replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '');
+
+      const div = document.createElement('div');
+      div.innerHTML = text;
+      text = div.textContent || div.innerText || '';
+
+      return text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    },
+    async updateBook() {
+      if (!this.selectedBook) return;
+      this.updating = true;
+      try {
+        const rsp = await this.$backend(`/book/${this.selectedBook.id}/edit`, {
+          method: 'POST',
+          body: JSON.stringify({ comments: this.htmlCode }),
+        });
+        if (rsp.err === 'ok') {
+          this.showToast(rsp.msg || this.$t('textProcessor.toastUpdateSuccess'));
+        } else {
+          this.showToast(rsp.msg || rsp.err);
+        }
+      } catch (e) {
+        this.showToast(String(e));
+      } finally {
+        this.updating = false;
+      }
     },
 
     // ==================== 文字处理核心 ====================
@@ -450,11 +550,120 @@ export default {
   color: var(--tp-on-accent);
 }
 
+.tp-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .tp-sep {
   width: 1px;
   height: 24px;
   background: var(--tp-border);
   margin: 0 4px;
+}
+
+/* 图书搜索 / 更新栏 */
+.tp-book-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--tp-surface);
+  border-bottom: 1px solid var(--tp-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.tp-book-search-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.tp-book-search-input {
+  flex: 1;
+  padding: 7px 12px;
+  background: var(--tp-surface2);
+  border: 1px solid var(--tp-border);
+  border-radius: 6px;
+  color: var(--tp-text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--tp-transition);
+}
+
+.tp-book-search-input::placeholder {
+  color: var(--tp-placeholder);
+}
+
+.tp-book-search-input:focus {
+  border-color: var(--tp-accent);
+}
+
+.tp-book-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--tp-surface2);
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.tp-book-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--tp-border);
+}
+
+.tp-book-result-item:last-child {
+  border-bottom: none;
+}
+
+.tp-book-result-item:hover {
+  background: var(--tp-border);
+}
+
+.tp-book-result-item.selected {
+  background: rgba(137, 180, 250, 0.2);
+}
+
+.tp-book-result-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tp-book-result-author {
+  font-size: 11px;
+  color: var(--tp-text-secondary);
+}
+
+.tp-book-no-results {
+  padding: 12px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tp-selected-book-chip {
+  font-size: 12px;
+  color: var(--tp-text-secondary);
+  background: var(--tp-surface2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 设置面板 */
