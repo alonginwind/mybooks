@@ -156,8 +156,8 @@ class ImageHelper:
                 logging.info(f"检测到上下对称白边: 上 {top}px, 下 {bottom}px。保留 {margin}px 边缘进行上下裁剪。")
 
         if not need_crop and (height / width <= 1.1 and height / width >= 0.9):
-            need_crop = True
             logging.info("图片接近正方形，强制进行裁剪以去除可能的单边白边。")
+            need_crop = True
             border_top = max(0, top - margin)
             border_bottom = max(0, bottom - margin)
             border_top = border_bottom = max(min(border_top, border_bottom), 0)
@@ -167,11 +167,11 @@ class ImageHelper:
             if border_top > 0 and border_bottom > 0 and border_top > border_left and border_top > border_right:
                 crop_top = max(0, border_bottom)
                 crop_bottom = max(0, height - border_bottom)
-            elif border_left > 0 and border_right > 0 and border_left > border_top and border_left > border_bottom:
+                need_crop = True
+            if border_left > 0 and border_right > 0 and border_left > border_top and border_left > border_bottom:
                 crop_left = max(0, border_left)
                 crop_right = max(0, width - border_right)
-            else:
-                need_crop = False
+                need_crop = True
 
         if need_crop:
             cropped_img = img.crop((crop_left, crop_top, crop_right, crop_bottom))
