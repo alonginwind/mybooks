@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
+"""
+(PoxenStudio)回收站管理工具
+"""
 import os
 import logging
 import shutil

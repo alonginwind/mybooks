@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+(PoxenStudio)图片处理工具
+"""
+
 import io
 import logging
 import traceback
