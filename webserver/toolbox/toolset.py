@@ -90,10 +90,12 @@ class ToolSet:
         from .merge_formats_tool import MergeFormatsTool
         from .review_cht_books_tool import ReviewTraditionalChineseTool
         from .minify_pdf import MinifyPdfTool
+        from .text_processor import TextProcessor
         ToolSet.register(RareBookDownloader.info())
         ToolSet.register(MergeFormatsTool.info())
         ToolSet.register(ReviewTraditionalChineseTool.info())
         ToolSet.register(MinifyPdfTool.info())
+        ToolSet.register(TextProcessor.info())
         MinifyPdfTool.cleanup_old_files()
 
     @staticmethod
