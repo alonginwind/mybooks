@@ -3,6 +3,7 @@
 
 import os
 import logging
+import shlex
 import traceback
 
 from webserver.i18n import _
@@ -22,7 +23,22 @@ DEFAULT_CONVERT_TIMEOUT = 3000
 CONF = loader.get_settings()
 
 
-class ConvertService(AsyncService):
+def shell_quote_for_log(value):
+    """Quote a value for display in logs, favoring readability for copy-paste into a shell.
+
+    shlex.quote() always wraps in single quotes, so a value containing single quotes
+    (e.g. an XPath expression like //*[local-name()='p' and ...]) turns into the
+    hard-to-read '...'"'"'...' form. When a value needs quoting solely because of
+    single quotes (no double quotes or other characters special inside double quotes),
+    wrap it in double quotes instead, matching what one would naturally type by hand.
+    """
+    quoted = shlex.quote(value)
+    if quoted != value and "'" in value and not any(c in value for c in "\"\\$`"):
+        return '"%s"' % value
+    return quoted
+
+
+class ConverterService(AsyncService):
     def get_fmt(self, path):
         fmt = os.path.splitext(path)[1]
         return fmt[1:].lower() if fmt else ""
@@ -63,6 +79,9 @@ class ConvertService(AsyncService):
             if old_path.lower().endswith(".txt"):
                 args += ["--chapter-mark", "pagebreak",
                          "--output-profile", "kindle",
+                         "--input-encoding", "utf-8",
+                         "--language", "zh",
+                         "--chapter", "//*[local-name()='p' and re:test(., '(^第?[0-9一二三四五六七八九十百千]+[章节卷回集].*|^章[0-9]+.*|^引子|^楔子|^尾声)', 'i')]",
                          "--flow-size", "260"]
             else:
                 args += ["--flow-size", "0"]
@@ -90,7 +109,7 @@ class ConvertService(AsyncService):
             timeout = DEFAULT_CONVERT_TIMEOUT
 
         with open(log_path, "w") as log:
-            cmd = " ".join("'%s'" % v for v in args)
+            cmd = " ".join(shell_quote_for_log(v) for v in args)
             logging.info("CMD: %s" % cmd)
             env = os.environ.copy()
             env["QTWEBENGINE_DISABLE_SANDBOX"] = "1"
@@ -138,7 +157,7 @@ class ConvertService(AsyncService):
         new_path = os.path.join(
             CONF["convert_path"], "book-%s-%s.%s" % (book["id"], int(time.time()), new_fmt),
         )
-        progress_file = ConvertService().get_path_progress(book["id"])
+        progress_file = ConverterService().get_path_progress(book["id"])
         logging.info("convert book: %s => %s, progress: %s" % (fpath, new_path, progress_file))
 
         title = book.get("title", "Unknown Title")
@@ -146,7 +165,7 @@ class ConvertService(AsyncService):
             title = title[0:19] + "..."
         service_item = f"[{book['id']}]{title}"
         task = BackgroundService().add_task(BackgroundTask.SERVICE_TYPE_CONVERT, service_item, book_id=book["id"])
-        ok = ConvertService().do_ebook_convert(fpath, new_path, progress_file)
+        ok = ConverterService().do_ebook_convert(fpath, new_path, progress_file)
         if task:
             BackgroundService().complete_task(task.id)
         if not ok:

@@ -13,7 +13,7 @@ from webserver.i18n import _
 from tornado import web
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from webserver import constants, loader
-from webserver.services.convert import ConvertService
+from webserver.services.converter import ConverterService
 from webserver.handlers.base import BaseHandler
 from webserver.base.cover_generator import CoverGenerator
 
@@ -189,7 +189,7 @@ class ProxyImageHandler(BaseHandler):
 class ProgressHandler(BaseHandler):
     def get(self, id):
         book_id = int(id)
-        path = ConvertService().get_path_progress(book_id)
+        path = ConverterService().get_path_progress(book_id)
         if not os.path.exists(path):
             raise web.HTTPError(404, log_message="nothing")
         txt = open(path).read()

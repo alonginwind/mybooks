@@ -35,7 +35,7 @@ from webserver.base.image_helper import ImageHelper
 from webserver.services.autofill import AutoFillService
 from webserver.services.ai_fillinfo import AIFillInfoService
 from webserver.services.book_search import BookSearch
-from webserver.services.convert import ConvertService
+from webserver.services.converter import ConverterService
 from webserver.services.extract import ExtractService
 from webserver.services.mail import MailService
 from webserver.handlers.base import BaseHandler, ListHandler, auth, js
@@ -459,7 +459,7 @@ class BookConverter(BaseHandler):
         else:
             fpath = paths[0]
 
-        service = ConvertService()
+        service = ConverterService()
         if service.is_book_converting(book):
             return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
         service.convert_and_save(self.user_id(), book, fpath, fmt)
@@ -497,7 +497,7 @@ class BookToPDF(BaseHandler):
             return {"err": "params.book.invalid", "msg": _("本书不支持转换，仅支持EPUB及Kindle使用的格式转换为PDF")}
 
         fpath = paths[0]
-        service = ConvertService()
+        service = ConverterService()
         if service.is_book_converting(book):
             return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
         service.convert_and_save(self.user_id(), book, fpath, "pdf")
@@ -535,7 +535,7 @@ class BookToTxtZ(BaseHandler):
             return {"err": "params.book.invalid", "msg": _("本书不支持转换，仅支持TXT格式转换为TXTZ")}
 
         fpath = paths[0]
-        service = ConvertService()
+        service = ConverterService()
         if service.is_book_converting(book):
             return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
         service.convert_and_save(self.user_id(), book, fpath, "txtz")
@@ -2476,7 +2476,7 @@ class BookRead(BaseHandler):
 
             if fmt_arg in ("epub", "mobi", "azw", "azw3"):
                 if fmt_arg != 'epub':
-                    ConvertService().convert_and_save(self.user_id(), book, fpath_arg, "epub")
+                    ConverterService().convert_and_save(self.user_id(), book, fpath_arg, "epub")
 
                 epub_dir = "/get/extract/%s" % book["id"]
                 return self.html_page("book/" + CONF["EPUB_VIEWER"], {
@@ -2493,7 +2493,7 @@ class BookRead(BaseHandler):
                 continue
 
             if fmt != 'epub':
-                ConvertService().convert_and_save(self.user_id(), book, fpath, "epub")
+                ConverterService().convert_and_save(self.user_id(), book, fpath, "epub")
 
             # epub_dir is for javascript
             epub_dir = "/get/extract/%s" % book["id"]
@@ -2508,7 +2508,7 @@ class BookRead(BaseHandler):
         if 'fmt_docx' in book and 'fmt_pdf' not in book:
             fpath = book.get("fmt_docx", None)
             if fpath:
-                ConvertService().convert_and_save(self.user_id(), book, fpath, "pdf")
+                ConverterService().convert_and_save(self.user_id(), book, fpath, "pdf")
                 has_converted_pdf = True
 
         if "fmt_pdf" in book or has_converted_pdf:
@@ -2714,7 +2714,7 @@ class BookSendToDevice(BaseHandler):
         if "fmt_azw3" in book or "fmt_mobi" in book:
             fmt = "azw3" if "fmt_azw3" in book else "mobi"
             logging.info(f"[SEND_TO_KINDLE] 找到{fmt}格式，需要转换为epub后发送")
-            ConvertService().convert_and_send(self.user_id(), self.site_url, book, mail_to)
+            ConverterService().convert_and_send(self.user_id(), self.site_url, book, mail_to)
             self.add_msg(
                 "success",
                 _("服务器正在推送《%(title)s》到%(email)s") % {"title": book["title"], "email": mail_to},

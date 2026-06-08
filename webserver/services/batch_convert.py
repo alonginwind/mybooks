@@ -8,7 +8,7 @@ from webserver.i18n import _
 from webserver import loader
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
-from webserver.services.convert import ConvertService
+from webserver.services.converter import ConverterService
 
 CONF = loader.get_settings()
 
@@ -95,8 +95,8 @@ class BatchConvertService(AsyncService):
             new_path = os.path.join(
                 CONF["convert_path"], f"batch-convert-{book_id}-{int(time.time())}.epub"
             )
-            progress_file = ConvertService().get_path_progress(book_id)
-            ok = ConvertService().do_ebook_convert(kindle_path, new_path, progress_file)
+            progress_file = ConverterService().get_path_progress(book_id)
+            ok = ConverterService().do_ebook_convert(kindle_path, new_path, progress_file)
             if not ok:
                 logging.error("[BatchConvert] Failed to convert book id=%d", book_id)
                 return False

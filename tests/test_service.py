@@ -7,7 +7,7 @@ import unittest
 
 from tests.test_main import TestWithUserLogin, setUpModule as init, testdir
 from webserver.services import AsyncService
-from webserver.services.convert import ConvertService
+from webserver.services.converter import ConverterService
 from webserver.services.extract import ExtractService
 from webserver.handlers.static_files import guess_favicon_content_type
 
@@ -21,7 +21,7 @@ class TestConvert(TestWithUserLogin):
         fin = testdir + "/cases/old.epub"
         fout = "/tmp/output.mobi"
         flog = "/tmp/output.log"
-        ok = ConvertService().do_ebook_convert(fin, fout, flog)
+        ok = ConverterService().do_ebook_convert(fin, fout, flog)
         self.assertEqual(ok, True)
 
 
