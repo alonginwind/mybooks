@@ -1208,6 +1208,24 @@
     "dropPagesDesc": "逗號分隔的頁碼（以 1 為起點），支援負數，從輸出中完全刪除這些頁。",
     "maxWidthError": "寬度必須在 600 到 2048 之間"
   },
+  "formatsPruning": {
+    "title": "格式精簡",
+    "close": "關閉",
+    "optionsTitle": "請選擇當書籍有多個格式時需要保留的格式，其它格式將被清理。建議至少保留epub一項。",
+    "optPdf": "PDF",
+    "optEpub": "EPUB",
+    "optAzw3Mobi": "AZW3 / MOBI",
+    "optTxt": "TXT",
+    "optDocx": "DOCX",
+    "allSelectedError": "不能選擇全部格式，請至少取消勾選一項",
+    "startBtn": "開始執行",
+    "statusProcessing": "處理中",
+    "statusCompleted": "處理完成",
+    "processStartSuccess": "格式精簡任務已啟動",
+    "processCompleted": "格式精簡任務已完成",
+    "progressInfo": "已檢查 {checked}/{total} 本，已清理 {books} 本書的 {formats} 個格式檔案",
+    "taskRunning": "已有格式精簡任務正在執行，請稍後再試"
+  },
   "textProcessor": {
     "title": "文字處理工具",
     "close": "關閉",

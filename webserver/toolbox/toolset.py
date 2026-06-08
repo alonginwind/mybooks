@@ -91,11 +91,13 @@ class ToolSet:
         from .review_cht_books_tool import ReviewTraditionalChineseTool
         from .minify_pdf import MinifyPdfTool
         from .text_processor import TextProcessor
+        from .formats_pruning import FormatsPruningTool
         ToolSet.register(RareBookDownloader.info())
         ToolSet.register(MergeFormatsTool.info())
         ToolSet.register(ReviewTraditionalChineseTool.info())
         ToolSet.register(MinifyPdfTool.info())
         ToolSet.register(TextProcessor.info())
+        ToolSet.register(FormatsPruningTool.info())
         MinifyPdfTool.cleanup_old_files()
 
     @staticmethod

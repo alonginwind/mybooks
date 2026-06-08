@@ -12,6 +12,8 @@ from webserver.toolbox.rare_book_downloader import RareBookDownloader
 from webserver.toolbox.merge_formats_tool import MergeFormatsTool
 from webserver.toolbox.review_cht_books_tool import ReviewTraditionalChineseTool
 from webserver.toolbox.minify_pdf import MinifyPdfTool
+from webserver.toolbox.formats_pruning import FormatsPruningTool
+from webserver.services.background_service import BackgroundTask
 from pathlib import Path
 
 
@@ -220,6 +222,58 @@ class AdminMinifyPdfDownload(BaseHandler):
             self.write(f.read())
 
 
+class AdminFormatsPruningStart(BaseHandler):
+    @js
+    @is_admin
+    def post(self):
+        data = tornado.escape.json_decode(self.request.body)
+        keep = data.get("keep")
+        if not isinstance(keep, list) or not keep:
+            return {"err": "params.missing", "msg": _("请至少选择一种需要保留的格式")}
+
+        valid_keys = set(FormatsPruningTool.FORMAT_GROUPS.keys())
+        keep_keys = [k for k in keep if k in valid_keys]
+        if not keep_keys:
+            return {"err": "params.invalid", "msg": _("无效的格式选项")}
+
+        if len(set(keep_keys)) >= len(valid_keys):
+            return {"err": "params.invalid", "msg": _("不能选择全部格式，请至少取消勾选一项以便清理")}
+
+        tool = FormatsPruningTool()
+        if tool.is_running():
+            return {"err": "task.running", "msg": _("已有格式精简任务正在运行，请稍后再试")}
+
+        tool.prune(keep_keys, self.user_id())
+        return {"err": "ok", "msg": _("格式精简任务已启动，右上角可以查看进度")}
+
+
+class AdminFormatsPruningProgress(BaseHandler):
+    @js
+    @is_admin
+    def get(self):
+        task = FormatsPruningTool.get_last_task()
+        if not task:
+            return {"err": "task.not_found", "msg": _("尚未启动格式精简任务")}
+
+        progress_data = task.get("progress_data") or {}
+        result = {
+            "status": task.get("status"),
+            "progress": task.get("progress", 0),
+            "total": progress_data.get("total", 0),
+            "checked": progress_data.get("checked", 0),
+            "pruned_books": progress_data.get("pruned_books", 0),
+            "pruned_formats": progress_data.get("pruned_formats", 0),
+        }
+
+        if task.get("status") == BackgroundTask.STATUS_FAILED:
+            return {"err": "task.failed", "msg": task.get("error_message") or _("处理失败"), "data": result}
+
+        if task.get("status") == BackgroundTask.STATUS_COMPLETED:
+            return {"err": "ok", "msg": _("格式精简任务已完成"), "data": result}
+
+        return {"err": "ok", "data": result}
+
+
 def routes():
     return [
         (r"/api/toolbox/list", AdminToolList),
@@ -230,4 +284,6 @@ def routes():
         (r"/api/toolbox/minify_pdf/process", AdminMinifyPdfProcess),
         (r"/api/toolbox/minify_pdf/progress", AdminMinifyPdfProgress),
         (r"/api/toolbox/minify_pdf/download", AdminMinifyPdfDownload),
+        (r"/api/toolbox/formats_pruning/start", AdminFormatsPruningStart),
+        (r"/api/toolbox/formats_pruning/progress", AdminFormatsPruningProgress),
     ]
