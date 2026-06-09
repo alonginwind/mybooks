@@ -5,7 +5,7 @@ import datetime
 import os
 from urllib.parse import urlparse, parse_qs, quote, unquote
 import re
-from ctfile_downloader import CTFileDownloader
+from tools.downloader.ctfile_downloader import CTFileDownloader
 
 def get_dushupai_books(skip_count=10, downloaded_books={}):
     base_url = "https://www.dushupai.com"
