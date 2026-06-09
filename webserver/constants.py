@@ -67,6 +67,7 @@ META_SOURCE_GOOGLE = "google"
 META_SOURCE_AMAZON = "amazon"
 META_SOURCE_XHSD = "xinhua"
 META_SOURCE_DOUBAN = "douban"
+META_SOURCE_DOUBAN_V2 = "douban_v2"
 META_SOURCE_BAIDU = "baidu"
 META_SOURCE_YOUSHU = "youshu"
 

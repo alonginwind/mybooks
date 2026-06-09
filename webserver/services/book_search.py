@@ -13,14 +13,15 @@ from webserver.i18n import _
 from webserver import loader
 from webserver.constants import META_SELECTED_SOURCES
 from webserver.plugins.meta.douban import DoubanMetaPlugin, has_proper_book
+from webserver.plugins.meta.douban_v2 import DoubanV2MetaPlugin
 from webserver.plugins.meta.baike import BaikeMetaPlugin
 from webserver.plugins.meta.youshu import YoushuMetaPlugin
 from webserver.plugins.meta.calibre import CalibreMetaPlugin
 from webserver.plugins.meta.xhsd import XhsdMetaPlugin
 
 CONF = loader.get_settings()
-_PLUGIN_CLASSES = [DoubanMetaPlugin, BaikeMetaPlugin, CalibreMetaPlugin, YoushuMetaPlugin]
-_PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin]
+_PLUGIN_CLASSES = [DoubanMetaPlugin, DoubanV2MetaPlugin, BaikeMetaPlugin, CalibreMetaPlugin, YoushuMetaPlugin]
+_PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin]  # XhsdMetaPlugin 不参与聚合搜索但需要 provider 路由
 
 
 class BookSearch:
