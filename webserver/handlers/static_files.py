@@ -139,7 +139,7 @@ class ImageHandler(BaseHandler):
 class ProxyImageHandler(BaseHandler):
     def is_whitelist(self, host):
         whitelist = ["bcebos.com", "doubanio.com", "bdstatic.com", "amazon.com", "qpic.cn",
-                     "youshu.me", "zongheng.com", "byteimg.com", "fanqienovel.com"]
+                     "youshu.me", "zongheng.com", "byteimg.com", "fanqienovel.com", "neodb.social"]
         for w in whitelist:
             if host.endswith(w):
                 return True
@@ -148,6 +148,11 @@ class ProxyImageHandler(BaseHandler):
     async def get(self):
         """使用异步 HTTP 客户端获取远程图片"""
         url = self.get_argument("url", None)
+        # set the content-type according the extension of the url, default to image/jpeg
+        ext = os.path.splitext(url)[1].lower() if url else ""
+        content_type = (mimetypes.guess_type(ext)[0] if ext else None) or "image/jpeg"
+        self.set_header("Content-Type", content_type)
+
         if not url:
             cover = self.default_cover
             self.write(cover)

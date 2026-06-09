@@ -161,7 +161,7 @@ def get_book_detail(book_url, search_url):
         return None
     headers = {**_SEARCH_HEADERS, "Referer": search_url}
     try:
-        resp = requests.get(book_url, headers=headers, timeout=15)
+        resp = requests.get(book_url, headers=headers, timeout=10)
         resp.raise_for_status()
     except requests.exceptions.RequestException as e:
         logging.error("豆瓣V2获取书籍页面失败 %s: %s", book_url, e)
@@ -193,12 +193,12 @@ def get_cover(cover_url, referer="https://book.douban.com/"):
     headers = {**_COVER_HEADERS, "Referer": referer}
     try:
         session = requests.Session()
-        resp = session.get(cover_url, headers=headers, timeout=15)
+        resp = session.get(cover_url, headers=headers, timeout=10)
         resp.raise_for_status()
         if "text/html" in resp.headers.get("Content-Type", ""):
             cookies = _parse_js_challenge_cookies(resp.text)
             if cookies:
-                resp = session.get(cover_url, headers=headers, cookies=cookies, timeout=15)
+                resp = session.get(cover_url, headers=headers, cookies=cookies, timeout=10)
                 resp.raise_for_status()
         if "image" not in resp.headers.get("Content-Type", ""):
             logging.error("豆瓣V2封面下载失败，非图片响应: %s", resp.headers.get("Content-Type"))

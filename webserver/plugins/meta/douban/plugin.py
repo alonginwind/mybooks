@@ -20,22 +20,26 @@ class DoubanMetaPlugin(MetaSourcePlugin):
     PROVIDER_KEY = KEY
 
     def _api(self, copy_image=True):
+        max_count = min(CONF.get("douban_max_count", 2), 5)
         return DoubanBookApi(
             CONF["douban_apikey"],
             CONF["douban_baseurl"],
             copy_image=copy_image,
             manual_select=False,
-            maxCount=CONF.get("douban_max_count", 2),
+            maxCount=CONF.get("douban_max_count", max_count),
         )
 
     def search(self, title=None, isbn=None, publisher=None):
         if not title:
             return []
 
+        max_count = min(CONF.get("douban_max_count", 2), 5)
         api = self._api(copy_image=False)
         books = []
         try:
             books = api.search_books(title) or []
+            if books:
+                books = books[:max_count]
         except Exception as e:
             logging.error(_(u"豆瓣接口查询 %s 失败: %s" % (title, str(e))))
 

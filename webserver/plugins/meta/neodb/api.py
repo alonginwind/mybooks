@@ -89,7 +89,7 @@ def search(query, max_count=1):
         resp = requests.get(url, headers=_HEADERS, timeout=15)
         resp.raise_for_status()
     except requests.exceptions.RequestException as e:
-        logging.error("NeoDB搜索请求失败: %s", e)
+        logging.error("[NeoDB]搜索请求失败: %s", e)
         return []
 
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -99,7 +99,7 @@ def search(query, max_count=1):
         try:
             results.append(_parse_item_card(article))
         except Exception as e:
-            logging.warning("NeoDB解析条目失败: %s", e)
+            logging.warning("[NeoDB]解析条目失败: %s", e)
     return results
 
 
@@ -114,11 +114,11 @@ def get_cover(cover_url):
         resp = requests.get(cover_url, headers=_HEADERS, timeout=15)
         resp.raise_for_status()
         if "image" not in resp.headers.get("Content-Type", ""):
-            logging.error("NeoDB封面下载失败，非图片响应: %s", resp.headers.get("Content-Type"))
+            logging.error("[NeoDB]封面下载失败，非图片响应: %s", resp.headers.get("Content-Type"))
             return None
         return (suffix, resp.content)
     except requests.exceptions.RequestException as e:
-        logging.error("NeoDB封面下载失败: %s", e)
+        logging.error("[NeoDB]封面下载失败: %s", e)
         return None
 
 
@@ -166,10 +166,13 @@ def build_metadata(item, isbn=None, copy_image=False):
             pass
 
     cover_url = item.get("cover_url", "")
+    logging.info("[NeoDB]封面URL: %s", cover_url)
     if cover_url:
         if not copy_image:
+            logging.info("[NeoDB]不复制封面，直接使用URL")
             mi.cover_url = cover_url
         else:
+            logging.info("[NeoDB]复制封面数据")
             cover_data = get_cover(cover_url)
             if cover_data:
                 mi.cover_data = cover_data

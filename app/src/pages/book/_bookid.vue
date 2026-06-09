@@ -204,9 +204,9 @@
                 <v-toolbar flat dense dark color="primary">
                     {{ $t('book.syncBookInfo') }}
                     <v-spacer></v-spacer>
-                    <v-btn outlined text @click="dialog_refer = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn @click="dialog_refer = false" color="green">{{ $t('common.cancel') }}</v-btn>
                 </v-toolbar>
-                <v-card-text xclass="pt-3 px-3 px-sm-6">
+                <v-card-text xclass="pt-3 px-3 px-sm-3">
                     <p class="py-6 text-center" v-if="refer_books_loading">
                         <v-progress-circular indeterminate color="primary"></v-progress-circular>
                     </p>
@@ -233,7 +233,7 @@
                                         dark
                                         :href="book.website"
                                         target="__blank"
-                                        :color="(book.source === '豆瓣' || book.source === 'amazon') ? 'green' : 'blue'"
+                                        :color="['douban', 'amazon', 'douban_v2'].includes(book.provider_key) ? '#064420' : '#003153'"
                                     >{{ book.source }}
                                     </v-chip
                                     >
