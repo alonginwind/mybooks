@@ -6,9 +6,6 @@
 # 使用 subject_search 接口，仅依赖搜索结果中的字段，不发二次详情请求。
 # 可选：get_book_detail(url) 额外抓取书籍页面，提取作者、ISBN 和 div.intro 简介。
 # 搜索结果 abstract 格式：作者 / 出版社 / 出版日期 / 定价（" / " 分隔）。
-# 封面反爬处理同 tools/meta_source/search_on_douban.py：
-#   CDN 返回 text/html JS 挑战时，解析 WTKkN/bOYDu/wyeCN 三个硬编码常量，
-#   携带 __tst_status cookie 重试即可。
 # @author: PoxenStudio, 2026-06
 
 import datetime

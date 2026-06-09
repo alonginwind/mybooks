@@ -18,9 +18,10 @@ from webserver.plugins.meta.baike import BaikeMetaPlugin
 from webserver.plugins.meta.youshu import YoushuMetaPlugin
 from webserver.plugins.meta.calibre import CalibreMetaPlugin
 from webserver.plugins.meta.xhsd import XhsdMetaPlugin
+from webserver.plugins.meta.neodb import NeodbMetaPlugin
 
 CONF = loader.get_settings()
-_PLUGIN_CLASSES = [DoubanMetaPlugin, BaikeMetaPlugin, CalibreMetaPlugin, YoushuMetaPlugin, DoubanV2MetaPlugin]
+_PLUGIN_CLASSES = [DoubanMetaPlugin, BaikeMetaPlugin, CalibreMetaPlugin, YoushuMetaPlugin, DoubanV2MetaPlugin, NeodbMetaPlugin]
 _PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin]  # XhsdMetaPlugin 不参与聚合搜索但需要 provider 路由
 
 
