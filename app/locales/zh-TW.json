@@ -1230,7 +1230,7 @@
   "epubFixer": {
     "title": "EPUB 修復",
     "close": "關閉",
-    "hint": "修復操作將對書籍執行 epub→epub 格式轉換，完成後將直接覆蓋原始檔案，請確認操作。如需保留原始檔案，請勾選「轉換前備份」選項。",
+    "hint": "EPUB 修復工具可以修復部分 EPUB 格式異常的書籍，將嘗試修復常見的結構問題以提高兼容性和閱讀體驗。請注意，修復過程會修改原始 EPUB 檔案，可以勾選備份選項，處理完成後在數據目錄下的 toolbox/epub-fixer 目錄中找到備份檔案。",
     "searchPlaceholder": "搜尋書名",
     "noResults": "未找到相關書籍",
     "backupLabel": "轉換前備份原始 EPUB 檔案",

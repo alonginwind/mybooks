@@ -291,7 +291,7 @@ class AdminEpubFixerFix(BaseHandler):
             return {"err": "task.running", "msg": _("已有 EPUB 修复任务正在执行，请稍后再试")}
 
         tool.fix(int(book_id), backup, self.user_id())
-        return {"err": "ok", "msg": _("EPUB 修复任务已启动")}
+        return {"err": "ok", "msg": _("EPUB修复任务已启动,不要重复执行,注意查看消息通知中的处理结果")}
 
 
 def routes():

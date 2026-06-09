@@ -1230,7 +1230,7 @@
   "epubFixer": {
     "title": "EPUB Fixer",
     "close": "Close",
-    "hint": "This tool performs an epub→epub conversion to rebuild the EPUB structure and fix formatting issues. The original file will be overwritten when complete. Check 「Backup before converting」 to keep a copy of the original.",
+    "hint": "This tool rebuild the EPUB structure and fix formatting issues. The original file will be overwritten when complete. Check 「Backup before converting」 to keep a copy of the original.",
     "searchPlaceholder": "Search by title",
     "noResults": "No books found",
     "backupLabel": "Backup original EPUB before converting",

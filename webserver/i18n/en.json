@@ -479,5 +479,14 @@
   "同步元数据到文件的任务已经开始执行，在右上角可以查看进度": "The task of syncing metadata to file has started. You can check the progress in the top right corner",
   "[无效]:": "[INCOMPLETE]:",
   "不能刪除全部格式": "Cannot delete all formats",
-  "删除格式不能为空，请至少选择一种格式": "Format to delete cannot be empty, please select at least one format"
+  "删除格式不能为空，请至少选择一种格式": "Format to delete cannot be empty, please select at least one format",
+  "已有 EPUB 修复任务正在执行，请稍后再试": "An EPUB fix task is already running, please try again later",
+  "书籍不存在：ID=%d": "Book not found: ID=%d",
+  "该书籍没有 EPUB 格式，无法执行修复": "This book has no EPUB format, cannot perform fix",
+  "找不到 EPUB 文件，可能已被移除": "EPUB file not found, it may have been removed",
+  "EPUB 转换失败，请检查文件是否损坏（日志：%s）": "EPUB conversion failed, please check if the file is corrupted (log: %s)",
+  "书籍 [%s] EPUB 修复成功！": "Book [%s] EPUB fixed successfully!",
+  "书籍 [%s] EPUB 修复失败！": "Book [%s] EPUB fix failed!",
+  "请提供书籍ID": "Please provide a book ID",
+  "EPUB修复任务已启动,不要重复执行,注意查看消息通知中的处理结果": "EPUB fix task has started, do not execute repeatedly, check the message notifications for results"
 }
