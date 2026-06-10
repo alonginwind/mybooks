@@ -1475,6 +1475,12 @@ class BookEdit(BaseHandler):
         "languages",
     ]
 
+    def _is_html_content(self, content: str) -> bool:
+        if not content:
+            return False
+        html_pattern = re.compile(r'<[^>]+>')
+        return bool(html_pattern.search(content))
+
     def edit_book(self, bid, data):
         from calibre.utils.date import now as nowf
         mi = self.calibre_db.get_metadata(bid, index_is_id=True, get_cover=True)
@@ -1490,6 +1496,9 @@ class BookEdit(BaseHandler):
         for key, val in data.items():
             if key not in self.KEYS:
                 continue
+            if key == "comments" and not self._is_html_content(val):
+                # replace the line break with <br/> to avoid losing line break when display in web
+                val = val.replace("\n", "<br/>")
             mi.set(key, val)
 
         if data.get("pubdate", None):
