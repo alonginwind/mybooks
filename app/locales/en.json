@@ -412,6 +412,8 @@
     "site_title": "Site Title",
     "site_header": "Site Header",
     "site_footer": "Site Footer",
+    "footer_watermark": "Footer Watermark",
+    "hide_project_link_in_footer":"Hide Project Links in Footer",
     "private_library_mode": "Enable Private Library Mode",
     "access_code": "Access Code",
     "invite_message": "Invite Message",

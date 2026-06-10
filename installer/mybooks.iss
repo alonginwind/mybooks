@@ -72,6 +72,12 @@ Name: "{group}\Restart {#MyAppName}"; Filename: "{app}\RestartMyBooks.bat"; Work
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"; IconFilename: "{app}\{#IconFileName}"
 
 
+[Dirs]
+; 创建用于持久化书库数据的目录，启动时绑定挂载到容器内的 /data
+; 卸载时不删除该目录，避免误删用户书库数据
+Name: "{app}\data"; Flags: uninsneveruninstall
+
+
 [Run]
 ; 安装完成后，自动导入 WSL 实例
 ; 参数说明: --import <发行版名称> <安装目录> <tar文件路径> --version 2
@@ -82,21 +88,36 @@ Filename: "wsl.exe"; Parameters: "--import MyBooksService ""{app}\wsl_data"" ""{
 Filename: "wsl.exe"; Parameters: "--unregister MyBooksService"; Flags: runhidden waituntilterminated; StatusMsg: "正在清理 MyBooks 运行环境..."
 
 [Code]
+// 将 Windows 路径转换为 WSL (DrvFs) 下可访问的路径，例如 C:\Users\foo\bar -> /mnt/c/Users/foo/bar
+function GetWslPath(WinPath: String): String;
+var
+  Drive: String;
+  Rest: String;
+begin
+  Drive := Lowercase(Copy(WinPath, 1, 1));
+  Rest := Copy(WinPath, 3, MaxInt);
+  StringChangeEx(Rest, '\', '/', True);
+  Result := '/mnt/' + Drive + Rest;
+end;
+
 // 动态生成启动批处理文件，避免额外携带文件
 procedure CreateStartBatch();
 var
   BatchFile: String;
   BatchContent: String;
+  DataPath: String;
 begin
   BatchFile := ExpandConstant('{app}\StartMyBooks.bat');
+  DataPath := GetWslPath(ExpandConstant('{app}\data'));
 
   // ==========================================
   // ⚠️ 重要：请在此处修改您的实际入口命令！
   // ==========================================
   // 在独立窗口中以前台方式运行服务（保留日志输出），主窗口等待片刻后打开默认浏览器
+  // 启动前先将本机的 data 目录绑定挂载到容器内的 /data，实现书库数据持久化到本机
   BatchContent := '@echo off' + #13#10 +
                   'echo 正在启动 MyBooks...' + #13#10 +
-                  'start "MyBooks Server" wsl.exe -d MyBooksService -u root -- bash -c "export PGID=1000 && export PUID=1000 && /var/www/talebook/docker/start.sh"' + #13#10 +
+                  'start "MyBooks Server" wsl.exe -d MyBooksService -u root -- bash -c "export PGID=1000 && export PUID=1000 && mkdir -p /data && (grep -qs \" /data \" /proc/mounts || mount --bind \"' + DataPath + '\" /data); /var/www/talebook/docker/start.sh"' + #13#10 +
                   'echo 正在等待服务就绪...' + #13#10 +
                   'timeout /t 5 /nobreak >nul' + #13#10 +
                   'start "" "http://localhost"' + #13#10 +
@@ -132,22 +153,20 @@ procedure CreateRestartBatch();
 var
   BatchFile: String;
   BatchContent: String;
+  DataPath: String;
 begin
   BatchFile := ExpandConstant('{app}\RestartMyBooks.bat');
+  DataPath := GetWslPath(ExpandConstant('{app}\data'));
 
   // 先尝试注销 WSL 实例（未运行时为空操作），再重新启动，统一处理“启动”和“重启”两种场景
+  // 启动前先将本机的 data 目录绑定挂载到容器内的 /data，实现书库数据持久化到本机
   BatchContent := '@echo off' + #13#10 +
                   'echo 正在重启 MyBooks...' + #13#10 +
                   'wsl.exe --terminate MyBooksService >nul 2>&1' + #13#10 +
                   'timeout /t 2 /nobreak >nul' + #13#10 +
-                  'start "MyBooks Server" wsl.exe -d MyBooksService -u root -- bash -c "export PGID=1000 && export PUID=1000 && /var/www/talebook/docker/start.sh"' + #13#10 +
-                  'echo 正在等待服务就绪...' + #13#10 +
-                  'timeout /t 5 /nobreak >nul' + #13#10 +
-                  'start "" "http://localhost"' + #13#10 +
+                  'wsl.exe -d MyBooksService -u root -- bash -c "export PGID=1000 && export PUID=1000 && mkdir -p /data && (grep -qs \" /data \" /proc/mounts || mount --bind \"' + DataPath + '\" /data); /var/www/talebook/docker/start.sh"' + #13#10 +
                   'echo.' + #13#10 +
-                  'echo MyBooks 已启动，服务日志显示在另一个窗口中。' + #13#10 +
-                  'echo 关闭此窗口不会停止服务，如需停止请使用 Stop MyBooks。' + #13#10 +
-                  'echo 按任意键关闭此窗口...' + #13#10 +
+                  'echo MyBooks 已启动，按任意键关闭此窗口...' + #13#10 +
                   'pause >nul';
 
   SaveStringToFile(BatchFile, BatchContent, False);

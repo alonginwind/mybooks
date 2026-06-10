@@ -730,6 +730,9 @@ export default {
                 rsp.sys.footer = this.$t('appHeader.defaultFooter');
                 this.$store.commit("set_footer", rsp.sys.footer);
             }
+            this.$store.commit("set_footer_watermark", rsp.sys.footer_watermark);
+            this.$store.commit("set_standalone", rsp.sys.standalone);
+            this.$store.commit("set_hide_project_links", rsp.sys.hide_project_links);
             if (rsp.user.is_login) {
                 if (process.client && localStorage.getItem('drawerSidebar') === null) {
                     this.sidebar = this.$vuetify.breakpoint.lgAndUp;

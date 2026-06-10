@@ -7,6 +7,7 @@ import os
 
 settings = {
     'installed'     : False,
+    'STANDALONE'    : False,
     "autoreload"    : True,
     "xsrf_cookies"  : False,
     "static_host"   : "",
@@ -165,6 +166,8 @@ settings = {
     'ALLOW_REGISTER' : False,
     'HEADER': '',
     'FOOTER': '',
+    'FOOTER_WATERMARK': 'PoxenStudio/MyBooks',
+    'HIDE_PROJECT_LINKS': False,
 
     'FRIENDS': [
         { "text": "书格", "href": "https://www.shuge.org/" },

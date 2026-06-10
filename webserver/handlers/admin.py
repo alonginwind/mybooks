@@ -290,6 +290,9 @@ class AdminSettings(BaseHandler):
         CONF["site_icon"] = "favicon_0"  # default icon, means use current favicon.ico
         CONF["META_ALL_SOURCES"] = BookSearch.all_sources()
 
+        if "STANDALONE" not in CONF:
+            CONF["STANDALONE"] = False
+
         sns = [
             {"value": "qq", "text": "QQ", "link": "https://connect.qq.com/"},
             {
@@ -328,6 +331,8 @@ class AdminSettings(BaseHandler):
             "EPUB_VIEWER",
             "FRIENDS",
             "FOOTER",
+            "FOOTER_WATERMARK",
+            'HIDE_PROJECT_LINKS',
             "HEADER",
             "INVITE_CODE",
             "INVITE_MESSAGE",

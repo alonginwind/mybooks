@@ -756,6 +756,11 @@ export default {
             type: "textarea",
           },
           {
+            icon: "mdi-closed-caption-outline",
+            key: "FOOTER_WATERMARK",
+            label: "settings.footer_watermark",
+          },
+          {
             icon: "language",
             key: "site_language",
             label: "settings.language_switch",
@@ -822,6 +827,12 @@ export default {
               text: String(v),
               value: v,
             })),
+          },
+          {
+            icon: "mdi-star-off-outline",
+            key: "HIDE_PROJECT_LINKS",
+            label: "settings.hide_project_link_in_footer",
+            type: "checkbox",
           },
         ],
         groups: [

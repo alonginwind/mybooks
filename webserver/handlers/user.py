@@ -478,6 +478,7 @@ class UserInfo(BaseHandler):
             "socials": CONF["SOCIALS"],
             "friends": self._build_friends_with_favicon(),
             "footer": CONF["FOOTER"] if "FOOTER" in CONF else "",
+            "footer_watermark": CONF.get("FOOTER_WATERMARK", ""),
             "header": CONF["HEADER"] if "HEADER" in CONF else "",
             "allow": {
                 "register": CONF["ALLOW_REGISTER"],
@@ -490,6 +491,8 @@ class UserInfo(BaseHandler):
             "indexPage": CONF.get("INDEX_PAGE_TYPE", "index"),
             "defaultPageSize": CONF.get("DEFAULT_PAGE_SIZE", 60),
             "aiEnabled": CONF.get("AI_ENABLED", False),
+            "standalone": CONF.get("STANDALONE", False),
+            "hide_project_links": CONF.get("HIDE_PROJECT_LINKS", False),
         }
 
     def get_user_info(self, detail):

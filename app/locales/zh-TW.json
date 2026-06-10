@@ -610,6 +610,8 @@
     "site_title": "網站標題",
     "site_header": "網站公告",
     "site_footer": "網站頁尾",
+    "footer_watermark": "頁尾浮水印",
+    "hide_project_link_in_footer":"隱藏頁尾的項目連結",
     "private_library_mode": "開啟私人圖書館模式",
     "access_code": "存取碼",
     "invite_message": "提示語",

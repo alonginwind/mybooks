@@ -2,19 +2,23 @@
     <div>
     <v-row>
         <v-col cols=12 class='text-center position-relative'>
-            <div class="watermark">PoxenStudio/MyBooks</div>
+            <div class="watermark" v-if="footer_watermark" v-text="footer_watermark"></div>
 
             <v-divider class='mt-10 mb-3'></v-divider>
             <p class='mb-0 text-center footer-text' v-html="footer_text" v-if="footer_text"></p>
             <p>
-                <v-btn small text target="_blank" href="https://github.com/PoxenStudio/mybooks">Project</v-btn>
-                | <v-btn small text target="_blank" href="/podcast">Podcast</v-btn>
-                | <v-btn small text target="_blank" href="https://mybooks.top">MyBooks</v-btn>
-                | <v-btn small text target="_blank" href="/opds-readme"> {{ $t('appHeader.opdsIntroduction') }} </v-btn>
-                | <v-btn small text target="_blank" href="/webdav-readme"> {{ $t('appHeader.webdavIntroduction') }} </v-btn>
+                <v-btn small text target="_blank" v-if="!hide_project_links" href="https://github.com/PoxenStudio/mybooks">Project</v-btn>
+                <span v-if="!hide_project_links">|</span>
+                <v-btn small text target="_blank" href="/podcast">Podcast</v-btn>
+                <span>|</span>
+                <v-btn small text target="_blank" v-if="!hide_project_links" href="https://mybooks.top">MyBooks</v-btn>
+                <span v-if="!hide_project_links">|</span>
+                <v-btn small text target="_blank" href="/opds-readme"> {{ $t('appHeader.opdsIntroduction') }}</v-btn>
+                <span>|</span>
+                <v-btn small text target="_blank" href="/webdav-readme"> {{ $t('appHeader.webdavIntroduction') }} </v-btn>
             </p>
             <p v-if="version" class="version-info cursor-pointer" @click="showReleaseNotes">
-                {{ $t('appHeader.systemVersion') }}: {{ version }}
+                {{ $t('appHeader.systemVersion') }}: {{ version }} {{ standalone ? '(Standalone)' : '' }}
             </p>
         </v-col>
     </v-row>
@@ -61,6 +65,15 @@ export default {
             if (raw == null) return '';
             const trimmed = String(raw).trim();
             return trimmed === '' ? '' : raw;
+        },
+        standalone: function () {
+            return this.$store.state.sys.standalone || false;
+        },
+        footer_watermark: function () {
+            return this.$store.state.sys.footer_watermark || '';
+        },
+        hide_project_links: function () {
+            return this.$store.state.sys.hide_project_links || false;
         },
         version: function () {
             return this.$store.state.sys.version || '';
