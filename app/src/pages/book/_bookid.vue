@@ -353,6 +353,10 @@
                                     <v-icon>mdi-file-upload-outline</v-icon>
                                     {{ $t('book.uploadNewFormat') }}
                                 </v-list-item>
+                                <v-list-item @click="dialog_set_cover = true">
+                                    <v-icon>photo</v-icon>
+                                    {{ $t('book.setCover') }}
+                                </v-list-item>
                                 <v-list-item @click="generateCover">
                                     <v-icon>mdi-panorama-variant-outline</v-icon>
                                     {{ $t('book.generateCover') }}
@@ -388,10 +392,6 @@
                                 <v-list-item @click="resetRefer">
                                     <v-icon>apps</v-icon>
                                     {{ $t('book.resetInfo') }}
-                                </v-list-item>
-                                <v-list-item @click="dialog_set_cover = true">
-                                    <v-icon>photo</v-icon>
-                                    {{ $t('book.setCover') }}
                                 </v-list-item>
                                 <v-list-item @click="setSole">
                                     <v-icon>{{ book.sole ? 'public_off' : 'public' }}</v-icon>

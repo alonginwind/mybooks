@@ -16,7 +16,7 @@ def get_file_encoding(file):
 
 def get_content_encoding(byte):
     import chardet
-    return chardet.detect(byte)['encoding']
+    return chardet.detect(byte)['encoding'] or 'GB2312'
 
 
 class TxtParser:
@@ -29,7 +29,7 @@ class TxtParser:
         {
             "name": "目录",
             "example": "第一章 标准的粤语就是这样",
-            "rule": r"^[ 　\t]{0,4}(?:序章|楔子|正文(?!完|结)|终章|后记|尾声|番外|第\s{0,4}[\d〇零一二两三四五六七八九十百千万壹贰叁肆伍陆柒捌玖拾佰仟]+?\s{0,4}(?:章|节(?!课)|卷|集(?![合和])|部(?![分赛游])|篇(?!张))).{0,30}$"}, # noqa
+            "rule": r"^[ 　\t]{0,4}(?:序章|序言|楔子|正文(?!完|结)|终章|后记|尾声|番外|第\s{0,4}[\d〇零一二两三四五六七八九十百千万壹贰叁肆伍陆柒捌玖拾佰仟]+?\s{0,4}(?:章|节(?!课)|卷|集(?![合和])|部(?![分赛游])|篇(?!张))).{0,30}$"}, # noqa
         {
             "name": "数字 分隔符 标题名称",
             "example": "1、这个就是标题",
@@ -40,7 +40,7 @@ class TxtParser:
             "rule": r"^[ 　\t]{0,4}(?:序章|楔子|正文(?!完|结)|终章|后记|尾声|番外|[零一二两三四五六七八九十百千万壹贰叁肆伍陆柒捌玖拾佰仟]{1,8}章?)[ 、_—\-].{1,30}$"},
         {
             "name": "正文 标题/序号",
-            "example": "正文 我奶常山赵子龙",
+            "example": "正文 我乃常山赵子龙",
             "rule": r"^[ 　\t]{0,4}正文[ 　]{1,4}.{0,20}$"},
         {
             "name": "Chapter/Section/Part/Episode 序号 标题",

@@ -356,7 +356,8 @@ class ScanService(AsyncService):
         # Skip metadata reading when title/author are derived from filename
         skip_metadata = (fmt == "txt")
         if skip_metadata:
-            title = utils.remove_zlibrary_suffix(fname.replace("." + fmt, ""))
+            title = fname[:-len(fmt) - 1]
+            title = utils.remove_zlibrary_suffix(title)
             author = None
             if fmt == "txt":
                 title, author = utils.guess_title_author_from_filename(title)
