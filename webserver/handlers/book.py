@@ -2513,7 +2513,9 @@ class BookRead(BaseHandler):
 
             if fmt_arg in ("epub", "mobi", "azw", "azw3"):
                 if fmt_arg != 'epub':
-                    ConverterService().convert_and_save(self.user_id(), book, fpath_arg, "epub")
+                    service = ConverterService()
+                    if not service.is_book_converting(book):
+                        service.convert_and_save(self.user_id(), book, fpath_arg, "epub")
 
                 epub_dir = "/get/extract/%s" % book["id"]
                 return self.html_page("book/" + CONF["EPUB_VIEWER"], {
@@ -2532,7 +2534,7 @@ class BookRead(BaseHandler):
             if fmt != 'epub':
                 service = ConverterService()
                 if not service.is_book_converting(book):
-                    ConverterService().convert_and_save(self.user_id(), book, fpath, "epub")
+                    service.convert_and_save(self.user_id(), book, fpath, "epub")
 
             # epub_dir is for javascript
             epub_dir = "/get/extract/%s" % book["id"]
@@ -2547,7 +2549,9 @@ class BookRead(BaseHandler):
         if 'fmt_docx' in book and 'fmt_pdf' not in book:
             fpath = book.get("fmt_docx", None)
             if fpath:
-                ConverterService().convert_and_save(self.user_id(), book, fpath, "pdf")
+                service = ConverterService()
+                if not service.is_book_converting(book):
+                    service.convert_and_save(self.user_id(), book, fpath, "pdf")
                 has_converted_pdf = True
 
         if "fmt_pdf" in book or has_converted_pdf:

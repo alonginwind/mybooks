@@ -264,9 +264,7 @@
                         </span>
                     </v-btn>
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" :style="tiny ? { padding: '0px 2px', margin: '0px 3px !important' } : {}"
-                           :href="readHref"
-                           target="_blank">
-                        <v-icon left v-if="!tiny">more-vert</v-icon>
+                           :href="readHref" target="_blank">
                         {{ $t('book.read') }}
                     </v-btn>
                     <v-menu v-if="needsReadFormatChoice" offset-y>
@@ -277,7 +275,7 @@
                             </v-btn>
                         </template>
                         <v-list dense>
-                            <v-list-item v-for="fmt in extraReadFormats" :key="fmt.key" :href="fmt.href" target="_blank">
+                            <v-list-item v-for="fmt in extraReadFormats" :key="fmt.key" :href="fmt.href">
                                 <v-list-item-title>{{ fmt.label }}</v-list-item-title>
                             </v-list-item>
                         </v-list>
@@ -1452,7 +1450,7 @@ export default {
         readFormats() {
             if (!this.book) return [];
             const formats = [];
-            if (this.is_txt) formats.push({ key: 'txt', label: 'TXT', href: '/read/txt/' + this.book.id });
+            if (this.is_txt) formats.push({ key: 'txt', label: 'TXT', href: '/book' + this.book.id + '/readtxt/' });
             // TXT 默认同时支持转换为 EPUB 阅读
             if (this.hasEpubFormat || this.is_txt) formats.push({ key: 'epub', label: 'EPUB阅读', href: '/read/' + this.book.id + '?format=epub' });
             if (this.hasPDF) formats.push({ key: 'pdf', label: 'PDF阅读', href: '/read/' + this.book.id + '?format=pdf' });

@@ -151,12 +151,6 @@ class ConverterService(AsyncService):
         progress_file = ConverterService().get_path_progress(book["id"])
         logging.info("convert book: %s => %s, progress: %s" % (fpath, new_path, progress_file))
 
-        # 如果格式已经存在，就不要重复转换了，直接返回失败
-        if self.db.format_exists(book["id"], new_fmt, index_is_id=True):
-            self.add_msg(user_id, "warning", _(u"文件已经存在，无需转换"))
-            return
-
-
         title = book.get("title", "Unknown Title")
         if len(title) > 20:
             title = title[0:19] + "..."
