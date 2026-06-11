@@ -488,6 +488,7 @@ class BookConverter(BaseHandler):
         service = ConverterService()
         if service.is_book_converting(book):
             return {"err": "params.book.converting", "msg": _("本书正在转换中，请稍后再试")}
+        logging.info(f"Start converting book {book_id} from {fmts[0]} to {fmt}, title:{book.get('title', '')}")
         service.convert_and_save(self.user_id(), book, fpath, fmt)
         return {"err": "ok", "content": "%s" % _("转换成功，请稍后刷新页面查看")}
 
@@ -2474,7 +2475,7 @@ class BookUploadChunk(BaseHandler):
 
 
 class BookRead(BaseHandler):
-    def get(self, id):
+    def get(self, bid):
         if not CONF["ALLOW_GUEST_READ"] and not self.current_user:
             return self.redirect("/login")
 
@@ -2485,7 +2486,7 @@ class BookRead(BaseHandler):
             else:
                 raise web.HTTPError(403, reason=_("无权在线阅读"))
 
-        book = self.get_book(id, raise_exception=False)
+        book = self.get_book(bid, raise_exception=False)
         if not book:
             return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
         book_id = book["id"]
@@ -2497,7 +2498,7 @@ class BookRead(BaseHandler):
         fpath_arg = book.get("fmt_%s" % fmt_arg, None) if fmt_arg else None
         if fpath_arg:
             if fmt_arg == "txt":
-                return self.redirect(f'/book/{book_id}/readtxt')
+                return self.redirect(f'/read/txt/{book_id}')
 
             if fmt_arg == "pdf":
                 if not CONF["ALLOW_GUEST_DOWNLOAD"] and not self.current_user:
@@ -2529,7 +2530,9 @@ class BookRead(BaseHandler):
                 continue
 
             if fmt != 'epub':
-                ConverterService().convert_and_save(self.user_id(), book, fpath, "epub")
+                service = ConverterService()
+                if not service.is_book_converting(book):
+                    ConverterService().convert_and_save(self.user_id(), book, fpath, "epub")
 
             # epub_dir is for javascript
             epub_dir = "/get/extract/%s" % book["id"]
@@ -2561,7 +2564,7 @@ class BookRead(BaseHandler):
 
         if 'fmt_txt' in book:
             # TXT有专门的阅读器
-            txt_reader_url = f'/book/{book_id}/readtxt'
+            txt_reader_url = f'/read/txt/{book_id}'
             return self.redirect(txt_reader_url)
 
         raise web.HTTPError(404, reason=_("抱歉，在线阅读器暂不支持该格式的书籍，可以转为epub或者pdf后阅读"))
@@ -2570,17 +2573,16 @@ class BookRead(BaseHandler):
 class TxtRead(BaseHandler):
     @js
     @auth
-    def get(self):
-        bid = self.get_argument("id", "")
-        book = self.get_book(bid)
+    def get(self, bid):
+        book = self.get_book(bid, raise_exception=False)
+        if not book:
+            return {"err": "params.book.invalid", "msg": _("书籍已不存在")}
         start = int(self.get_argument("start", "0"))
         end = int(self.get_argument("end", "-1"))
-        logging.info(book)
         fpath = book.get("fmt_txt", None)
         if not fpath:
             return {"err": "format error", "msg": _("非txt书籍")}
         with open(fpath, mode='rb') as file:
-            # 移动文件指针到起始位置
             file.seek(start)
             if end == -1:
                 content = file.read()
@@ -3384,7 +3386,7 @@ def routes():
         (r"/api/book/([0-9]+)/send_to_device", BookSendToDevice),
         (r"/api/book/([0-9]+)/mailto", BookSendToMail),
         (r"/read/([0-9]+)", BookRead),
-        (r"/api/read/txt", TxtRead),
+        (r"/api/read/txt/([0-9]+)", TxtRead),
         (r"/api/book/txt/init", BookTxtInit),
         (r"/api/book/([0-9]+)/convert", BookConverter),
         (r"/api/book/([0-9]+)/topdf", BookToPDF),

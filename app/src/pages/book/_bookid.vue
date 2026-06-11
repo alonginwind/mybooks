@@ -158,48 +158,6 @@
                 </v-card>
             </v-dialog>
 
-            <v-dialog v-model="dialog_read_format" persistent width="300">
-                <v-card>
-                    <v-card-title color="primary" class="">{{ $t('book.selectReadFormat') }}</v-card-title>
-                    <v-card-text>
-                        <v-list>
-                            <v-list-item v-if="readEbookFormat" :href="'/read/' + book.id + '?format=' + readEbookFormat" target="_blank"
-                                         @click="dialog_read_format = false">
-                                <v-list-item-avatar color='primary'>
-                                    <v-icon dark>import_contacts</v-icon>
-                                </v-list-item-avatar>
-                                <v-list-item-content>
-                                    <v-list-item-title>{{ readEbookFormat.toUpperCase() }}</v-list-item-title>
-                                </v-list-item-content>
-                            </v-list-item>
-                            <v-list-item v-if="hasPDF" :href="'/read/' + book.id + '?format=pdf'" target="_blank"
-                                         @click="dialog_read_format = false">
-                                <v-list-item-avatar color='primary'>
-                                    <v-icon dark>import_contacts</v-icon>
-                                </v-list-item-avatar>
-                                <v-list-item-content>
-                                    <v-list-item-title>PDF</v-list-item-title>
-                                </v-list-item-content>
-                            </v-list-item>
-                            <v-list-item v-if="is_txt" :href="'/book/' + book.id + '/readtxt'" target="_blank"
-                                         @click="dialog_read_format = false">
-                                <v-list-item-avatar color='primary'>
-                                    <v-icon dark>import_contacts</v-icon>
-                                </v-list-item-avatar>
-                                <v-list-item-content>
-                                    <v-list-item-title>{{ $t('book.txtOnlineReading', { status: txt_parse_inited ? $t('book.parsed') : $t('book.notParsed') }) }}</v-list-item-title>
-                                </v-list-item-content>
-                            </v-list-item>
-                        </v-list>
-                    </v-card-text>
-                    <v-card-actions>
-                        <v-spacer></v-spacer>
-                        <v-btn text @click="dialog_read_format = false">{{ $t('common.close') }}</v-btn>
-                        <v-spacer></v-spacer>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
-
             <v-card v-if="dialog_refer">
                 <v-toolbar flat dense dark color="primary">
                     {{ $t('book.syncBookInfo') }}
@@ -306,12 +264,24 @@
                         </span>
                     </v-btn>
                     <v-btn :small="tiny" dark color="primary" class="mx-2 d-flex d-sm-flex" :style="tiny ? { padding: '0px 2px', margin: '0px 3px !important' } : {}"
-                           :href="needsReadFormatChoice ? undefined : '/read/' + book.id"
-                           @click="onReadClick"
+                           :href="readHref"
                            target="_blank">
-                        <v-icon left v-if="!tiny">import_contacts</v-icon>
+                        <v-icon left v-if="!tiny">more-vert</v-icon>
                         {{ $t('book.read') }}
                     </v-btn>
+                    <v-menu v-if="needsReadFormatChoice" offset-y>
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn :small="tiny" dark color="primary" icon class="mr-2" style="margin-left: -12px"
+                                   v-bind="attrs" v-on="on">
+                                <v-icon small>mdi-menu-down</v-icon>
+                            </v-btn>
+                        </template>
+                        <v-list dense>
+                            <v-list-item v-for="fmt in extraReadFormats" :key="fmt.key" :href="fmt.href" target="_blank">
+                                <v-list-item-title>{{ fmt.label }}</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </v-menu>
                     <template v-if="book.is_owner">
                         <v-menu offset-y>
                             <template v-slot:activator="{ on }">
@@ -662,7 +632,7 @@
         <v-col cols="12" sm="6" class="book-action-col">
             <v-card outlined>
                 <v-list>
-                    <v-list-item :href="needsReadFormatChoice ? undefined : '/read/' + book.id" @click="onReadClick" target="_blank" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL">
+                    <v-list-item :href="readHref" target="_blank" :disabled="book.book_type == this.BOOK_TYPE.PHYSICAL">
                         <v-list-item-avatar large :color="book.book_type == this.BOOK_TYPE.PHYSICAL ? 'grey' : 'primary'">
                             <v-icon dark>import_contacts</v-icon>
                         </v-list-item-avatar>
@@ -670,7 +640,19 @@
                             <v-list-item-title :class="{ 'grey--text': book.book_type == this.BOOK_TYPE.PHYSICAL }">{{ $t('book.onlineReading') }}</v-list-item-title>
                         </v-list-item-content>
                         <v-list-item-action>
-                            <v-icon>mdi-arrow-right</v-icon>
+                            <v-menu v-if="needsReadFormatChoice" offset-y>
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-btn icon v-bind="attrs" v-on="on" @click.stop.prevent>
+                                        <v-icon>mdi-menu-down</v-icon>
+                                    </v-btn>
+                                </template>
+                                <v-list dense>
+                                    <v-list-item v-for="fmt in extraReadFormats" :key="fmt.key" :href="fmt.href" target="_blank">
+                                        <v-list-item-title>{{ fmt.label }}</v-list-item-title>
+                                    </v-list-item>
+                                </v-list>
+                            </v-menu>
+                            <v-icon v-else>mdi-arrow-right</v-icon>
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
@@ -1459,19 +1441,42 @@ export default {
             return this.book.files.some(file => file.format.toLowerCase() === 'pdf');
         },
 
-        // 在线阅读时使用的电子书格式（优先级：epub > azw3 > mobi）
-        readEbookFormat() {
-            if (!this.book || !this.book.files) return '';
+        // 是否存在按 EPUB 阅读的格式（epub/azw3/mobi/azw/docx 均按 EPUB 处理，内部自动转换）
+        hasEpubFormat() {
+            if (!this.book || !this.book.files) return false;
             const formats = this.book.files.map(f => f.format.toLowerCase());
-            for (const format of ['epub', 'azw3', 'mobi']) {
-                if (formats.includes(format)) return format;
-            }
-            return '';
+            return ['epub', 'azw3', 'mobi', 'azw', 'docx'].some(format => formats.includes(format));
         },
 
-        // 同时存在 PDF 和其它电子书格式，或存在 TXT 格式时，阅读前需要先选择格式
+        // 可供在线阅读的格式列表，按优先级排列：TXT > EPUB > PDF
+        readFormats() {
+            if (!this.book) return [];
+            const formats = [];
+            if (this.is_txt) formats.push({ key: 'txt', label: 'TXT', href: '/read/txt/' + this.book.id });
+            // TXT 默认同时支持转换为 EPUB 阅读
+            if (this.hasEpubFormat || this.is_txt) formats.push({ key: 'epub', label: 'EPUB阅读', href: '/read/' + this.book.id + '?format=epub' });
+            if (this.hasPDF) formats.push({ key: 'pdf', label: 'PDF阅读', href: '/read/' + this.book.id + '?format=pdf' });
+            return formats;
+        },
+
+        // 默认阅读格式（优先级最高的一项）
+        defaultReadFormat() {
+            return this.readFormats.length ? this.readFormats[0] : null;
+        },
+
+        // 除默认格式外，可在菜单中选择的其它格式
+        extraReadFormats() {
+            return this.readFormats.slice(1);
+        },
+
+        // 存在多个可阅读格式时，阅读按钮右侧显示格式选择菜单
         needsReadFormatChoice() {
-            return (this.hasPDF && !!this.readEbookFormat) || this.is_txt;
+            return this.readFormats.length > 1;
+        },
+
+        // 阅读按钮的默认跳转地址
+        readHref() {
+            return this.defaultReadFormat ? this.defaultReadFormat.href : '/read/' + (this.book ? this.book.id : '');
         },
 
         // 检查是否有兼容邮箱发送的文件格式（EPUB/AZW3/PDF/MOBI/TXT）
@@ -1643,12 +1648,10 @@ export default {
         location_input: "",
         mail_to: "",
         kindle_sender: "",
-        txt_parse_inited: false,
         favoriteLoading: false,
         wantsLoading: false,
         readingStateLoading: false,
         dialog_download: false,
-        dialog_read_format: false,
         dialog_epub2audio: false,
         dialog_audiolist: false,
         dialog_refer: false,
@@ -1773,7 +1776,6 @@ export default {
         }
     },
     async mounted() {
-        this.getTxtParseStatus();
         // 异步加载推荐图书
         this.loadSuggestionBooks();
         this.loadSameNameBooks();
@@ -1993,12 +1995,6 @@ export default {
                 this.switchAudioDialog();
             }
         },
-        onReadClick(e) {
-            if (this.needsReadFormatChoice) {
-                e.preventDefault();
-                this.dialog_read_format = true;
-            }
-        },
         switchAudioDialog() {
             // 如果是实体书，则不允许转换音频
             if (this.book.book_type == this.BOOK_TYPE.PHYSICAL) {
@@ -2067,18 +2063,6 @@ export default {
                     this.$alert("error", rsp.msg);
                 }
             });
-        },
-        getTxtParseStatus(){
-          if (!this.hasTxt && !this.hasTxtZ) {
-            return;
-          }
-          this.$backend(`/book/txt/init?id=${this.book.id}&test=1`,)
-            .then(res => {
-              if (res.err === "ok" && res.msg === "parsed") {
-                this.txt_parse_inited = true;
-                console.log(this.txt_parse_inited);
-              }
-            })
         },
         getRefer() {
             this.dialog_refer = true;
