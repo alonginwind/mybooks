@@ -2653,7 +2653,7 @@ class TxtRead(BaseHandler):
         return {"err": "ok", "content": content}
 
 
-class BookTxtInit(BaseHandler):
+class BookTxtParser(BaseHandler):
     @js
     def get(self):
         bid = self.get_argument("id", "")
@@ -2682,12 +2682,16 @@ class BookTxtInit(BaseHandler):
         wait = min(120, os.path.getsize(fpath) / (1024 * 1024) * 15)
         ExtractService().parse_txt_content(bid, fpath)
         que_len = ExtractService().get_queue('parse_txt_content').qsize()
-        return {"err": "ok", "msg": _("已加入队列"), "data": {
-            "wait": wait,
-            "name": book["title"],
-            "path": content_path,
-            "que": que_len
-        }}
+        return {
+            "err": "ok",
+            "msg": _("已加入队列"),
+            "data": {
+                "wait": wait,
+                "name": book["title"],
+                "path": content_path,
+                "que": que_len,
+            },
+        }
 
 
 class BookSuggestion(ListHandler):
@@ -3445,7 +3449,7 @@ def routes():
         (r"/read/([0-9]+)", BookRead),
         (r"/api/book/([0-9]+)/read", BookRead),
         (r"/api/read/txt/([0-9]+)", TxtRead),
-        (r"/api/book/txt/init", BookTxtInit),
+        (r"/api/book/txt/parser", BookTxtParser),
         (r"/api/book/([0-9]+)/convert", BookConverter),
         (r"/api/book/([0-9]+)/topdf", BookToPDF),
         (r"/api/book/([0-9]+)/totxtz", BookToTxtZ),

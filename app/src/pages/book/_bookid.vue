@@ -1672,6 +1672,7 @@ export default {
         dialog_converting: false,
         converting_poll_timer: null,
         converting_target_href: '',
+        converting_format: '',
         dialog_epub2audio: false,
         dialog_audiolist: false,
         dialog_refer: false,
@@ -2570,9 +2571,12 @@ export default {
                 this.progressTimer = null;
             }
         },
-        // 在打开阅读器之前，检测目标格式是否就绪（如未就绪则启动转换）
-        async checkReadStatus(formatKey) {
+        // 启动目标格式的解析/转换任务（如已就绪则后端直接返回就绪状态）
+        async startReadConversion(formatKey) {
             try {
+                if (formatKey === 'txt') {
+                    return await this.$backend(`/book/txt/parser?id=${this.book.id}&test=0`);
+                }
                 return await this.$backend(`/book/${this.book.id}/read`, {
                     method: 'POST',
                     body: JSON.stringify({ format: formatKey }),
@@ -2581,18 +2585,39 @@ export default {
                 return null;
             }
         },
-        // 阅读按钮点击：epub格式需要先检查转换状态，其它格式直接打开
+        // 轮询目标格式的解析/转换状态
+        async pollReadConversion(formatKey) {
+            try {
+                if (formatKey === 'txt') {
+                    return await this.$backend(`/book/txt/parser?id=${this.book.id}&test=1`);
+                }
+                return await this.$backend(`/book/${this.book.id}/read`, {
+                    method: 'POST',
+                    body: JSON.stringify({ format: formatKey }),
+                });
+            } catch (e) {
+                return null;
+            }
+        },
+        // 判断目标格式是否已就绪
+        isReadConversionReady(formatKey, rsp) {
+            if (!rsp || rsp.err !== 'ok') return false;
+            if (formatKey === 'txt') return rsp.msg === 'parsed';
+            return !!(rsp.data && rsp.data.status === 'ready');
+        },
+        // 阅读按钮点击：epub/txt格式需要先检查解析/转换状态，其它格式直接打开
         async onReadClick(event, fmt) {
-            if (!fmt || fmt.key !== 'epub') return;
+            if (!fmt || (fmt.key !== 'epub' && fmt.key !== 'txt')) return;
             event.preventDefault();
 
-            const rsp = await this.checkReadStatus(fmt.key);
-            if (rsp && rsp.data && rsp.data.status === 'ready') {
+            const rsp = await this.startReadConversion(fmt.key);
+            if (this.isReadConversionReady(fmt.key, rsp)) {
                 window.open(fmt.href, '_blank');
                 return;
             }
 
             this.converting_target_href = fmt.href;
+            this.converting_format = fmt.key;
             this.dialog_converting = true;
             this.startConvertingPolling();
         },
@@ -2609,8 +2634,8 @@ export default {
             }
         },
         async pollConvertingStatus() {
-            const rsp = await this.checkReadStatus('epub');
-            if (rsp && rsp.data && rsp.data.status === 'ready') {
+            const rsp = await this.pollReadConversion(this.converting_format);
+            if (this.isReadConversionReady(this.converting_format, rsp)) {
                 const href = this.converting_target_href;
                 this.cancelConvertingDialog();
                 window.open(href, '_blank');
@@ -2621,6 +2646,7 @@ export default {
             this.stopConvertingPolling();
             this.dialog_converting = false;
             this.converting_target_href = '';
+            this.converting_format = '';
         },
         async updateAudioProgress() {
             try {

@@ -101,7 +101,7 @@ export default {
   methods: {
     init() {
       this.loading = true
-      this.$backend(`/book/txt/init?id=${this.bookid}&test=0`)
+      this.$backend(`/book/txt/parser?id=${this.bookid}&test=0`)
         .then(rsp => {
           if (rsp.err !== "ok") {
             this.tip.title = this.$t('reader.error');
@@ -132,7 +132,7 @@ export default {
                 return;
               }
               if (this.wait % 5 !== 0) return;
-              this.$backend(`/book/txt/init?id=${this.bookid}&test=1`,)
+              this.$backend(`/book/txt/parser?id=${this.bookid}&test=1`,)
                 .then(res => {
                   if (res.err === "ok" && res.msg === "parsed") {
                     this.inited = true;
