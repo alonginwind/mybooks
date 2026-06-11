@@ -7,7 +7,7 @@
                     <div style="height: 16px;"></div>
                     <v-card-text class="d-flex align-center">
                         <v-progress-circular indeterminate color="primary" class="mr-3"></v-progress-circular>
-                        <span>{{ $t('book.convertingPleaseWait') }}</span>
+                        <span>{{ $t(converting_format === 'txt' ? 'book.parseringPleaseWait' : 'book.convertingPleaseWait') }}</span>
                     </v-card-text>
                     <v-card-actions>
                         <v-spacer></v-spacer>
