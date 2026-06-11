@@ -2005,7 +2005,7 @@ class BookUpload(BaseHandler):
 
         if CONF.get("USE_DYNAMIC_COVER", False):
             fmt, cover_data = mi.cover_data
-            if fmt is None and cover_data is not None:
+            if fmt is None or cover_data is None:
                 author = mi.authors[0] if mi.authors else _("佚名")
                 data = CoverGenerator.generate_cover(mi.title, author)
                 if data:

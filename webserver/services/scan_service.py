@@ -439,7 +439,7 @@ class ScanService(AsyncService):
                 mi.title_sort = utils.get_title_sort(mi.title)
                 if CONF.get("USE_DYNAMIC_COVER", False):
                     fmt, data = mi.cover_data
-                    if fmt is None and data is not None:
+                    if fmt is None or data is None:
                         author = mi.authors[0] if mi.authors else _("佚名")
                         data = CoverGenerator.generate_cover(mi.title, author)
                         if data:
