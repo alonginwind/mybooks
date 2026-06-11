@@ -27,14 +27,14 @@ export default {
 
   computed: {
     pageNotFound() {
-      return this.$t("error_page_not_found");
+      return this.$t ? this.$t("error_page_not_found") : "404: 页面已走失，请回首页";
     },
     otherError() {
-      return this.$t("error_server_starting");
+      return this.$t ? this.$t("error_server_starting") : "[MyBooks] 服务正在启动中，稍后重试";
     },
   },
   head() {
-    const title = this.error.statusCode === 404 ? this.pageNotFound : this.otherError;
+    const title = this.error && this.error.statusCode === 404 ? this.pageNotFound : this.otherError;
     return {
       title,
     };
