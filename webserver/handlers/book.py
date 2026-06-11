@@ -1714,11 +1714,11 @@ class BookDownload(BaseHandler, web.StaticFileHandler):
 
         path = book["fmt_%s" % fmt]
         book["fmt"] = fmt
-        book["title"] = urllib.parse.quote_plus(book["title"])
+        book["title"] = urllib.parse.quote_plus(book["title"][:128])
         fname = "%(id)d-%(title)s.%(fmt)s" % book
-        att = u"attachment; filename=\"%s\"; filename*=UTF-8''%s" % (fname, fname)
+        att = "attachment; filename=\"%s\"; filename*=UTF-8''%s" % (fname, fname)
         if self.is_opds:
-            att = u'attachment; filename="%(id)d.%(fmt)s"' % book
+            att = 'attachment; filename="%(id)d.%(fmt)s"' % book
 
         self.set_header("Content-Disposition", att.encode("UTF-8"))
         self.set_header("Content-Type", "application/octet-stream")
@@ -2592,7 +2592,7 @@ class BookRead(BaseHandler):
     def post(self, bid):
         """检测目标阅读格式是否就绪，如未就绪则按需启动转换任务"""
         if not CONF["ALLOW_GUEST_READ"] and not self.current_user:
-            return {"err": "user.no_permission", "msg": _("请先登录")}
+            return {"err": "user.need_login", "msg": _("请先登录")}
 
         if self.current_user:
             if self.current_user.can_read():
@@ -2639,6 +2639,14 @@ class TxtRead(BaseHandler):
         fpath = book.get("fmt_txt", None)
         if not fpath:
             return {"err": "format error", "msg": _("非txt书籍")}
+        if not CONF["ALLOW_GUEST_READ"] and not self.current_user:
+            return {"err": "user.need_login", "msg": _("请先登录")}
+        if self.current_user:
+            if self.current_user.can_read():
+                if not self.current_user.is_active():
+                    return {"err": "user.no_permission", "msg": _("无权在线阅读，请先登录注册邮箱激活账号。")}
+            else:
+                return {"err": "user.no_permission", "msg": _("无权在线阅读")}
         with open(fpath, mode='rb') as file:
             file.seek(start)
             if end == -1:
@@ -2662,6 +2670,14 @@ class BookTxtParser(BaseHandler):
         fpath = book.get("fmt_txt", None)
         if not fpath:
             return {"err": "format error", "msg": _("非text书籍")}
+        if not CONF["ALLOW_GUEST_READ"] and not self.current_user:
+            return {"err": "user.need_login", "msg": _("请先登录")}
+        if self.current_user:
+            if self.current_user.can_read():
+                if not self.current_user.is_active():
+                    return {"err": "user.no_permission", "msg": _("无权在线阅读，请先登录注册邮箱激活账号。")}
+            else:
+                return {"err": "user.no_permission", "msg": _("无权在线阅读")}
         # 解压后的目录
         fdir = os.path.join(CONF["extract_path"], str(book["id"]))
         # txt 解析出的目录文件

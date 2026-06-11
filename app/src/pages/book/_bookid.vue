@@ -2,15 +2,14 @@
   <div>
     <v-row align="start">
         <v-col cols="12">
-            <v-dialog v-model="dialog_converting" persistent width="420">
+            <v-dialog v-model="dialog_converting" persistent width="460">
                 <v-card class="dialog-border">
                     <div style="height: 16px;"></div>
                     <v-card-text class="d-flex align-center">
                         <v-progress-circular indeterminate color="primary" class="mr-3"></v-progress-circular>
                         <span>{{ $t(converting_format === 'txt' ? 'book.parseringPleaseWait' : 'book.convertingPleaseWait') }}</span>
                     </v-card-text>
-                    <v-card-actions>
-                        <v-spacer></v-spacer>
+                    <v-card-actions class="justify-center">
                         <v-btn color="" text @click="cancelConvertingDialog()">{{ $t('common.cancel') }}</v-btn>
                     </v-card-actions>
                 </v-card>
@@ -2607,10 +2606,17 @@ export default {
         },
         // 阅读按钮点击：epub/txt格式需要先检查解析/转换状态，其它格式直接打开
         async onReadClick(event, fmt) {
-            if (!fmt || (fmt.key !== 'epub' && fmt.key !== 'txt')) return;
             event.preventDefault();
-
             const rsp = await this.startReadConversion(fmt.key);
+            if (rsp.err === "user.need_login") {
+                this.$router.push("/login");
+                return;
+            }
+            if (rsp.err !== "ok") {
+                this.$alert("error", rsp.msg);
+                return;
+            }
+
             if (this.isReadConversionReady(fmt.key, rsp)) {
                 window.open(fmt.href, '_blank');
                 return;
