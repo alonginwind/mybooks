@@ -215,9 +215,8 @@ def configure_plugins():
       1. 配置 Amazon 插件，将 server 选项设置为 'amazon'
       2. 禁用TXT to TXTZ插件，避免不必要的TXT文件处理
     """
+    from calibre.customize.ui import metadata_plugins, disable_plugin, enable_plugin
     try:
-        from calibre.customize.ui import metadata_plugins, disable_plugin, enable_plugin
-
         for plugin in metadata_plugins({"identify"}):
             if plugin.name == "Amazon.com":
                 plugin.prefs["server"] = "amazon"
@@ -347,14 +346,11 @@ def make_app():
     patch_plugins()
     configure_plugins()
 
-    # hook 1: 按字母作为第一级目录，解决书库子目录太多的问题
     logging.info("Patching calibre book names format...")
     if CONF["BOOK_NAMES_FORMAT"].lower() == "utf8":
         bind_utf8_book_names(cache)
     else:
         bind_topdir_book_names(cache)
-
-    # hook 2: don't force GUI
     logging.info("Patching calibre GUI requirement...")
     old_must_use_qt = gui2.must_use_qt
 
