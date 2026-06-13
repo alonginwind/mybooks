@@ -92,7 +92,7 @@
                                     <v-text-field :label="$t('book.edit.fields.isbn')" v-model="book.isbn">{{ book.isbn }}</v-text-field>
                                 </v-col>
                                 <v-col class='py-0' cols=12 sm=4 v-if="book.book_type === 1">
-                                    <v-text-field :label="$t('book.edit.fields.location')" v-model="book.location">{{ book.location }}</v-text-field>
+                                    <v-combobox :label="$t('book.edit.fields.location')" v-model="book.location" :items="bookshelves" clearable></v-combobox>
                                 </v-col>
                                 <v-col class='py-0' cols=12 sm=2 v-if="book.book_type === 1">
                                     <v-text-field
@@ -179,6 +179,7 @@ export default {
         alert_msg: "please login",
         alert_type: "error",
         languageOptions: languageOptions,
+        bookshelves: [],
     }),
     computed: {
         pub_year: function () {
@@ -198,15 +199,19 @@ export default {
         this.publishers_loading = true;
         this.tags_loading = true;
         try {
-            const [pubRsp, tagRsp] = await Promise.all([
+            const [pubRsp, tagRsp, bookshelvesRsp] = await Promise.all([
                 this.$backend('/publisher'),
                 this.$backend('/tag'),
+                this.$backend('/bookshelves').catch(() => null),
             ]);
             if (pubRsp && pubRsp.items) {
                 this.publishers = pubRsp.items.slice(0, 100);
             }
             if (tagRsp && tagRsp.items) {
                 this.tags_list = tagRsp.items.slice(0, 100);
+            }
+            if (bookshelvesRsp && bookshelvesRsp.err === 'ok') {
+                this.bookshelves = bookshelvesRsp.bookshelves || [];
             }
         } catch (e) {
             // ignore
