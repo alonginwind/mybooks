@@ -1331,5 +1331,20 @@
       "repeatImage3": "深色图1",
       "repeatImage4": "深色图2"
     }
+  },
+  "bookshelves": {
+    "pageTitle": "书架管理",
+    "description": "管理实体书的存放书架，添加的书架将作为实体书位置的选项。",
+    "addLabel": "添加书架",
+    "addPlaceholder": "请输入书架名称",
+    "nameColumn": "书架名称",
+    "actions": "操作",
+    "delete": "删除",
+    "empty": "暂无书架，请添加",
+    "addSuccess": "书架添加成功",
+    "deleteSuccess": "书架删除成功",
+    "deleteConfirmTitle": "确认删除",
+    "deleteConfirmMessage": "确定要删除书架“{name}”吗？删除后已使用该位置的实体书不会自动修改。",
+    "locationUpdated": "位置更新成功"
   }
 }

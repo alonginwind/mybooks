@@ -1330,5 +1330,20 @@
       "repeatImage3": "深色圖1",
       "repeatImage4": "深色圖2"
     }
+  },
+  "bookshelves": {
+    "pageTitle": "書架管理",
+    "description": "管理實體書的存放書架，新增的書架將作為實體書位置的選項。",
+    "addLabel": "新增書架",
+    "addPlaceholder": "請輸入書架名稱",
+    "nameColumn": "書架名稱",
+    "actions": "操作",
+    "delete": "刪除",
+    "empty": "暫無書架，請新增",
+    "addSuccess": "書架新增成功",
+    "deleteSuccess": "書架刪除成功",
+    "deleteConfirmTitle": "確認刪除",
+    "deleteConfirmMessage": "確定要刪除書架「{name}」嗎？刪除後已使用該位置的實體書不會自動修改。",
+    "locationUpdated": "位置更新成功"
   }
 }

@@ -1330,5 +1330,20 @@
       "repeatImage3": "Image 3",
       "repeatImage4": "Image 4"
     }
+  },
+  "bookshelves": {
+    "pageTitle": "Bookshelf Management",
+    "description": "Manage bookshelves for physical books. Added bookshelves will appear as location options.",
+    "addLabel": "Add Bookshelf",
+    "addPlaceholder": "Enter bookshelf name",
+    "nameColumn": "Bookshelf Name",
+    "actions": "Actions",
+    "delete": "Delete",
+    "empty": "No bookshelves yet, please add one",
+    "addSuccess": "Bookshelf added successfully",
+    "deleteSuccess": "Bookshelf deleted successfully",
+    "deleteConfirmTitle": "Confirm Delete",
+    "deleteConfirmMessage": "Are you sure you want to delete bookshelf \"{name}\"? Existing books using this location will not be changed.",
+    "locationUpdated": "Location updated successfully"
   }
 }
