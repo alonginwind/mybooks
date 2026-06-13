@@ -1,7 +1,7 @@
 
 # ----------------------------------------
 # 第一阶段，拉取 node 基础镜像并安装依赖，执行构建
-FROM docker.1ms.run/library/node:16-alpine AS builder
+FROM node:16-alpine AS builder
 ARG BUILD_COUNTRY=""
 
 WORKDIR /build
@@ -28,7 +28,7 @@ RUN mkdir -p /app-ssr/ /app-static/ && \
 
 # ----------------------------------------
 # 测试阶段 (--break-system-packages)
-FROM docker.1ms.run/poxenstudio/mybooks_base:latest AS test
+FROM poxenstudio/mybooks_base:latest AS test
 RUN pip install flake8 pytest --break-system-packages
 COPY webserver/ /var/www/talebook/webserver/
 COPY tests/ /var/www/talebook/tests/
@@ -36,8 +36,8 @@ CMD ["pytest", "/var/www/talebook/tests"]
 
 # ----------------------------------------
 # 生产环境
-FROM docker.1ms.run/poxenstudio/mybooks_base:latest AS production
-ARG BUILD_COUNTRY="CN"
+FROM poxenstudio/mybooks_base:latest AS production
+ARG BUILD_COUNTRY=""
 ARG GIT_VERSION=""
 
 LABEL Author="horky <horky.chen@gmail.com>"
