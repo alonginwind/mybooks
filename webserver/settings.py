@@ -190,5 +190,7 @@ Hi, %(username)s！
 你刚刚在网站上提交了密码重置，请妥善保存你的新密码: %(password)s
 ''',
     'NEW_BOOK_MAIL_TITLE': '',
-    'NWE_BOOK_MAIL_HEADER': ''
+    'NWE_BOOK_MAIL_HEADER': '',
+
+    'BOOKSHELF_NAMES': '',
 }

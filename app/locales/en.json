@@ -1285,5 +1285,20 @@
     "sampleText": "This is sample text used to demonstrate the text processor.\n\nImportant: Note that this tool automatically converts text into HTML format.\n\nTip: You can add custom keyword rules in the settings panel to make specific words bold, enlarged, or highlighted automatically.\n\nWarning: Make sure the input text matches the expected format, with paragraphs separated by blank lines.\n\nKey features include: automatic paragraph tags, keyword highlighting, live preview, and HTML code copying."
   },
   "error_page_not_found": "404 Not Found",
-  "error_server_starting": "Service is starting, please try again later"
+  "error_server_starting": "Service is starting, please try again later",
+  "bookshelves": {
+    "pageTitle": "Bookshelf Management",
+    "description": "Manage bookshelves for physical books. Added bookshelves will appear as location options.",
+    "addLabel": "Add Bookshelf",
+    "addPlaceholder": "Enter bookshelf name",
+    "nameColumn": "Bookshelf Name",
+    "actions": "Actions",
+    "delete": "Delete",
+    "empty": "No bookshelves yet, please add one",
+    "addSuccess": "Bookshelf added successfully",
+    "deleteSuccess": "Bookshelf deleted successfully",
+    "deleteConfirmTitle": "Confirm Delete",
+    "deleteConfirmMessage": "Are you sure you want to delete bookshelf \"{name}\"? Existing books using this location will not be changed.",
+    "locationUpdated": "Location updated successfully"
+  }
 }

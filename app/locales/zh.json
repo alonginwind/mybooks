@@ -1286,5 +1286,20 @@
     "sampleText": "这是一段示例文字，用于演示文字处理工具的功能。\n\n重要：请注意，这个工具可以自动将文字内容转换为 HTML 格式。\n\n提示：你可以在设置面板中添加自定义关键词规则，让特定文字自动加粗、加大或高亮显示。\n\n警告：请确保输入的文字内容符合你的预期格式，每段之间用空行分隔。\n\n关键功能包括：自动段落标签、关键词高亮、实时预览、HTML 代码复制等。"
   },
   "error_page_not_found": "404: 页面已走失，请回首页",
-  "error_server_starting": "[MyBooks] 服务正在启动中，稍后重试"
+  "error_server_starting": "[MyBooks] 服务正在启动中，稍后重试",
+  "bookshelves": {
+    "pageTitle": "书架管理",
+    "description": "管理实体书的存放书架，添加的书架将作为实体书位置的选项。",
+    "addLabel": "添加书架",
+    "addPlaceholder": "请输入书架名称",
+    "nameColumn": "书架名称",
+    "actions": "操作",
+    "delete": "删除",
+    "empty": "暂无书架，请添加",
+    "addSuccess": "书架添加成功",
+    "deleteSuccess": "书架删除成功",
+    "deleteConfirmTitle": "确认删除",
+    "deleteConfirmMessage": "确定要删除书架“{name}”吗？删除后已使用该位置的实体书不会自动修改。",
+    "locationUpdated": "位置更新成功"
+  }
 }

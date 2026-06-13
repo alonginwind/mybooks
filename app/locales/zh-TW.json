@@ -1285,5 +1285,20 @@
     "sampleText": "這是一段範例文字，用於示範文字處理工具的功能。\n\n重要：請注意，這個工具可以自動將文字內容轉換為 HTML 格式。\n\n提示：你可以在設定面板中新增自訂關鍵詞規則，讓特定文字自動加粗、放大或高亮顯示。\n\n警告：請確保輸入的文字內容符合你的預期格式，每段之間用空行分隔。\n\n關鍵功能包括：自動段落標籤、關鍵詞高亮、即時預覽、HTML 代碼複製等。"
   },
   "error_page_not_found": "404: 頁面已走失，回首頁再看看",
-  "error_server_starting": "服務正在啟動中，稍後重試"
+  "error_server_starting": "服務正在啟動中，稍後重試",
+  "bookshelves": {
+    "pageTitle": "書架管理",
+    "description": "管理實體書的存放書架，新增的書架將作為實體書位置的選項。",
+    "addLabel": "新增書架",
+    "addPlaceholder": "請輸入書架名稱",
+    "nameColumn": "書架名稱",
+    "actions": "操作",
+    "delete": "刪除",
+    "empty": "暫無書架，請新增",
+    "addSuccess": "書架新增成功",
+    "deleteSuccess": "書架刪除成功",
+    "deleteConfirmTitle": "確認刪除",
+    "deleteConfirmMessage": "確定要刪除書架「{name}」嗎？刪除後已使用該位置的實體書不會自動修改。",
+    "locationUpdated": "位置更新成功"
+  }
 }

@@ -499,22 +499,22 @@
                                 <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">{{ $t('book.bookCount') }}: {{book.book_count}}</span>
                                 <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">
                                     , {{ $t('book.location') }}:
-                                    <span v-if="!editing_location">
-                                        {{book.location || "*" }}
-                                        <v-icon small @click="startEditLocation">edit</v-icon>
-                                    </span>
-                                    <v-text-field
-                                        v-else
-                                        v-model="location_input"
-                                        autofocus
-                                        dense
-                                        hide-details
-                                        single-line
-                                        maxlength="20"
-                                        style="display: inline-flex; width: 120px;"
-                                        @keyup.enter="confirmEditLocation"
-                                        @blur="cancelEditLocation"
-                                    ></v-text-field>
+                                    <v-menu offset-y>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-chip rounded small color="indigo" class="white--text" v-bind="attrs" v-on="on" :disabled="bookshelves.length === 0">
+                                                {{ book.location || '*' }}
+                                                <v-icon color="white" class="ml-1">edit</v-icon>
+                                            </v-chip>
+                                        </template>
+                                        <v-list dense>
+                                            <v-list-item v-for="(shelf, index) in bookshelves" :key="index" @click="setLocation(shelf)">
+                                                <v-list-item-title>{{ shelf }}</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="setLocation('')">
+                                                <v-list-item-title class="red--text">{{ $t('book.clearCategory') }}</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
                                 </span>
                                 <template v-for="(file, index) in book.files.slice(0, 3)" :key="'file-size-' + index">
                                     <span
@@ -1632,6 +1632,7 @@ export default {
         err: "",
         msg: "",
         categories: [],
+        bookshelves: [],
         book: {id: 0, title: "", files: [], tags: [], pubdate: "", state: {favorite: 0, wants: 0, read_state: 0}},
         audios: {count: 0, files: [], status: "ok"},
         suggestionBooks: [],
@@ -2912,12 +2913,14 @@ export default {
             if (this.$store.state.user?.is_login !== true) {
                 this.devices = [];
                 this.categories = [];
+                this.bookshelves = [];
                 return;
             }
             try {
-                const [settingsResponse, devicesResponse] = await Promise.all([
+                const [settingsResponse, devicesResponse, bookshelvesResponse] = await Promise.all([
                     this.$backend('/admin/settings').catch(() => null),
                     this.$backend('/user/devices').catch(() => null),
+                    this.$backend('/bookshelves').catch(() => null),
                 ]);
                 const personalDevices = (devicesResponse?.err === 'ok' ? devicesResponse.devices : null) || [];
                 const globalDevices = (settingsResponse?.err === 'ok' ? settingsResponse.settings?.DEVICES : null) || [];
@@ -2932,6 +2935,9 @@ export default {
                     }).filter(c => c);
                     // 添加国际化的"清除"选项
                     this.categories.push(this.$t('book.clearCategory'));
+                }
+                if (bookshelvesResponse?.err === 'ok') {
+                    this.bookshelves = bookshelvesResponse.bookshelves || [];
                 }
                 // 获取图章默认位置
                 if (settingsResponse?.err === 'ok') {
@@ -2986,6 +2992,24 @@ export default {
                 if (response.err === 'ok') {
                     this.book.location = location;
                     this.editing_location = false;
+                } else {
+                    this.$alert('error', response.msg || '更新失败');
+                }
+            } catch (error) {
+                console.error('更新位置失败:', error);
+                this.$alert('error', this.$t('message.networkError'));
+            }
+        },
+
+        async setLocation(location) {
+            try {
+                const response = await this.$backend(`/book/${this.book.id}/location`, {
+                    method: 'POST',
+                    body: JSON.stringify({ location }),
+                });
+                if (response.err === 'ok') {
+                    this.book.location = location;
+                    this.$alert('success', this.$t('bookshelves.locationUpdated'));
                 } else {
                     this.$alert('error', response.msg || '更新失败');
                 }

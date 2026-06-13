@@ -408,6 +408,7 @@ class AdminSettings(BaseHandler):
             "USE_DYNAMIC_COVER",
             "BATCH_ADD_IN_FORCE",
             "DEFAULT_LANGUAGE",
+            "BOOKSHELF_NAMES",
         ]
 
         current_icon = CONF.get(
@@ -1403,6 +1404,85 @@ class AdminResources(BaseHandler):
         return {"err": "ok", "resources": resources}
 
 
+class AdminBookshelves(BaseHandler):
+    """书架管理接口"""
+
+    @js
+    @is_admin
+    def get(self):
+        """获取所有书架名称"""
+        bookshelf_str = CONF.get("BOOKSHELF_NAMES", "")
+        bookshelves = [name.strip() for name in bookshelf_str.split('\n') if name.strip()]
+        return {"err": "ok", "bookshelves": bookshelves}
+
+    @js
+    @is_admin
+    def post(self):
+        """添加书架名称"""
+        data = tornado.escape.json_decode(self.request.body)
+        name = data.get("name", "").strip()
+        if not name:
+            return {"err": "params.invalid", "msg": _("书架名称不能为空")}
+        if len(name) > 64:
+            return {"err": "params.invalid", "msg": _("书架名称过长")}
+
+        bookshelf_str = CONF.get("BOOKSHELF_NAMES", "")
+        bookshelves = [n.strip() for n in bookshelf_str.split('\n') if n.strip()]
+        if name in bookshelves:
+            return {"err": "params.duplicate", "msg": _("书架名称已存在")}
+
+        bookshelves.append(name)
+        CONF["BOOKSHELF_NAMES"] = "\n".join(bookshelves)
+        # Persist settings
+        args = loader.SettingsLoader()
+        args.clear()
+        args.update(CONF)
+        try:
+            args.dumpfile()
+        except Exception as e:
+            logging.error("Failed to save bookshelf settings: %s", e)
+            return {"err": "internal", "msg": _("保存失败")}
+        return {"err": "ok", "bookshelves": bookshelves}
+
+    @js
+    @is_admin
+    def delete(self):
+        """删除书架名称"""
+        data = tornado.escape.json_decode(self.request.body)
+        name = data.get("name", "").strip()
+        if not name:
+            return {"err": "params.invalid", "msg": _("书架名称不能为空")}
+
+        bookshelf_str = CONF.get("BOOKSHELF_NAMES", "")
+        bookshelves = [n.strip() for n in bookshelf_str.split('\n') if n.strip()]
+        if name not in bookshelves:
+            return {"err": "params.not_found", "msg": _("书架名称不存在")}
+
+        bookshelves.remove(name)
+        CONF["BOOKSHELF_NAMES"] = "\n".join(bookshelves)
+        # Persist settings
+        args = loader.SettingsLoader()
+        args.clear()
+        args.update(CONF)
+        try:
+            args.dumpfile()
+        except Exception as e:
+            logging.error("Failed to save bookshelf settings: %s", e)
+            return {"err": "internal", "msg": _("保存失败")}
+        return {"err": "ok", "bookshelves": bookshelves}
+
+
+class BookshelvesPublic(BaseHandler):
+    """公共书架列表接口（用于下拉选择）"""
+
+    @js
+    @auth
+    def get(self):
+        bookshelf_str = CONF.get("BOOKSHELF_NAMES", "")
+        bookshelves = [name.strip() for name in bookshelf_str.split('\n') if name.strip()]
+        return {"err": "ok", "bookshelves": bookshelves}
+
+
 class AdminAITestConnection(BaseHandler):
     @js
     @is_admin
@@ -1455,4 +1535,6 @@ def routes():
         (r"/api/admin/syslog/download", AdminSyslogDownload),
         (r"/api/admin/resources", AdminResources),
         (r"/api/admin/ai/test", AdminAITestConnection),
+        (r"/api/admin/bookshelves", AdminBookshelves),
+        (r"/api/bookshelves", BookshelvesPublic),
     ]
