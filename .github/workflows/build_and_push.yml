@@ -1,13 +1,9 @@
 name: Build and Push Docker Image
 
 on:
-  workflow_dispatch:
-    inputs:
-      push_latest:
-        description: 'Push to latest and master tags'
-        required: false
-        type: boolean
-        default: false
+  push:
+    tags:
+      - 'v*'
 
 env:
   REGISTRY: docker.io
@@ -76,12 +72,10 @@ jobs:
           fi
           echo "build_args=GIT_VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-          # Prepare tags
-          TAGS="${{ steps.meta.outputs.tags }}"
-          if [[ "${{ github.event.inputs.push_latest }}" == "true" ]]; then
-            TAGS="${TAGS},${{ env.REGISTRY }}/poxenstudio/mybooks:latest,${{ env.REGISTRY }}/poxenstudio/mybooks:master"
-          fi
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "tags<<$EOF" >> $GITHUB_OUTPUT
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -90,7 +84,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           labels: ${{ steps.meta.outputs.labels }}
           push: ${{ github.event_name != 'pull_request' }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/poxenstudio/mybooks:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/alonginwind/mybooks:latest
           cache-to: type=inline,mode=max
           provenance: false
           tags: ${{ steps.prep.outputs.tags }}

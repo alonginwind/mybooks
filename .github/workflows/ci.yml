@@ -1,10 +1,10 @@
 name: Code Quality Check and Build
 
 on:
-  push:
-    branches:
-      - master
-      - add-workflow-actions
+#  push:
+#    branches:
+#      - master
+#      - add-workflow-actions
   pull_request:
     branches:
       - master
