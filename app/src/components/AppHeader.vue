@@ -630,6 +630,7 @@ export default {
                         { icon: "mdi-account", href: "/admin/users", text: "appHeader.userManagement", color: "#EDC10A"},
                         { icon: "mdi-import", href: "/admin/imports", text: "appHeader.importBooks", color: "green"},
                         { icon: "mdi-library-shelves", href: "/admin/books", text: "appHeader.bookManagement", color: "primary"},
+                        { icon: "mdi-bookshelf", href: "/admin/bookshelves", text: "bookshelves.pageTitle", color: "indigo"},
                         { icon: "mdi-notebook", href: "/admin/all-expected", text: "expected.allPageTitle", color: "green"},
                         { icon: "mdi-message-text-outline", href: "/admin/user-memos", text: "memos.pageTitle", color: "blue"},
                         ...(this.sys.allow.book_review ? [{ icon: "mdi-comment-text-multiple-outline", href: "/admin/book-reviews", text: "adminBookReviews.pageTitle", color: "deep-orange"}] : []),

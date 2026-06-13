@@ -20,7 +20,8 @@
 
       <v-col>
         <book-cards :books="books" :isAudioPage="isAudioPage" :selectable="multiSelectMode"
-                    :selectedIds="selectedIds" @toggle-select="toggleSelect"></book-cards>
+                    :selectedIds="selectedIds" @toggle-select="toggleSelect"
+                    :editableLocation="isPhysicalBooksPage" :bookshelves="bookshelves" @update-location="handleLocationUpdate"></book-cards>
       </v-col>
 
       <v-col cols=12>
@@ -87,6 +88,9 @@ export default {
       };
       return this.$t(keys[action] || 'listBook.confirmRemoveContentFavorites', { count: this.selectedIds.length });
     },
+    isPhysicalBooksPage() {
+      return this.$route.path === '/printbooks';
+    }
   },
   data: () => ({
     title: "",
@@ -100,6 +104,7 @@ export default {
     selectedIds: [],
     confirmDialog: false,
     removing: false,
+    bookshelves: [],
   }),
   async asyncData({route, app, res}) {
     if (res !== undefined) {
@@ -122,6 +127,9 @@ export default {
     this.page_cnt = Math.max(1, Math.ceil(this.total / this.page_size))
 
     this.checkIfAudioPage();
+    if (this.isPhysicalBooksPage) {
+      this.loadBookshelves();
+    }
   },
 
   beforeRouteUpdate(to, from, next) {
@@ -203,11 +211,48 @@ export default {
     checkIfAudioPage() {
       this.isAudioPage = this.$route.path === '/audiobooks';
     },
+    async loadBookshelves() {
+      if (this.$store.state.user?.is_login !== true) {
+        this.bookshelves = [];
+        return;
+      }
+      try {
+        const rsp = await this.$backend('/bookshelves');
+        if (rsp.err === 'ok') {
+          this.bookshelves = rsp.bookshelves || [];
+        }
+      } catch (e) {
+        this.bookshelves = [];
+      }
+    },
+    async handleLocationUpdate({ bookId, location }) {
+      try {
+        const rsp = await this.$backend(`/book/${bookId}/location`, {
+          method: 'POST',
+          body: JSON.stringify({ location }),
+        });
+        if (rsp.err === 'ok') {
+          const book = this.books.find(b => b.id === bookId);
+          if (book) {
+            this.$set(book, 'location', location);
+          }
+          this.$alert('success', this.$t('bookshelves.locationUpdated'));
+        } else {
+          this.$alert('error', rsp.msg || '更新失败');
+        }
+      } catch (e) {
+        this.$alert('error', this.$t('message.networkError'));
+      }
+    },
     init(route, next) {
       this.inited = true;
       this.$store.commit('navbar', true);
 
       this.isAudioPage = route.path === '/audiobooks';
+
+      if (route.path === '/printbooks') {
+        this.loadBookshelves();
+      }
 
       this.$backend(route.fullPath)
         .then(rsp => {
