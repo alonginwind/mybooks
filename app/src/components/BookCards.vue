@@ -23,8 +23,41 @@
                                 <v-chip rounded x-small color="green" class="white--text ma-1" v-if="book.category">
                                     {{ book.category }}
                                 </v-chip>
-                                <v-chip rounded x-small color="dark" class="white--text ma-1" v-if="book.location">
+                                <v-chip rounded x-small color="dark" class="white--text ma-1" v-if="book.location && !editableLocation">
                                     {{ book.location }}
+                                </v-chip>
+                                <v-menu offset-y v-if="book.location && editableLocation" :close-on-content-click="true">
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-chip rounded x-small color="indigo" class="white--text ma-1" v-bind="attrs" v-on="on" @click.native.stop>
+                                            {{ book.location }}
+                                            <v-icon x-small color="white" class="ml-1">mdi-chevron-down</v-icon>
+                                        </v-chip>
+                                    </template>
+                                    <v-list dense>
+                                        <v-list-item v-for="(shelf, si) in bookshelves" :key="si" @click.stop="onLocationChange(book, shelf)">
+                                            <v-list-item-title>{{ shelf }}</v-list-item-title>
+                                        </v-list-item>
+                                        <v-list-item @click.stop="onLocationChange(book, '')">
+                                            <v-list-item-title class="red--text">{{ $t('book.clearCategory') }}</v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-menu>
+                                <v-chip rounded x-small color="indigo" outlined class="ma-1" v-if="!book.location && editableLocation"
+                                    @click.stop style="border-style: dashed; cursor: pointer;"
+                                >
+                                    <v-menu offset-y :close-on-content-click="true">
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <span v-bind="attrs" v-on="on" class="d-flex align-center">
+                                                <v-icon x-small class="mr-1">mdi-plus</v-icon>
+                                                {{ $t('book.location') }}
+                                            </span>
+                                        </template>
+                                        <v-list dense>
+                                            <v-list-item v-for="(shelf, si) in bookshelves" :key="si" @click.stop="onLocationChange(book, shelf)">
+                                                <v-list-item-title>{{ shelf }}</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
                                 </v-chip>
                                 <template v-for="(file, index) in book.files?.slice(0, 3)" :key="'format-' + index">
                                     <v-chip rounded x-small class="ma-1"
@@ -61,6 +94,14 @@ export default {
         isAudioPage: {
             type: Boolean,
             default: false
+        },
+        editableLocation: {
+            type: Boolean,
+            default: false
+        },
+        bookshelves: {
+            type: Array,
+            default: () => []
         }
     },
     components: {
@@ -83,6 +124,9 @@ export default {
         },
     },
     methods: {
+        onLocationChange(book, location) {
+            this.$emit('update-location', { bookId: book.id, location: location });
+        },
         shouldShowCommentTooltip(html) {
             return this.isLongComment(html) && !this.isSmallScreen();
         },
