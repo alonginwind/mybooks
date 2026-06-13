@@ -43,6 +43,7 @@ from webserver.constants import (
     BOOK_TYPE_PHYSICAL,
     BOOK_TYPE_EBOOK,
     ENABLE_OPDS_SERVICE,
+    CALIBRE_COLUMN_LOCATION,
 )
 from webserver.i18n import apply_localized_default_settings
 
@@ -1472,6 +1473,55 @@ class AdminBookshelves(BaseHandler):
             logging.error("Failed to save bookshelf settings: %s", e)
             return {"err": "internal", "msg": _("保存失败")}
         return {"err": "ok", "bookshelves": bookshelves}
+
+    @js
+    @is_admin
+    def put(self):
+        """重命名书架"""
+        data = tornado.escape.json_decode(self.request.body)
+        old_name = data.get("old_name", "").strip()
+        new_name = data.get("new_name", "").strip()
+        if not old_name or not new_name:
+            return {"err": "params.invalid", "msg": _("书架名称不能为空")}
+        if len(new_name) > 64:
+            return {"err": "params.invalid", "msg": _("书架名称过长")}
+
+        bookshelf_str = CONF.get("BOOKSHELF_NAMES", "")
+        bookshelves = [n.strip() for n in bookshelf_str.split('\n') if n.strip()]
+        if old_name not in bookshelves:
+            return {"err": "params.not_found", "msg": _("书架名称不存在")}
+        if new_name in bookshelves and new_name != old_name:
+            return {"err": "params.duplicate", "msg": _("书架名称已存在")}
+
+        idx = bookshelves.index(old_name)
+        bookshelves[idx] = new_name
+        CONF["BOOKSHELF_NAMES"] = "\n".join(bookshelves)
+        # Persist settings
+        args = loader.SettingsLoader()
+        args.clear()
+        args.update(CONF)
+        try:
+            args.dumpfile()
+        except Exception as e:
+            logging.error("Failed to save bookshelf settings: %s", e)
+            return {"err": "internal", "msg": _("保存失败")}
+
+        # 同步更新所有使用旧书架名的书籍位置
+        updated_count = 0
+        try:
+            query = f'{CALIBRE_COLUMN_LOCATION}:="{old_name}"'
+            book_ids = self.calibre_db_cache.search(query)
+            if book_ids:
+                self.calibre_db_cache.set_field(
+                    CALIBRE_COLUMN_LOCATION,
+                    {bid: new_name for bid in book_ids}
+                )
+                updated_count = len(book_ids)
+                logging.info("Renamed bookshelf '%s' -> '%s', updated %d books", old_name, new_name, updated_count)
+        except Exception as e:
+            logging.error("Failed to update book locations during bookshelf rename: %s", e)
+
+        return {"err": "ok", "bookshelves": bookshelves, "updated_books": updated_count}
 
 
 class BookshelvesPublic(BaseHandler):

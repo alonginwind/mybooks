@@ -587,6 +587,7 @@
     "restore": "恢复生成",
     "delete": "删除",
     "ok": "确定",
+    "save": "保存",
     "backToHome": "返回首页"
   },
   "settings": {
@@ -1345,6 +1346,10 @@
     "deleteSuccess": "书架删除成功",
     "deleteConfirmTitle": "确认删除",
     "deleteConfirmMessage": "确定要删除书架“{name}”吗？删除后已使用该位置的实体书不会自动修改。",
-    "locationUpdated": "位置更新成功"
+    "locationUpdated": "位置更新成功",
+    "edit": "编辑",
+    "editTitle": "修改书架名称",
+    "editLabel": "新名称",
+    "editSuccess": "书架名称修改成功"
   }
 }
