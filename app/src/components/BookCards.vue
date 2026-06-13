@@ -1,8 +1,7 @@
 <template>
     <v-row>
         <v-col cols=12 xs=12 sm=6 md=4 lg=3 xl=2 v-for="(book,idx) in render_books" :key="idx+'-books-'+book.id" class="book-list-card d-flex">
-            <v-card :to="selectable ? undefined : book.href" class="flex-grow-1"
-                    @click="selectable ? $emit('toggle-select', book.id) : undefined">
+            <v-card class="flex-grow-1" style="cursor: pointer;" @click="navigateToBook(book)">
                 <div v-if="selectable" class="book-select-badge" @click.stop.prevent="$emit('toggle-select', book.id)">
                     <v-icon :color="isSelected(book.id) ? 'primary' : 'grey lighten-1'">
                         {{ isSelected(book.id) ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank' }}
@@ -32,39 +31,39 @@
                                 <v-chip rounded x-small color="dark" class="white--text ma-1" v-if="book.location && !editableLocation">
                                     {{ book.location }}
                                 </v-chip>
-                                <v-menu offset-y v-if="book.location && editableLocation" :close-on-content-click="true">
-                                    <template v-slot:activator="{ on, attrs }">
-                                        <v-chip rounded x-small color="indigo" class="white--text ma-1" v-bind="attrs" v-on="on" @click.native.stop>
-                                            {{ book.location }}
-                                            <v-icon x-small color="white" class="ml-1">mdi-chevron-down</v-icon>
-                                        </v-chip>
-                                    </template>
-                                    <v-list dense>
-                                        <v-list-item v-for="(shelf, si) in bookshelves" :key="si" @click.stop="onLocationChange(book, shelf)">
-                                            <v-list-item-title>{{ shelf }}</v-list-item-title>
-                                        </v-list-item>
-                                        <v-list-item @click.stop="onLocationChange(book, '')">
-                                            <v-list-item-title class="red--text">{{ $t('book.clearCategory') }}</v-list-item-title>
-                                        </v-list-item>
-                                    </v-list>
-                                </v-menu>
-                                <v-chip rounded x-small color="indigo" outlined class="ma-1" v-if="!book.location && editableLocation"
-                                    @click.stop style="border-style: dashed; cursor: pointer;"
-                                >
+                                <span v-if="book.location && editableLocation" @click.stop>
                                     <v-menu offset-y :close-on-content-click="true">
                                         <template v-slot:activator="{ on, attrs }">
-                                            <span v-bind="attrs" v-on="on" class="d-flex align-center">
-                                                <v-icon x-small class="mr-1">mdi-plus</v-icon>
-                                                {{ $t('book.location') }}
-                                            </span>
+                                            <v-chip rounded x-small color="indigo" class="white--text ma-1" v-bind="attrs" v-on="on">
+                                                {{ book.location }}
+                                                <v-icon x-small color="white" class="ml-1">mdi-chevron-down</v-icon>
+                                            </v-chip>
                                         </template>
                                         <v-list dense>
-                                            <v-list-item v-for="(shelf, si) in bookshelves" :key="si" @click.stop="onLocationChange(book, shelf)">
+                                            <v-list-item v-for="(shelf, si) in bookshelves" :key="si" @click="onLocationChange(book, shelf)">
+                                                <v-list-item-title>{{ shelf }}</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="onLocationChange(book, '')">
+                                                <v-list-item-title class="red--text">{{ $t('book.clearCategory') }}</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
+                                </span>
+                                <span v-if="!book.location && editableLocation" @click.stop>
+                                    <v-menu offset-y :close-on-content-click="true">
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-chip rounded x-small color="indigo" outlined class="ma-1" v-bind="attrs" v-on="on" style="border-style: dashed; cursor: pointer;">
+                                                <v-icon x-small class="mr-1">mdi-plus</v-icon>
+                                                {{ $t('book.location') }}
+                                            </v-chip>
+                                        </template>
+                                        <v-list dense>
+                                            <v-list-item v-for="(shelf, si) in bookshelves" :key="si" @click="onLocationChange(book, shelf)">
                                                 <v-list-item-title>{{ shelf }}</v-list-item-title>
                                             </v-list-item>
                                         </v-list>
                                     </v-menu>
-                                </v-chip>
+                                </span>
                                 <template v-for="(file, index) in book.files?.slice(0, 3)" :key="'format-' + index">
                                     <v-chip rounded x-small class="ma-1"
                                         color="cyan"
@@ -143,6 +142,13 @@ export default {
         },
         onLocationChange(book, location) {
             this.$emit('update-location', { bookId: book.id, location: location });
+        },
+        navigateToBook(book) {
+            if (this.selectable) {
+                this.$emit('toggle-select', book.id);
+            } else if (book.href) {
+                this.$router.push(book.href);
+            }
         },
         shouldShowCommentTooltip(html) {
             return this.isLongComment(html) && !this.isSmallScreen();
