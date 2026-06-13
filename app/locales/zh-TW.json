@@ -585,6 +585,7 @@
     "clear": "清除音訊",
     "restore": "恢復生成",
     "ok": "確定",
+    "save": "儲存",
     "delete": "刪除",
     "backToHome": "返回首頁"
   },
@@ -1299,6 +1300,10 @@
     "deleteSuccess": "書架刪除成功",
     "deleteConfirmTitle": "確認刪除",
     "deleteConfirmMessage": "確定要刪除書架「{name}」嗎？刪除後已使用該位置的實體書不會自動修改。",
-    "locationUpdated": "位置更新成功"
+    "locationUpdated": "位置更新成功",
+    "edit": "編輯",
+    "editTitle": "修改書架名稱",
+    "editLabel": "新名稱",
+    "editSuccess": "書架名稱修改成功"
   }
 }

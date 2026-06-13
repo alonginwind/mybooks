@@ -770,6 +770,7 @@
     "clear": "Clear",
     "restore": "Restore",
     "ok": "OK",
+    "save": "Save",
     "delete": "Delete",
     "backToHome": "Back to Home"
   },
@@ -1299,6 +1300,10 @@
     "deleteSuccess": "Bookshelf deleted successfully",
     "deleteConfirmTitle": "Confirm Delete",
     "deleteConfirmMessage": "Are you sure you want to delete bookshelf \"{name}\"? Existing books using this location will not be changed.",
-    "locationUpdated": "Location updated successfully"
+    "locationUpdated": "Location updated successfully",
+    "edit": "Edit",
+    "editTitle": "Rename Bookshelf",
+    "editLabel": "New Name",
+    "editSuccess": "Bookshelf renamed successfully"
   }
 }
