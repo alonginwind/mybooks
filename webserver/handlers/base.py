@@ -754,6 +754,8 @@ class BaseHandler(web.RequestHandler):
             logging.error(f"删除ID为{book_id},名为《{book_title}》的书籍Item记录失败: {e}")
         try:
             self.calibre_db.delete_book(book_id)
+            # 清除实体书计数缓存，避免统计数字不一致
+            BaseHandler._physical_books_count_cache_time = 0
             self.add_msg("success", _(u"删除书籍《%s》") % book_title)
             return {"err": "ok", "msg": _(u"删除成功")}
         except Exception as e:
