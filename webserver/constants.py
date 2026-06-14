@@ -72,6 +72,7 @@ META_SOURCE_BAIDU = "baidu"
 META_SOURCE_YOUSHU = "youshu"
 META_SOURCE_NEODB = "neodb"
 META_SOURCE_OPENLIBRARY = "openlibrary"
+META_SOURCE_CNBIP = "cnbip"
 
 # User reading range setting
 ALLOW_READ_RANGE_SETTING = "ALLOW_READ_RANGE_SETTING"
