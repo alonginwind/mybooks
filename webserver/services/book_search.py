@@ -20,10 +20,11 @@ from webserver.plugins.meta.calibre import CalibreMetaPlugin
 from webserver.plugins.meta.xhsd import XhsdMetaPlugin
 from webserver.plugins.meta.neodb import NeodbMetaPlugin
 from webserver.plugins.meta.openlibrary import OpenLibraryMetaPlugin
+from webserver.plugins.meta.cnbip import CnbipMetaPlugin
 
 CONF = loader.get_settings()
 _PLUGIN_CLASSES = [DoubanMetaPlugin, BaikeMetaPlugin, CalibreMetaPlugin, YoushuMetaPlugin, DoubanV2MetaPlugin, NeodbMetaPlugin]
-_PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin, OpenLibraryMetaPlugin]  # 不参与聚合搜索但需要 provider 路由
+_PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin, OpenLibraryMetaPlugin, CnbipMetaPlugin]  # 不参与聚合搜索但需要 provider 路由
 
 
 class BookSearch:
@@ -198,6 +199,17 @@ class BookSearch:
                 book_data = XhsdMetaPlugin().search_by_isbn(isbn)
             except Exception as e:
                 logging.error(f"Xhsd API error for ISBN {isbn}: {e}")
+                book_data = None
+
+        if not book_data:
+            # 中国出版物信息平台：收录国内出版物非常全面，中文书兜底
+            try:
+                logging.info(f"Trying Cnbip API for ISBN {isbn}")
+                book_data = CnbipMetaPlugin().search_by_isbn(isbn)
+                if book_data:
+                    logging.info(f"Cnbip found: {getattr(book_data, 'title', '')}")
+            except Exception as e:
+                logging.error(f"Cnbip API error for ISBN {isbn}: {e}")
                 book_data = None
 
         if not book_data:
