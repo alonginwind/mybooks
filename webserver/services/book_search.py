@@ -19,10 +19,11 @@ from webserver.plugins.meta.youshu import YoushuMetaPlugin
 from webserver.plugins.meta.calibre import CalibreMetaPlugin
 from webserver.plugins.meta.xhsd import XhsdMetaPlugin
 from webserver.plugins.meta.neodb import NeodbMetaPlugin
+from webserver.plugins.meta.openlibrary import OpenLibraryMetaPlugin
 
 CONF = loader.get_settings()
 _PLUGIN_CLASSES = [DoubanMetaPlugin, BaikeMetaPlugin, CalibreMetaPlugin, YoushuMetaPlugin, DoubanV2MetaPlugin, NeodbMetaPlugin]
-_PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin]  # XhsdMetaPlugin 不参与聚合搜索但需要 provider 路由
+_PROVIDER_PLUGIN_CLASSES = _PLUGIN_CLASSES + [XhsdMetaPlugin, OpenLibraryMetaPlugin]  # 不参与聚合搜索但需要 provider 路由
 
 
 class BookSearch:
@@ -197,6 +198,17 @@ class BookSearch:
                 book_data = XhsdMetaPlugin().search_by_isbn(isbn)
             except Exception as e:
                 logging.error(f"Xhsd API error for ISBN {isbn}: {e}")
+                book_data = None
+
+        if not book_data:
+            # Open Library：免费无需 API Key，适合外文书等国内数据库未收录的图书
+            try:
+                logging.info(f"Trying Open Library API for ISBN {isbn}")
+                book_data = OpenLibraryMetaPlugin().search_by_isbn(isbn)
+                if book_data:
+                    logging.info(f"Open Library found: {getattr(book_data, 'title', '')}")
+            except Exception as e:
+                logging.error(f"Open Library API error for ISBN {isbn}: {e}")
                 book_data = None
 
         return book_data
