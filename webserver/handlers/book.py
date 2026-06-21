@@ -182,6 +182,11 @@ class BookTags(BaseHandler):
                 if len(new_tags) > 0:
                     updated_tags = list(set(new_tags))
                     self.calibre_db.set_tags(book_id, updated_tags)
+                    # 根据标签推断并设置分类
+                    category = AutoFillService().infer_category_from_tags(updated_tags)
+                    if category:
+                        self.calibre_db_cache.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: category})
+                        logging.info(f"Auto-set category for book {book_id}: {category}")
                     logging.info(f"Updated tags for book {book_id}: {updated_tags}")
                     return {"err": "ok", "msg": _("标签更新成功")}
             return {"err": "ok", "msg": _("标签已是最新，无需更新")}
@@ -1981,6 +1986,11 @@ class BookAddByISBN(BaseHandler):
             item.book_count = 1
             self.sqlite_session.add(item)
             self.sqlite_session.commit()
+
+            # 自动获取标签并设置分类
+            if CONF.get(AUTO_FILL_META, False):
+                AutoFillService().auto_fill(book_id, force_update=True)
+
             return {"err": "ok", "msg": _("图书添加成功"), "book_id": book_id}
         except Exception as e:
             logging.error("Failed to add book by ISBN: %s", e)
