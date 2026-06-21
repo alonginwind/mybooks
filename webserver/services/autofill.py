@@ -204,6 +204,11 @@ class AutoFillService(AsyncService):
         category = self.infer_category_from_tags(all_tags)
         self._set_category(book_id, category)
 
+        # 根据 ISBN 推断语言（仅在语言为空时设置）
+        isbn = mi.isbn or refer_mi.isbn
+        language = self.infer_language_from_isbn(isbn)
+        self._set_language(book_id, language)
+
         # 保留书名不修改（万一出BUG，还能抢救一下）
         title = utils.remove_zlibrary_suffix(mi.title)
         refer_mi.title = title
@@ -258,6 +263,62 @@ class AutoFillService(AsyncService):
             logging.info(_("自动设置书籍 id=[%d] 的分类为: %s"), book_id, category)
         except Exception as e:
             logging.error(_("设置分类失败 book_id=%d: %s"), book_id, e)
+
+    def infer_language_from_isbn(self, isbn):
+        """根据 ISBN 前缀推断语言。返回 Calibre 语言代码（如 zho, eng, jpn）"""
+        if not isbn:
+            return None
+        isbn = isbn.replace("-", "").strip()
+        if len(isbn) < 4:
+            return None
+
+        if isbn.startswith("978"):
+            # ISBN-13: 978 + group + ...
+            # 大部分国家 group 是 1 位数字，少数是 2 位
+            g1 = isbn[3] if len(isbn) > 3 else ""  # 1 位 group
+            g2 = isbn[3:5] if len(isbn) > 4 else ""  # 2 位 group
+            if g1 == "7":
+                return "zho"  # 中国简体
+            elif g1 in ("0", "1"):
+                return "eng"
+            elif g1 == "4":
+                return "jpn"
+            elif g1 == "5":
+                return "rus"
+            elif g1 == "2":
+                return "fra"
+            elif g1 == "3":
+                return "deu"
+            elif g2 == "88":
+                return "ita"
+            elif g2 == "89":
+                return "kor"
+        elif isbn.startswith("979"):
+            g2 = isbn[3:5] if len(isbn) > 4 else ""
+            if g2 == "10":
+                return "fra"
+            elif g2 == "11":
+                return "kor"
+            elif g2 in ("00", "01", "12"):
+                return "eng"
+            elif g2 == "88":
+                return "ita"
+        # 默认中文
+        return "zho"
+
+    def _set_language(self, book_id, language):
+        """设置书籍语言"""
+        if not language:
+            return
+        try:
+            mi = self.db.get_metadata(book_id, index_is_id=True)
+            # 只有当语言为空或默认值时才设置
+            if not mi.languages or mi.languages[0] in ("zho", "und"):
+                mi.languages = [language]
+                self.db.set_metadata(book_id, mi, force_changes=True)
+                logging.info(_("自动设置书籍 id=[%d] 的语言为: %s"), book_id, language)
+        except Exception as e:
+            logging.error(_("设置语言失败 book_id=%d: %s"), book_id, e)
 
     def do_fill_tags(self, book_id, mi, need_commit=False):
         try:
