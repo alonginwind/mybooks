@@ -99,6 +99,21 @@
                                 </template>
                                 <span>{{ $t('upload.selectImageForBarcode') }}</span>
                             </v-tooltip>
+                            <v-tooltip bottom>
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-btn
+                                        icon
+                                        small
+                                        @click="startScanner"
+                                        color="primary"
+                                        v-bind="attrs"
+                                        v-on="on"
+                                    >
+                                        <v-icon>mdi-qrcode-scan</v-icon>
+                                    </v-btn>
+                                </template>
+                                <span>{{ $t('upload.scanBarcode') || '扫描条形码' }}</span>
+                            </v-tooltip>
                         </template>
                     </v-text-field>
 
@@ -110,6 +125,25 @@
                         style="display: none"
                         @change="handleImageUpload"
                     />
+
+                    <!-- 实时扫描对话框 -->
+                    <v-dialog v-model="scanner_dialog" max-width="400" persistent>
+                        <v-card>
+                            <v-toolbar flat dense dark color="green">
+                                <v-icon>mdi-qrcode-scan</v-icon>
+                                <v-toolbar-title class="ml-2">{{ $t('upload.scanBarcode') || '扫描条形码' }}</v-toolbar-title>
+                                <v-spacer></v-spacer>
+                                <v-btn icon @click="stopScanner">
+                                    <v-icon>mdi-close</v-icon>
+                                </v-btn>
+                            </v-toolbar>
+                            <v-card-text class="pa-0">
+                                <div id="barcode-scanner" style="width: 100%; min-height: 300px;"></div>
+                                <div v-if="scanner_error" class="pa-3 red--text text-center">{{ scanner_error }}</div>
+                                <div class="pa-3 text-center caption grey--text">{{ $t('upload.scanHint') || '将条形码对准框内，自动识别' }}</div>
+                            </v-card-text>
+                        </v-card>
+                    </v-dialog>
 
                     <!-- 继续添加checkbox -->
                     <v-checkbox
@@ -149,6 +183,10 @@ export default {
         continueAdding: false,
         // 条形码识别相关
         recognizing_barcode: false,
+        // 实时扫描相关
+        scanner_dialog: false,
+        scanner_error: "",
+        _html5QrCode: null,
         // 缓存ISBN验证结果以提高性能
         _cachedIsbn: "",
         _cachedIsValidResult: false,
@@ -546,6 +584,62 @@ export default {
                 // 清空文件输入框，允许重复选择同一文件
                 event.target.value = '';
             });
+        },
+
+        // 实时扫描相关方法
+        async startScanner() {
+            this.scanner_dialog = true;
+            this.scanner_error = "";
+            
+            // 等待对话框渲染完成
+            await this.$nextTick();
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            try {
+                const { Html5Qrcode, Html5QrcodeScanType } = await import('html5-qrcode');
+                this._html5QrCode = new Html5Qrcode("barcode-scanner");
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 280, height: 100 },
+                    aspectRatio: 1.0,
+                };
+                
+                await this._html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText) => {
+                        // 扫描成功，检查是否是 ISBN
+                        const cleanText = decodedText.replace(/[-\s]/g, '');
+                        if (/^[0-9]{10}$/.test(cleanText) || /^[0-9]{13}$/.test(cleanText) || /^[0-9]{9}[0-9X]$/i.test(cleanText)) {
+                            this.isbn = decodedText;
+                            this.stopScanner();
+                            this.$nextTick(() => {
+                                this.$refs.isbnField && this.$refs.isbnField.validate();
+                            });
+                        }
+                    },
+                    (errorMessage) => {
+                        // 扫描失败时不处理，持续扫描
+                    }
+                );
+            } catch (err) {
+                console.error('Scanner error:', err);
+                this.scanner_error = this.$t('upload.scannerNotSupported') || '您的浏览器不支持摄像头扫描，请使用图片上传方式';
+            }
+        },
+
+        async stopScanner() {
+            if (this._html5QrCode) {
+                try {
+                    await this._html5QrCode.stop();
+                    this._html5QrCode.clear();
+                } catch (err) {
+                    console.error('Stop scanner error:', err);
+                }
+                this._html5QrCode = null;
+            }
+            this.scanner_dialog = false;
         },
     },
 
