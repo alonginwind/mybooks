@@ -10,7 +10,7 @@ from webserver.plugins.meta.bookbarn_tags import BookBarnTags
 from webserver.services import AsyncService
 from webserver.services.background_service import BackgroundService, BackgroundTask
 from webserver.services.book_search import BookSearch
-from webserver.constants import AUTO_FILL_META
+from webserver.constants import AUTO_FILL_META, CALIBRE_COLUMN_CATEGORY
 
 CONF = loader.get_settings()
 
@@ -199,6 +199,11 @@ class AutoFillService(AsyncService):
         if len(refer_mi.tags) == 0 and len(mi.tags) == 0:
             mi.tags = self.guess_tags(refer_mi)
 
+        # 根据标签自动设置分类
+        all_tags = refer_mi.tags or mi.tags or []
+        category = self.infer_category_from_tags(all_tags)
+        self._set_category(book_id, category)
+
         # 保留书名不修改（万一出BUG，还能抢救一下）
         title = utils.remove_zlibrary_suffix(mi.title)
         refer_mi.title = title
@@ -225,6 +230,35 @@ class AutoFillService(AsyncService):
                 break
         return ts
 
+    def infer_category_from_tags(self, tags):
+        """根据标签推断书籍分类。
+        遍历 BOOK_NAV 配置，将标签与分类关键词匹配，返回第一个匹配的分类名。
+        """
+        if not tags:
+            return None
+        tag_set = set(t.strip() for t in tags)
+        for line in CONF.get("BOOK_NAV", "").split("\n"):
+            line = line.strip()
+            if "=" not in line:
+                continue
+            category_name, keywords_str = line.split("=", 1)
+            category_name = category_name.strip()
+            keywords = [k.strip() for k in keywords_str.split("/") if k.strip()]
+            for keyword in keywords:
+                if keyword in tag_set:
+                    return category_name
+        return None
+
+    def _set_category(self, book_id, category):
+        """设置书籍分类到 Calibre 自定义字段"""
+        if not category:
+            return
+        try:
+            self.db.new_api.set_field(CALIBRE_COLUMN_CATEGORY, {book_id: category})
+            logging.info(_("自动设置书籍 id=[%d] 的分类为: %s"), book_id, category)
+        except Exception as e:
+            logging.error(_("设置分类失败 book_id=%d: %s"), book_id, e)
+
     def do_fill_tags(self, book_id, mi, need_commit=False):
         try:
             tags = self.plugin_search_book_tag(mi)
@@ -232,6 +266,9 @@ class AutoFillService(AsyncService):
                 mi.tags = tags
                 if need_commit:
                     self.db.set_metadata(book_id, mi, ignore_errors=True)
+                # 根据标签自动设置分类
+                category = self.infer_category_from_tags(tags)
+                self._set_category(book_id, category)
                 logging.info(_("自动更新书籍 id=[%d] 的标签，title=%s"), book_id, mi.title)
                 return True
             else:
