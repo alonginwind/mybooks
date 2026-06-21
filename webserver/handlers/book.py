@@ -1239,6 +1239,55 @@ class PrintBooks(BaseHandler):
             return {"err": "internal", "msg": _("获取实体书失败")}
 
 
+class EBooks(BaseHandler):
+    @js
+    def get(self):
+        title = _("电子书")
+
+        # 查询所有电子书（非实体书），按添加时间倒序排列
+        db_items = self.sqlite_session.query(Item).filter(
+            Item.book_type != BOOK_TYPE_PHYSICAL
+        ).order_by(Item.create_time.desc())
+        total_cnt = db_items.count()
+
+        # 同时包含没有 Item 记录的书籍（纯 Calibre 书籍）
+        item_book_ids = set(item.book_id for item in self.sqlite_session.query(Item.book_id).all())
+        all_book_ids = set(self.calibre_db_cache.all_book_ids())
+        orphan_ids = all_book_ids - item_book_ids
+
+        try:
+            start = self.get_argument_start()
+            delta = CONF.get("DEFAULT_PAGE_SIZE", 60)
+
+            # 获取有 Item 记录的电子书
+            items = db_items.limit(delta).offset(start).all()
+            ids = [item.book_id for item in items]
+
+            # 第一页时，把无 Item 记录的书籍也加上
+            if start == 0 and orphan_ids:
+                ids = ids + list(orphan_ids)
+
+            books = self.get_books(ids=ids)
+            books.sort(key=lambda x: x["id"], reverse=True)
+
+            books_result = []
+            for book in books[:delta]:
+                book_data = BookFormatter(self, book).format()
+                books_result.append(book_data)
+
+            # 总数 = 有Item记录的电子书 + 无Item记录的书籍
+            total_cnt = total_cnt + len(orphan_ids)
+
+            return {"err": "ok",
+                    "title": title,
+                    "total": total_cnt,
+                    "books": books_result}
+        except Exception as e:
+            traceback.print_exc()
+            logging.error("Failed to get ebooks: %s", e)
+            return {"err": "internal", "msg": _("获取电子书失败")}
+
+
 class BookSoled(BaseHandler):
     @js
     @auth
@@ -3459,6 +3508,7 @@ def routes():
         (r"/api/all", RecentBook),
         (r"/api/hot", HotBook),
         (r"/api/printbooks", PrintBooks),
+        (r"/api/ebooks", EBooks),
         (r"/api/soledbooks", BookSoled),
         (r"/api/book/nav", BookNav),
         (r"/api/book/add", BookAddByISBN),
