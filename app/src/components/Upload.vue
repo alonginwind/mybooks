@@ -396,6 +396,7 @@ export default {
 
         handleUploadResponse(rsp) {
             if (rsp.err === 'ok') {
+                this.$store.commit("refresh_sys");
                 this.$alert("success", this.$t('upload.uploadSuccess'), "/book/" + rsp.book_id);
                 this.$router.push("/book/" + rsp.book_id);
             } else if (rsp.err === 'samebook') {
@@ -488,6 +489,7 @@ export default {
                     if (rsp.err != "ok") {
                         this.$alert("error", rsp.msg);
                     } else {
+                        this.$store.commit("refresh_sys");
                         // 如果勾选了继续添加，则跳转时携带参数
                         if (this.continueAdding) {
                             this.$router.push(`/book/${rsp.book_id}?continue_adding=true`);
