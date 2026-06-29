@@ -21,7 +21,12 @@
                         <div class="stat-separator">|</div>
                         <div class="stat-group">
                             <span class="stat-label">{{ $t('index.physicalCount') }}:</span>
-                            <span class="stat-value">{{ stats.physical_count }}</span>
+                            <span class="stat-value">
+                                {{ stats.physical_count }}
+                                <span v-if="stats.physical_copies_count > stats.physical_count" class="copies-count">
+                                    ({{ stats.physical_copies_count }}{{ $t('index.copiesUnit') }})
+                                </span>
+                            </span>
                         </div>
                     </template>
                     <div class="stat-separator">|</div>
@@ -639,6 +644,13 @@ export default {
 .stat-value.month-new {
     background: rgba(76, 175, 80, 0.3);
     border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.copies-count {
+    font-size: 0.85em;
+    font-weight: normal;
+    color: rgba(255, 255, 255, 0.8);
+    margin-left: 2px;
 }
 
 .stat-separator {
