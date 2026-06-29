@@ -719,6 +719,11 @@ export default {
                 .concat(this.sys.friends.length > 0 ? friendLinks : [])
         },
     },
+    watch: {
+        '$store.state.sys_version'() {
+            this.refreshSysInfo();
+        }
+    },
     mounted() {
         // Load saved search category from localStorage
         if (process.client) {
@@ -788,6 +793,14 @@ export default {
         this.stopTaskPolling();
     },
     methods: {
+        refreshSysInfo() {
+            this.$backend("/user/info").then((rsp) => {
+                if (rsp.err === "ok") {
+                    this.sys = rsp.sys;
+                    this.$store.commit("login", rsp);
+                }
+            });
+        },
         isExternalLink(url) {
             return url && (url.startsWith('http://') || url.startsWith('https://'));
         },
