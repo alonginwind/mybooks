@@ -176,6 +176,10 @@ export default {
           displayTitle = this.$t('listBook.ebooks');
           break;
 
+        case "/unshelved":
+          displayTitle = this.$t('listBook.unshelved');
+          break;
+
         case "/audiobooks":
           displayTitle = this.$t('listBook.audioBooks');
           break;
