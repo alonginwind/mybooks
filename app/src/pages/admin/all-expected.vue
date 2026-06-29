@@ -300,6 +300,7 @@ export default {
               body: JSON.stringify({ id: item.id }),
             });
             this.items = this.items.filter(i => i.id !== item.id);
+            this.$store.commit("refresh_sys");
             this.$alert('success', this.$t('expected.physicalBookSuccess'));
           } else {
             this.$alert('error', (rsp && rsp.msg) || this.$t('upload.uploadFailed'));
@@ -348,6 +349,7 @@ export default {
             body: JSON.stringify({ id: item.id }),
           });
           this.items = this.items.filter(i => i.id !== item.id);
+          this.$store.commit("refresh_sys");
           this.$alert('success', this.$t('expected.uploadSuccess'));
         } else {
           this.$alert('error', (rsp && rsp.msg) || this.$t('upload.uploadFailed'));

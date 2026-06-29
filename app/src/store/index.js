@@ -1,5 +1,5 @@
 export const state = () => ({
-    nav: true, loading: true, count: 0, user: {
+    nav: true, loading: true, count: 0, sys_version: 0, user: {
         is_admin: false, is_login: false, nickname: "", kindle_email: "", avatar: "",
     }, alert: {
         to: "", msg: "", type: "", show: false,
@@ -37,6 +37,8 @@ export const mutations = {
         state.nav = nav;
     }, increment(state) {
         state.count++
+    }, refresh_sys(state) {
+        state.sys_version++
     }, login(state, data) {
         if (data != undefined) {
             if (data.sys) {
