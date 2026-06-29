@@ -1251,12 +1251,21 @@ class LibraryStats(BaseHandler):
         total_books = len(all_book_ids)
         ebook_count = 0
         physical_count = 0
+        physical_copies_count = 0
         month_ebook_count = 0
         month_physical_count = 0
 
         if all_book_ids:
             physical_count = self.get_physical_books_count()
             ebook_count = total_books - physical_count
+
+            # 实体书总册数（加总所有 book_count）
+            total_physical_copies = (
+                self.sqlite_session.query(func.sum(Item.book_count))
+                .filter(Item.book_type == 1)
+                .scalar()
+            )
+            physical_copies_count = total_physical_copies if total_physical_copies else 0
 
             month_ebook_count = (
                 self.sqlite_session.query(Item)
@@ -1284,6 +1293,7 @@ class LibraryStats(BaseHandler):
             "total_books": total_books,
             "ebook_count": ebook_count,
             "physical_count": physical_count,
+            "physical_copies_count": physical_copies_count,
             "month_ebook_count": month_ebook_count,
             "month_physical_count": month_physical_count,
         }
@@ -1314,6 +1324,7 @@ class LibraryStats(BaseHandler):
                         "total_books": 0,
                         "ebook_count": 0,
                         "physical_count": 0,
+                        "physical_copies_count": 0,
                         "month_ebook_count": 0,
                         "month_physical_count": 0,
                     }
