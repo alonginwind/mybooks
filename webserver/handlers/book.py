@@ -1297,6 +1297,51 @@ class EBooks(BaseHandler):
             return {"err": "internal", "msg": _("获取电子书失败")}
 
 
+class UnshelvedBooks(BaseHandler):
+    @js
+    def get(self):
+        title = _("未上架实体书")
+
+        # 查询所有实体书
+        db_items = self.sqlite_session.query(Item).filter(
+            Item.book_type == BOOK_TYPE_PHYSICAL
+        ).order_by(Item.create_time.desc())
+        items = db_items.all()
+        all_ids = [item.book_id for item in items]
+
+        if not all_ids:
+            return {"err": "ok", "title": title, "total": 0, "books": []}
+
+        # 获取所有实体书的 location 字段
+        location_map = self.calibre_db_cache.get_field(CALIBRE_COLUMN_LOCATION, set(all_ids))
+
+        # 筛选出 location 为空的书籍
+        unshelved_ids = [bid for bid in all_ids if not location_map.get(bid, "")]
+        total_cnt = len(unshelved_ids)
+
+        try:
+            start = self.get_argument_start()
+            delta = CONF.get("DEFAULT_PAGE_SIZE", 60)
+            page_ids = unshelved_ids[start:start + delta]
+
+            books = self.get_books(ids=page_ids)
+            books.sort(key=lambda x: x["id"], reverse=True)
+
+            books_result = []
+            for book in books:
+                book_data = BookFormatter(self, book).format()
+                books_result.append(book_data)
+
+            return {"err": "ok",
+                    "title": title,
+                    "total": total_cnt,
+                    "books": books_result}
+        except Exception as e:
+            traceback.print_exc()
+            logging.error("Failed to get unshelved books: %s", e)
+            return {"err": "internal", "msg": _("获取未上架实体书失败")}
+
+
 class BookSoled(BaseHandler):
     @js
     @auth
@@ -3541,6 +3586,7 @@ def routes():
         (r"/api/hot", HotBook),
         (r"/api/printbooks", PrintBooks),
         (r"/api/ebooks", EBooks),
+        (r"/api/unshelved", UnshelvedBooks),
         (r"/api/soledbooks", BookSoled),
         (r"/api/book/nav", BookNav),
         (r"/api/book/add", BookAddByISBN),
