@@ -672,6 +672,7 @@ export default {
             const navLinks = [
                 { icon: "mdi-headphones", href: "/audiobooks", text: "appHeader.audioBooks", count: this.sys.audiobooks, color: "purple"},
                 ...(this.sys.allow.physical_books ? [{ icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", count: this.sys.physicals, color: "orange"}] : []),
+                { icon: "mdi-book-multiple", href: "/ebooks", text: "appHeader.ebooks", count: this.sys.ebooks, color: "blue"},
                 { icon: "mdi-account-group", href: "/author", text: "appHeader.authors", count: this.sys.authors, color: "blue darken-1"},
                 { icon: "mdi-shape-plus", href: "/categories", text: "appHeader.categoryBrowse", count: this.sys.categories, color: "green" },
                 { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags, color: "deep-orange"},
