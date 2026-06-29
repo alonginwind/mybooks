@@ -1242,6 +1242,7 @@ class BaseHandler(web.RequestHandler):
 
         audio_book_cnt = self.get_audio_books_count()
         physical_book_cnt = self.get_physical_books_count()
+        ebook_cnt = db.count() - physical_book_cnt
 
         return {
             "books": db.count(),
@@ -1253,6 +1254,7 @@ class BaseHandler(web.RequestHandler):
             "categories": self.get_custom_category_count(),
             "folders": self.get_folder_count(),
             "physicals": physical_book_cnt,
+            "ebooks": ebook_cnt,
             "mtime": db.last_modified().strftime("%Y-%m-%d"),
             "users": count_all_users,
             "version": VERSION,
