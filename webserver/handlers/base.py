@@ -115,6 +115,8 @@ class BaseHandler(web.RequestHandler):
     _query_fallback_cache = {}
     _physical_books_count_cache: int = 0
     _physical_books_count_cache_time: float = 0.0
+    _unshelved_books_count_cache: int = 0
+    _unshelved_books_count_cache_time: float = 0.0
     _all_readers_cache: dict = {}
     _all_readers_cache_time: float = 0.0
     site_url = ""
@@ -597,6 +599,34 @@ class BaseHandler(web.RequestHandler):
             logging.error(traceback.format_exc())
             return BaseHandler._physical_books_count_cache
 
+    def get_unshelved_books_count(self):
+        # 统计未上架实体书数量（location 为空的实体书），缓存5分钟
+        now = time.time()
+        if now - BaseHandler._unshelved_books_count_cache_time < 300:
+            return BaseHandler._unshelved_books_count_cache
+        from webserver.constants import CALIBRE_COLUMN_LOCATION, BOOK_TYPE_PHYSICAL
+
+        try:
+            physical_ids = {
+                bid for (bid,) in self.sqlite_session.query(Item.book_id)
+                .filter(Item.book_type == BOOK_TYPE_PHYSICAL)
+                .all()
+            }
+            if not physical_ids:
+                BaseHandler._unshelved_books_count_cache = 0
+            else:
+                location_map = self.calibre_db_cache.all_field_for(
+                    CALIBRE_COLUMN_LOCATION, physical_ids
+                )
+                BaseHandler._unshelved_books_count_cache = sum(
+                    1 for bid in physical_ids if not location_map.get(bid, "")
+                )
+            BaseHandler._unshelved_books_count_cache_time = now
+            return BaseHandler._unshelved_books_count_cache
+        except Exception:
+            logging.error(traceback.format_exc())
+            return BaseHandler._unshelved_books_count_cache
+
     def get_all_readers(self):
         from webserver.models import Reader
         now = time.time()
@@ -778,6 +808,7 @@ class BaseHandler(web.RequestHandler):
             self.calibre_db.delete_book(book_id)
             # 清除实体书计数缓存，避免统计数字不一致
             BaseHandler._physical_books_count_cache_time = 0
+            BaseHandler._unshelved_books_count_cache_time = 0
             user_name = self.current_user.name if self.current_user else ""
             self.add_msg("success", _("%s删除了书籍《%s》") % (user_name, book_title))
             return {"err": "ok", "msg": _("删除成功")}
@@ -1098,6 +1129,9 @@ class BaseHandler(web.RequestHandler):
         physical_book_cnt = self.get_physical_books_count()
         ebook_cnt = db.count() - physical_book_cnt
 
+        # 未上架实体书数量（location 为空的实体书）
+        unshelved_count = self.get_unshelved_books_count()
+
         return {
             "books": db.count(),
             "tags": len(db.all_tags()),
@@ -1107,6 +1141,7 @@ class BaseHandler(web.RequestHandler):
             "series": len(db.all_series()),
             "physicals": physical_book_cnt,
             "ebooks": ebook_cnt,
+            "unshelved": unshelved_count,
             "mtime": db.last_modified().strftime("%Y-%m-%d"),
             "users": count_all_users,
             "version": VERSION,

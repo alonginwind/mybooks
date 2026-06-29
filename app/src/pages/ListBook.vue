@@ -43,7 +43,7 @@ export default {
       return this.getPageTitle();
     },
     isPhysicalBooksPage() {
-      return this.$route.path === '/printbooks';
+      return this.$route.path === '/printbooks' || this.$route.path === '/unshelved';
     }
   },
   data: () => ({
@@ -194,6 +194,11 @@ export default {
           if (book) {
             this.$set(book, 'location', location);
           }
+          // 未上架页面：设置书架后从列表中移除
+          if (this.$route.path === '/unshelved') {
+            this.books = this.books.filter(b => b.id !== bookId);
+            this.total--;
+          }
           this.$alert('success', this.$t('bookshelves.locationUpdated'));
         } else {
           this.$alert('error', rsp.msg || '更新失败');
@@ -208,7 +213,7 @@ export default {
 
       this.isAudioPage = route.path === '/audiobooks';
 
-      if (route.path === '/printbooks') {
+      if (route.path === '/printbooks' || route.path === '/unshelved') {
         this.loadBookshelves();
       }
 

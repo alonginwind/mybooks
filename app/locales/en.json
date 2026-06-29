@@ -866,6 +866,7 @@
     "allBooks": "All Books",
     "physicalBooks": "Hardcopy",
     "ebooks": "E-Books",
+    "unshelved": "Unshelved",
     "audioBooks": "Audio Books",
     "systemVersion": "Revision",
     "userCount": "User Count",
