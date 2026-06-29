@@ -849,6 +849,7 @@ export default {
             })
                 .then((rsp) => {
                     this.handleApiResponse(rsp);
+                    this.$store.commit("refresh_sys");
                     this.books_selected = [];
                     this.getDataFromApi();
                 })
@@ -1105,6 +1106,7 @@ export default {
             })
                 .then((rsp) => {
                     this.handleApiResponse(rsp);
+                    this.$store.commit("refresh_sys");
                     this.getDataFromApi();
                 })
                 .finally(() => {
