@@ -1096,6 +1096,7 @@ class BaseHandler(web.RequestHandler):
 
         audio_book_cnt = self.get_audio_books_count()
         physical_book_cnt = self.get_physical_books_count()
+        ebook_cnt = db.count() - physical_book_cnt
 
         return {
             "books": db.count(),
@@ -1105,6 +1106,7 @@ class BaseHandler(web.RequestHandler):
             "publishers": len(db.all_publishers()),
             "series": len(db.all_series()),
             "physicals": physical_book_cnt,
+            "ebooks": ebook_cnt,
             "mtime": db.last_modified().strftime("%Y-%m-%d"),
             "users": count_all_users,
             "version": VERSION,

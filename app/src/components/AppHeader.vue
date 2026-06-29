@@ -664,6 +664,7 @@ export default {
                 { icon: "mdi-tag-heart", href: "/tag", text: "appHeader.tags", count: this.sys.tags, color: "green"},
                 { icon: "mdi-home-group", href: "/publisher", text: "appHeader.publishers", count: this.sys.publishers, color: "primary"},
                 { icon: "mdi-bookshelf", href: "/printbooks", text: "appHeader.physicalBooks", count: this.sys.physicals, color: "orange"},
+                { icon: "mdi-book-multiple", href: "/ebooks", text: "appHeader.ebooks", count: this.sys.ebooks, color: "blue"},
                 { icon: "mdi-library-shelves", href: "/series", text: "appHeader.series", count: this.sys.series, color: "primary"},
                 { icon: "mdi-translate", href: "/language", text: "appHeader.languages", color: "purple"},
                 { icon: "mdi-check-all", href: "/all", text: "appHeader.allBooks", color: "primary"},
