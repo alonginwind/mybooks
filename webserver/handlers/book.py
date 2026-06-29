@@ -310,6 +310,7 @@ class BookLocation(BaseHandler):
         logging.info(f"Updating location for book {book_id}: {location}")
         try:
             self.calibre_db_cache.set_field(CALIBRE_COLUMN_LOCATION, {book_id: location})
+            BaseHandler._unshelved_books_count_cache_time = 0
             return {"err": "ok", "msg": _("位置更新成功")}
         except Exception as e:
             logging.error(f"Error updating location for book {book_id}: {e}")
@@ -1313,7 +1314,7 @@ class UnshelvedBooks(BaseHandler):
             return {"err": "ok", "title": title, "total": 0, "books": []}
 
         # 获取所有实体书的 location 字段
-        location_map = self.calibre_db_cache.get_field(CALIBRE_COLUMN_LOCATION, set(all_ids))
+        location_map = self.calibre_db_cache.all_field_for(CALIBRE_COLUMN_LOCATION, set(all_ids))
 
         # 筛选出 location 为空的书籍
         unshelved_ids = [bid for bid in all_ids if not location_map.get(bid, "")]
@@ -1663,6 +1664,7 @@ class BookEdit(BaseHandler):
             if len(location) < 64:
                 mi.set(CALIBRE_COLUMN_LOCATION, location)
                 self.calibre_db_cache.set_field(CALIBRE_COLUMN_LOCATION, {bid: location})
+                BaseHandler._unshelved_books_count_cache_time = 0
             else:
                 logging.error("Too many characters in the location, ignore it!")
 
@@ -2078,6 +2080,7 @@ class BookAddByISBN(BaseHandler):
                 self.calibre_db_cache.set_field(CALIBRE_COLUMN_BOOK_TYPE, {book_id: BOOK_TYPE_PHYSICAL})
                 self.calibre_db_cache.set_field(CALIBRE_COLUMN_PHY_COUNT, {book_id: 1})
                 BaseHandler._physical_books_count_cache_time = 0
+                BaseHandler._unshelved_books_count_cache_time = 0
             except Exception as e:
                 logging.error(f"Failed to set custom fields for book ID {book_id}: {e}")
 
