@@ -44,6 +44,7 @@
     "totalBooks": "在库数量",
     "ebookCount": "电子书",
     "physicalCount": "实体书",
+    "copiesUnit": "册",
     "monthNewBooks": "本月新增",
     "monthEbookCount": "本月新增电子书",
     "monthPhysicalCount": "本月新增实体书"

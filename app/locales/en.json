@@ -44,6 +44,7 @@
     "totalBooks": "Total Books",
     "ebookCount": "E-books",
     "physicalCount": "Hardcopy Books",
+    "copiesUnit": "copies",
     "monthNewBooks": "This Month",
     "monthEbookCount": "New E-books This Month",
     "monthPhysicalCount": "New Hardcopy Books This Month"
