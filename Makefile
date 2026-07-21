@@ -20,6 +20,7 @@ $(info Building tag2: $(TAG2))
 all: build up
 
 build:
+	@mkdir -p myreader-dist && touch myreader-dist/.gitkeep
 	docker build --pull --platform=$(PLATFORM) --no-cache=false --build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
 		-f Dockerfile -t $(IMAGE) -t $(REPO1) --target production .
 
@@ -45,6 +46,7 @@ build-base-multiarch:
 
 # 构建并推送多架构镜像（同时支持 amd64 和 arm64）
 build-multiarch:
+	@mkdir -p myreader-dist && touch myreader-dist/.gitkeep
 	docker buildx build --pull --platform=linux/amd64,linux/arm64 \
 		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
@@ -53,6 +55,7 @@ build-multiarch:
 
 # 仅构建多架构镜像到本地缓存（不推送）
 build-multiarch-local:
+	@mkdir -p myreader-dist && touch myreader-dist/.gitkeep
 	docker buildx build --pull --platform=linux/amd64,linux/arm64 \
 		--builder $(BUILDER) \
 		--build-arg BUILD_COUNTRY=CN --build-arg GIT_VERSION=$(VER) \
