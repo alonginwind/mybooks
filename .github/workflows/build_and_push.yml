@@ -77,6 +77,9 @@ jobs:
           echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
           echo "$EOF" >> $GITHUB_OUTPUT
 
+      - name: Prepare myreader-dist placeholder
+        run: mkdir -p myreader-dist && touch myreader-dist/.gitkeep
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
