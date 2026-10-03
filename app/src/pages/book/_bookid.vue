@@ -2002,7 +2002,7 @@ export default {
         // 实时扫描相关
         scanner_dialog: false,
         scanner_error: "",
-        _html5QrCode: null,
+        html5QrCode: null,
         // 控制是否显示验证错误（仅在点击添加按钮时显示）
         showValidationErrors: false,
         cover_file: null,
@@ -3281,7 +3281,7 @@ export default {
             
             try {
                 const { Html5Qrcode } = await import('html5-qrcode');
-                this._html5QrCode = new Html5Qrcode("barcode-scanner-bookid");
+                this.html5QrCode = new Html5Qrcode("barcode-scanner-bookid");
                 
                 const config = {
                     fps: 10,
@@ -3289,7 +3289,7 @@ export default {
                     aspectRatio: 1.0,
                 };
                 
-                await this._html5QrCode.start(
+                await this.html5QrCode.start(
                     { facingMode: "environment" },
                     config,
                     (decodedText) => {
@@ -3311,14 +3311,14 @@ export default {
         },
 
         async stopScanner() {
-            if (this._html5QrCode) {
+            if (this.html5QrCode) {
                 try {
-                    await this._html5QrCode.stop();
-                    this._html5QrCode.clear();
+                    await this.html5QrCode.stop();
+                    this.html5QrCode.clear();
                 } catch (err) {
                     console.error('Stop scanner error:', err);
                 }
-                this._html5QrCode = null;
+                this.html5QrCode = null;
             }
             this.scanner_dialog = false;
         },

@@ -229,7 +229,7 @@ export default {
         // 实时扫描相关
         scanner_dialog: false,
         scanner_error: "",
-        _html5QrCode: null,
+        html5QrCode: null,
         // 防抖相关变量
         shouldValidate: false,
         // 防抖验证规则（由 buildDebouncedIsbnRules() 构建，不放进 computed 是因为它本身
@@ -775,8 +775,8 @@ export default {
             await new Promise(resolve => setTimeout(resolve, 300));
             
             try {
-                const { Html5Qrcode, Html5QrcodeScanType } = await import('html5-qrcode');
-                this._html5QrCode = new Html5Qrcode("barcode-scanner");
+                const { Html5Qrcode } = await import('html5-qrcode');
+                this.html5QrCode = new Html5Qrcode("barcode-scanner");
                 
                 const config = {
                     fps: 10,
@@ -784,7 +784,7 @@ export default {
                     aspectRatio: 1.0,
                 };
                 
-                await this._html5QrCode.start(
+                await this.html5QrCode.start(
                     { facingMode: "environment" },
                     config,
                     (decodedText) => {
@@ -798,7 +798,7 @@ export default {
                             });
                         }
                     },
-                    (errorMessage) => {
+                    (_errorMessage) => {
                         // 扫描失败时不处理，持续扫描
                     }
                 );
@@ -809,14 +809,14 @@ export default {
         },
 
         async stopScanner() {
-            if (this._html5QrCode) {
+            if (this.html5QrCode) {
                 try {
-                    await this._html5QrCode.stop();
-                    this._html5QrCode.clear();
+                    await this.html5QrCode.stop();
+                    this.html5QrCode.clear();
                 } catch (err) {
                     console.error('Stop scanner error:', err);
                 }
-                this._html5QrCode = null;
+                this.html5QrCode = null;
             }
             this.scanner_dialog = false;
         },
